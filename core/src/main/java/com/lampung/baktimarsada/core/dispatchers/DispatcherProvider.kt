@@ -1,0 +1,18 @@
+package com.lampung.baktimarsada.core.dispatchers
+
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
+
+interface DispatcherProvider {
+    val io: CoroutineDispatcher
+    val default: CoroutineDispatcher
+    val main: CoroutineDispatcher
+}
+
+class DefaultDispatcherProvider : DispatcherProvider {
+    override val io: CoroutineDispatcher = Dispatchers.IO
+    override val default: CoroutineDispatcher = Dispatchers.Default
+    override val main: CoroutineDispatcher = Dispatchers.Main
+}
+
+// created by Mories Deo Hutapea, S.E.,S.Kom
