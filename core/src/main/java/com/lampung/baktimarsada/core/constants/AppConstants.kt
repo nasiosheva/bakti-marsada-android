@@ -83,5 +83,6 @@ object AppConstants {
     const val ROUTE_MEMBERS = "v1/members"
     const val ROUTE_FINANCE_REPORTS = "v1/finance-reports"
     const val ROUTE_PAYMENT_OBLIGATIONS = "v1/payment-obligations"
+    const val DEFAULT_LIST_PAGE_SIZE = 10
 
 }

@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { successResponse } from "../lib/api-response";
 import type { AppBindings } from "../types/env";
 import { HealthService } from "../services/health.service";
 import { HealthRepository } from "../repositories/health.repository";
@@ -10,5 +11,5 @@ healthRoute.get("/", async (c) => {
   const service = new HealthService(repository);
   const result = await service.check();
 
-  return c.json(result);
+  return successResponse(result);
 });

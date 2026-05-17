@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { errorResponse, successResponse } from "../lib/api-response";
 import { AuthError } from "../lib/auth-errors";
 import type { AppBindings } from "../types/env";
 import { createAuthService, type AuthResult, type AuthService } from "../services/auth.service";
@@ -35,7 +36,7 @@ export function createAuthRoute(deps: AuthRouteDependencies = {}) {
         fullName: body.fullName ?? ""
       });
 
-      return c.json(toAuthResponse(result), 201);
+      return successResponse(toAuthResponse(result), { status: 201, code: "CREATED", message: "User registered" });
     } catch (error) {
       return mapAuthError(error);
     }
@@ -55,7 +56,7 @@ export function createAuthRoute(deps: AuthRouteDependencies = {}) {
         password: body.password ?? ""
       });
 
-      return c.json(toAuthResponse(result));
+      return successResponse(toAuthResponse(result), { message: "Login success" });
     } catch (error) {
       return mapAuthError(error);
     }
@@ -67,7 +68,7 @@ export function createAuthRoute(deps: AuthRouteDependencies = {}) {
       const sessionToken = getBearerToken(c.req.header("Authorization"));
       const user = await service.me(sessionToken);
 
-      return c.json({ user });
+      return successResponse({ user });
     } catch (error) {
       return mapAuthError(error);
     }
@@ -79,7 +80,7 @@ export function createAuthRoute(deps: AuthRouteDependencies = {}) {
       const sessionToken = getBearerToken(c.req.header("Authorization"));
       await service.logout(sessionToken);
 
-      return c.json({ ok: true });
+      return successResponse({ success: true }, { message: "Logout success" });
     } catch (error) {
       return mapAuthError(error);
     }
@@ -108,25 +109,11 @@ function mapAuthError(error: unknown) {
       code: error.code,
       message: error.message
     });
-    return Response.json(
-      {
-        ok: false,
-        code: error.code,
-        message: error.message
-      },
-      { status: error.status }
-    );
+    return errorResponse(error.status, error.code, error.message);
   }
 
   console.error("auth_unhandled_error", error);
-  return Response.json(
-    {
-      ok: false,
-      code: "INTERNAL_SERVER_ERROR",
-      message: "Internal server error"
-    },
-    { status: 500 }
-  );
+  return errorResponse(500, "INTERNAL_SERVER_ERROR", "Internal server error");
 }
 
 function toAuthResponse(result: AuthResult) {

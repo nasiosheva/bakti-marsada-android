@@ -2,6 +2,7 @@ package com.lampung.baktimarsada.data.remote
 
 import com.lampung.baktimarsada.core.tenant.TenantRuntime
 import com.lampung.baktimarsada.network.api.BaktiApiService
+import com.lampung.baktimarsada.network.dto.ApiResponseDto
 import com.lampung.baktimarsada.network.dto.BackendLoginRequestDto
 import com.lampung.baktimarsada.network.dto.EventDto
 import com.lampung.baktimarsada.network.dto.FcmTokenRequestDto
@@ -25,7 +26,7 @@ abstract class RestAppRemoteDataSource(
                 password = request.password
             )
         )
-        val body = response.requireBody("Login failed")
+        val body = response.requireDataBody("Login failed")
         val token = body.session?.sessionToken ?: body.authToken
         val userId = body.user?.id ?: body.userId
         if (token.isNullOrBlank() || userId.isNullOrBlank()) {
@@ -62,11 +63,11 @@ abstract class RestAppRemoteDataSource(
     }
 
     override suspend fun fetchEvents(sectorId: String): List<EventDto> {
-        return apiService.fetchEvents(sectorId).requireBody("Failed to load events")
+        return apiService.fetchEvents(sectorId).requireDataBody("Failed to load events")
     }
 
     override suspend fun saveEvent(event: EventDto): EventDto {
-        return apiService.saveEvent(event).requireBody("Failed to save event")
+        return apiService.saveEvent(event).requireDataBody("Failed to save event")
     }
 
     override suspend fun deleteEvent(eventId: String) {
@@ -74,11 +75,11 @@ abstract class RestAppRemoteDataSource(
     }
 
     override suspend fun fetchWorshipTemplates(sectorId: String): List<WorshipTemplateDto> {
-        return apiService.fetchWorshipTemplates(sectorId).requireBody("Failed to load worship templates")
+        return apiService.fetchWorshipTemplates(sectorId).requireDataBody("Failed to load worship templates")
     }
 
     override suspend fun saveWorshipTemplate(template: WorshipTemplateDto): WorshipTemplateDto {
-        return apiService.saveWorshipTemplate(template).requireBody("Failed to save worship template")
+        return apiService.saveWorshipTemplate(template).requireDataBody("Failed to save worship template")
     }
 
     override suspend fun deleteWorshipTemplate(templateId: String) {
@@ -86,11 +87,11 @@ abstract class RestAppRemoteDataSource(
     }
 
     override suspend fun fetchMembers(sectorId: String): List<MemberDto> {
-        return apiService.fetchMembers(sectorId).requireBody("Failed to load members")
+        return apiService.fetchMembers(sectorId).requireDataBody("Failed to load members")
     }
 
     override suspend fun saveMember(member: MemberDto): MemberDto {
-        return apiService.saveMember(member).requireBody("Failed to save member")
+        return apiService.saveMember(member).requireDataBody("Failed to save member")
     }
 
     override suspend fun deleteMember(memberId: String) {
@@ -98,11 +99,11 @@ abstract class RestAppRemoteDataSource(
     }
 
     override suspend fun fetchFinanceReports(sectorId: String): List<FinanceReportDto> {
-        return apiService.fetchFinanceReports(sectorId).requireBody("Failed to load finance reports")
+        return apiService.fetchFinanceReports(sectorId).requireDataBody("Failed to load finance reports")
     }
 
     override suspend fun saveFinanceReport(report: FinanceReportDto): FinanceReportDto {
-        return apiService.saveFinanceReport(report).requireBody("Failed to save finance report")
+        return apiService.saveFinanceReport(report).requireDataBody("Failed to save finance report")
     }
 
     override suspend fun deleteFinanceReport(reportId: String) {
@@ -110,11 +111,11 @@ abstract class RestAppRemoteDataSource(
     }
 
     override suspend fun fetchPaymentObligations(sectorId: String): List<PaymentObligationDto> {
-        return apiService.fetchPaymentObligations(sectorId).requireBody("Failed to load payment obligations")
+        return apiService.fetchPaymentObligations(sectorId).requireDataBody("Failed to load payment obligations")
     }
 
     override suspend fun savePaymentObligation(obligation: PaymentObligationDto): PaymentObligationDto {
-        return apiService.savePaymentObligation(obligation).requireBody("Failed to save payment obligation")
+        return apiService.savePaymentObligation(obligation).requireDataBody("Failed to save payment obligation")
     }
 
     override suspend fun deletePaymentObligation(obligationId: String) {
@@ -123,17 +124,25 @@ abstract class RestAppRemoteDataSource(
 
     override suspend fun resetSimulationData(): Unit = Unit
 
-    private fun Response<*>.requireSuccess(defaultMessage: String) {
+    private fun Response<out ApiResponseDto<*>?>.requireSuccess(defaultMessage: String) {
         if (!isSuccessful) {
             error(errorBody()?.string()?.ifBlank { null } ?: defaultMessage)
+        }
+        val body = body()
+        if (body?.ok == false) {
+            error(body.message?.ifBlank { null } ?: defaultMessage)
         }
     }
 
-    private fun <T> Response<T>.requireBody(defaultMessage: String): T {
+    private fun <T> Response<ApiResponseDto<T>>.requireDataBody(defaultMessage: String): T {
         if (!isSuccessful) {
             error(errorBody()?.string()?.ifBlank { null } ?: defaultMessage)
         }
-        return body() ?: error(defaultMessage)
+        val body = body() ?: error(defaultMessage)
+        if (!body.ok) {
+            error(body.message?.ifBlank { null } ?: defaultMessage)
+        }
+        return body.data ?: error(body.message?.ifBlank { null } ?: defaultMessage)
     }
 }
 

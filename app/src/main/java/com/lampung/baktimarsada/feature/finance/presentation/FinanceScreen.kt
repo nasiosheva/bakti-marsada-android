@@ -35,6 +35,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import com.lampung.baktimarsada.R
+import com.lampung.baktimarsada.core.constants.AppConstants
 import com.lampung.baktimarsada.core.dispatchers.DispatcherProvider
 import com.lampung.baktimarsada.core.result.AppResult
 import com.lampung.baktimarsada.domain.model.FinanceReportDetail
@@ -127,6 +128,11 @@ fun FinanceContent(
     onShowEdit: (FinanceReportDetail) -> Unit
 ) {
     val displayItems = if (isAdmin) state.items else state.items.filter { it.isVisibleToJemaat }
+    var searchQuery by rememberSaveable { mutableStateOf("") }
+    var visibleCount by rememberSaveable { mutableStateOf(AppConstants.DEFAULT_LIST_PAGE_SIZE) }
+    val filteredItems = displayItems.filter { it.matchesFinanceQuery(searchQuery) }
+    val pagedItems = filteredItems.take(visibleCount)
+    val canLoadMore = pagedItems.size < filteredItems.size
 
     BaktiPullToRefreshBox(
         isRefreshing = state.isLoading,
@@ -143,7 +149,7 @@ fun FinanceContent(
                     BaktiErrorState(message = state.errorMessage, onRetry = onRefresh)
                 }
             }
-            displayItems.isEmpty() -> {
+            filteredItems.isEmpty() -> {
                 BaktiScrollableStateView {
                     BaktiEmptyState(message = stringResource(id = R.string.finance_empty))
                 }
@@ -156,6 +162,17 @@ fun FinanceContent(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     item {
+                        BaktiTextInput(
+                            value = searchQuery,
+                            label = stringResource(id = R.string.search_finance),
+                            onValueChange = {
+                                searchQuery = it
+                                visibleCount = AppConstants.DEFAULT_LIST_PAGE_SIZE
+                            },
+                            modifier = Modifier.semantics { testTag = "finance_search_input" }
+                        )
+                    }
+                    item {
                         if (isAdmin) {
                             Text(
                                 text = stringResource(id = R.string.finance_title_admin),
@@ -165,7 +182,7 @@ fun FinanceContent(
                         } else {
                             JemaatSectionHeader(
                                 title = stringResource(id = R.string.finance_title_jemaat),
-                                countLabel = stringResource(id = R.string.jemaat_count_finance, displayItems.size),
+                                countLabel = stringResource(id = R.string.jemaat_count_finance, filteredItems.size),
                                 actionLabel = stringResource(id = R.string.action_refresh),
                                 onAction = onRefresh,
                                 modifier = Modifier.semantics { testTag = "finance_title" }
@@ -183,7 +200,13 @@ fun FinanceContent(
                             Text(text = stringResource(id = R.string.action_refresh))
                         }
                     }
-                    items(displayItems, key = { it.id }) { item ->
+                    item {
+                        Text(
+                            text = stringResource(id = R.string.pagination_summary, pagedItems.size, filteredItems.size),
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                    items(pagedItems, key = { it.id }) { item ->
                         if (isAdmin) {
                             Card(
                                 modifier = Modifier
@@ -273,6 +296,16 @@ fun FinanceContent(
                             )
                         }
                     }
+                    if (canLoadMore) {
+                        item {
+                            OutlinedButton(
+                                onClick = { visibleCount += AppConstants.DEFAULT_LIST_PAGE_SIZE },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(text = stringResource(id = R.string.action_load_more))
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -289,7 +322,16 @@ fun FinanceContent(
             }
         }
     }
+    }
 }
+
+private fun FinanceReportDetail.matchesFinanceQuery(query: String): Boolean {
+    val keyword = query.trim().lowercase()
+    if (keyword.isBlank()) return true
+    return title.lowercase().contains(keyword) ||
+        description.lowercase().contains(keyword) ||
+        periodLabel.lowercase().contains(keyword) ||
+        sectorName.lowercase().contains(keyword)
 }
 
 @Composable

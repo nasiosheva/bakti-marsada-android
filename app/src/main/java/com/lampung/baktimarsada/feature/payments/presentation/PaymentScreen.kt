@@ -35,6 +35,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import com.lampung.baktimarsada.R
+import com.lampung.baktimarsada.core.constants.AppConstants
 import com.lampung.baktimarsada.core.dispatchers.DispatcherProvider
 import com.lampung.baktimarsada.core.result.AppResult
 import com.lampung.baktimarsada.domain.model.MemberDetail
@@ -130,6 +131,11 @@ fun PaymentContent(
     onShowDetail: (PaymentObligationDetail) -> Unit,
     onShowEdit: (PaymentObligationDetail) -> Unit
 ) {
+    var searchQuery by rememberSaveable { mutableStateOf("") }
+    var visibleCount by rememberSaveable { mutableStateOf(AppConstants.DEFAULT_LIST_PAGE_SIZE) }
+    val filteredItems = state.items.filter { it.matchesPaymentQuery(searchQuery) }
+    val displayItems = filteredItems.take(visibleCount)
+    val canLoadMore = displayItems.size < filteredItems.size
 
     BaktiPullToRefreshBox(
         isRefreshing = state.isLoading,
@@ -146,7 +152,7 @@ fun PaymentContent(
                     BaktiErrorState(message = state.errorMessage, onRetry = onRefresh)
                 }
             }
-            state.items.isEmpty() -> {
+            filteredItems.isEmpty() -> {
                 BaktiScrollableStateView {
                     BaktiEmptyState(message = stringResource(id = R.string.payment_empty))
                 }
@@ -159,6 +165,17 @@ fun PaymentContent(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     item {
+                        BaktiTextInput(
+                            value = searchQuery,
+                            label = stringResource(id = R.string.search_payments),
+                            onValueChange = {
+                                searchQuery = it
+                                visibleCount = AppConstants.DEFAULT_LIST_PAGE_SIZE
+                            },
+                            modifier = Modifier.semantics { testTag = "payment_search_input" }
+                        )
+                    }
+                    item {
                         if (isAdmin) {
                             Text(
                                 text = stringResource(id = R.string.payment_title_admin),
@@ -168,7 +185,7 @@ fun PaymentContent(
                         } else {
                             JemaatSectionHeader(
                                 title = stringResource(id = R.string.payment_title_jemaat),
-                                countLabel = stringResource(id = R.string.jemaat_count_payments, state.items.size),
+                                countLabel = stringResource(id = R.string.jemaat_count_payments, filteredItems.size),
                                 actionLabel = stringResource(id = R.string.action_refresh),
                                 onAction = onRefresh,
                                 modifier = Modifier.semantics { testTag = "payment_title" }
@@ -186,7 +203,13 @@ fun PaymentContent(
                             Text(text = stringResource(id = R.string.action_refresh))
                         }
                     }
-                    items(state.items, key = { it.id }) { item ->
+                    item {
+                        Text(
+                            text = stringResource(id = R.string.pagination_summary, displayItems.size, filteredItems.size),
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                    items(displayItems, key = { it.id }) { item ->
                         if (isAdmin) {
                             Card(
                                 modifier = Modifier
@@ -278,6 +301,16 @@ fun PaymentContent(
                             )
                         }
                     }
+                    if (canLoadMore) {
+                        item {
+                            OutlinedButton(
+                                onClick = { visibleCount += AppConstants.DEFAULT_LIST_PAGE_SIZE },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(text = stringResource(id = R.string.action_load_more))
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -294,7 +327,17 @@ fun PaymentContent(
             }
         }
     }
+    }
 }
+
+private fun PaymentObligationDetail.matchesPaymentQuery(query: String): Boolean {
+    val keyword = query.trim().lowercase()
+    if (keyword.isBlank()) return true
+    return title.lowercase().contains(keyword) ||
+        description.lowercase().contains(keyword) ||
+        memberName.lowercase().contains(keyword) ||
+        dueDate.lowercase().contains(keyword) ||
+        status.name.lowercase().contains(keyword)
 }
 
 @Composable

@@ -46,6 +46,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import com.lampung.baktimarsada.R
+import com.lampung.baktimarsada.core.constants.AppConstants
 import com.lampung.baktimarsada.core.dispatchers.DispatcherProvider
 import com.lampung.baktimarsada.core.result.AppResult
 import com.lampung.baktimarsada.domain.model.EventDetail
@@ -136,6 +137,11 @@ fun EventCopySourceRoute(
     viewModel: EventViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    var searchQuery by rememberSaveable { mutableStateOf("") }
+    var visibleCount by rememberSaveable { mutableStateOf(AppConstants.DEFAULT_LIST_PAGE_SIZE) }
+    val filteredItems = state.items.filter { it.matchesEventQuery(searchQuery) }
+    val displayItems = filteredItems.take(visibleCount)
+    val canLoadMore = displayItems.size < filteredItems.size
 
     Scaffold(
         topBar = {
@@ -155,7 +161,7 @@ fun EventCopySourceRoute(
                     BaktiLoadingState()
                 }
             }
-            state.items.isEmpty() -> {
+            filteredItems.isEmpty() -> {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -172,7 +178,23 @@ fun EventCopySourceRoute(
                         .padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    items(state.items, key = { it.id }) { event ->
+                    item {
+                        BaktiTextInput(
+                            value = searchQuery,
+                            label = stringResource(id = R.string.search_copy_previous_event),
+                            onValueChange = {
+                                searchQuery = it
+                                visibleCount = AppConstants.DEFAULT_LIST_PAGE_SIZE
+                            }
+                        )
+                    }
+                    item {
+                        Text(
+                            text = stringResource(id = R.string.pagination_summary, displayItems.size, filteredItems.size),
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                    items(displayItems, key = { it.id }) { event ->
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -187,6 +209,16 @@ fun EventCopySourceRoute(
                                 Text(text = event.title, style = MaterialTheme.typography.titleMedium)
                                 Text(text = event.scheduledAt, style = MaterialTheme.typography.bodyMedium)
                                 Text(text = event.location, style = MaterialTheme.typography.bodySmall)
+                            }
+                        }
+                    }
+                    if (canLoadMore) {
+                        item {
+                            OutlinedButton(
+                                onClick = { visibleCount += AppConstants.DEFAULT_LIST_PAGE_SIZE },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(text = stringResource(id = R.string.action_load_more))
                             }
                         }
                     }
@@ -420,6 +452,11 @@ fun EventContent(
     onShowDetail: (EventDetail) -> Unit,
     onShowEdit: (EventDetail) -> Unit
 ) {
+    var searchQuery by rememberSaveable { mutableStateOf("") }
+    var visibleCount by rememberSaveable { mutableStateOf(AppConstants.DEFAULT_LIST_PAGE_SIZE) }
+    val filteredItems = state.items.filter { it.matchesEventQuery(searchQuery) }
+    val displayItems = filteredItems.take(visibleCount)
+    val canLoadMore = displayItems.size < filteredItems.size
 
     BaktiPullToRefreshBox(
         isRefreshing = state.isLoading,
@@ -436,7 +473,7 @@ fun EventContent(
                     BaktiErrorState(message = state.errorMessage, onRetry = onRefresh)
                 }
             }
-            state.items.isEmpty() -> {
+            filteredItems.isEmpty() -> {
                 BaktiScrollableStateView {
                     BaktiEmptyState(message = stringResource(id = R.string.event_empty))
                 }
@@ -448,6 +485,17 @@ fun EventContent(
                         .padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
+                    item {
+                        BaktiTextInput(
+                            value = searchQuery,
+                            label = stringResource(id = R.string.search_events),
+                            onValueChange = {
+                                searchQuery = it
+                                visibleCount = AppConstants.DEFAULT_LIST_PAGE_SIZE
+                            },
+                            modifier = Modifier.semantics { testTag = "event_search_input" }
+                        )
+                    }
                     item {
                         if (isAdmin) {
                             Text(
@@ -465,7 +513,7 @@ fun EventContent(
                                     style = MaterialTheme.typography.titleLarge
                                 )
                                 Text(
-                                    text = stringResource(id = R.string.jemaat_count_events, state.items.size),
+                                    text = stringResource(id = R.string.jemaat_count_events, filteredItems.size),
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -475,7 +523,13 @@ fun EventContent(
                     state.errorMessage?.let { message ->
                         item { BaktiSectionMessage(message = message) }
                     }
-                    items(state.items, key = { it.id }) { item ->
+                    item {
+                        Text(
+                            text = stringResource(id = R.string.pagination_summary, displayItems.size, filteredItems.size),
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                    items(displayItems, key = { it.id }) { item ->
                         if (isAdmin) {
                             Card(
                                 modifier = Modifier
@@ -545,6 +599,16 @@ fun EventContent(
                             )
                         }
                     }
+                    if (canLoadMore) {
+                        item {
+                            OutlinedButton(
+                                onClick = { visibleCount += AppConstants.DEFAULT_LIST_PAGE_SIZE },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(text = stringResource(id = R.string.action_load_more))
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -562,6 +626,16 @@ fun EventContent(
         }
     }
     }
+}
+
+private fun EventDetail.matchesEventQuery(query: String): Boolean {
+    val keyword = query.trim().lowercase()
+    if (keyword.isBlank()) return true
+    return title.lowercase().contains(keyword) ||
+        description.lowercase().contains(keyword) ||
+        location.lowercase().contains(keyword) ||
+        scheduledAt.lowercase().contains(keyword) ||
+        sectorName.lowercase().contains(keyword)
 }
 
 @Composable

@@ -15,7 +15,12 @@ describe("health route", () => {
     expect(response.status).toBe(200);
     expect(body).toEqual({
       ok: true,
-      database: "connected"
+      code: "SUCCESS",
+      message: "Success",
+      data: {
+        ok: true,
+        database: "connected"
+      }
     });
   });
 });

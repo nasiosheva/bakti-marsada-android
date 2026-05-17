@@ -35,6 +35,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import com.lampung.baktimarsada.R
+import com.lampung.baktimarsada.core.constants.AppConstants
 import com.lampung.baktimarsada.core.dispatchers.DispatcherProvider
 import com.lampung.baktimarsada.core.result.AppResult
 import com.lampung.baktimarsada.domain.model.MemberDetail
@@ -120,6 +121,11 @@ fun MemberContent(
     onShowDetail: (MemberDetail) -> Unit,
     onShowEdit: (MemberDetail) -> Unit
 ) {
+    var searchQuery by rememberSaveable { mutableStateOf("") }
+    var visibleCount by rememberSaveable { mutableStateOf(AppConstants.DEFAULT_LIST_PAGE_SIZE) }
+    val filteredItems = state.items.filter { it.matchesMemberQuery(searchQuery) }
+    val displayItems = filteredItems.take(visibleCount)
+    val canLoadMore = displayItems.size < filteredItems.size
 
     BaktiPullToRefreshBox(
         isRefreshing = state.isLoading,
@@ -136,7 +142,7 @@ fun MemberContent(
                     BaktiErrorState(message = state.errorMessage, onRetry = onRefresh)
                 }
             }
-            state.items.isEmpty() -> {
+            filteredItems.isEmpty() -> {
                 BaktiScrollableStateView {
                     BaktiEmptyState(message = stringResource(id = R.string.member_empty))
                 }
@@ -149,6 +155,17 @@ fun MemberContent(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     item {
+                        BaktiTextInput(
+                            value = searchQuery,
+                            label = stringResource(id = R.string.search_members),
+                            onValueChange = {
+                                searchQuery = it
+                                visibleCount = AppConstants.DEFAULT_LIST_PAGE_SIZE
+                            },
+                            modifier = Modifier.semantics { testTag = "member_search_input" }
+                        )
+                    }
+                    item {
                         if (isAdmin) {
                             Text(
                                 text = stringResource(id = R.string.member_title_admin),
@@ -158,7 +175,7 @@ fun MemberContent(
                         } else {
                             JemaatSectionHeader(
                                 title = stringResource(id = R.string.member_title_jemaat),
-                                countLabel = stringResource(id = R.string.jemaat_count_members, state.items.size),
+                                countLabel = stringResource(id = R.string.jemaat_count_members, filteredItems.size),
                                 actionLabel = stringResource(id = R.string.action_refresh),
                                 onAction = onRefresh,
                                 modifier = Modifier.semantics { testTag = "member_title" }
@@ -176,7 +193,13 @@ fun MemberContent(
                             Text(text = stringResource(id = R.string.action_refresh))
                         }
                     }
-                    items(state.items, key = { it.id }) { item ->
+                    item {
+                        Text(
+                            text = stringResource(id = R.string.pagination_summary, displayItems.size, filteredItems.size),
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                    items(displayItems, key = { it.id }) { item ->
                         if (isAdmin) {
                             Card(
                                 modifier = Modifier
@@ -242,6 +265,16 @@ fun MemberContent(
                             )
                         }
                     }
+                    if (canLoadMore) {
+                        item {
+                            OutlinedButton(
+                                onClick = { visibleCount += AppConstants.DEFAULT_LIST_PAGE_SIZE },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(text = stringResource(id = R.string.action_load_more))
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -258,7 +291,17 @@ fun MemberContent(
             }
         }
     }
+    }
 }
+
+private fun MemberDetail.matchesMemberQuery(query: String): Boolean {
+    val keyword = query.trim().lowercase()
+    if (keyword.isBlank()) return true
+    return fullName.lowercase().contains(keyword) ||
+        familyGroup.lowercase().contains(keyword) ||
+        roleInSector.lowercase().contains(keyword) ||
+        address.lowercase().contains(keyword) ||
+        phoneNumber.lowercase().contains(keyword)
 }
 
 

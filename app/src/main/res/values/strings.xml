@@ -32,11 +32,13 @@
     <string name="action_cancel">Batal</string>
     <string name="action_save">Simpan</string>
     <string name="action_toggle_visibility">Ubah Visibilitas</string>
+    <string name="action_load_more">Muat lebih banyak</string>
     <string name="action_add_event">Tambah Acara</string>
     <string name="action_manage_templates">Template</string>
     <string name="action_copy_previous_event">Salin dari acara sebelumnya</string>
     <string name="copy_previous_event_title">Pilih Acara Sebelumnya</string>
     <string name="copy_previous_event_empty">Belum ada acara sebelumnya untuk disalin.</string>
+    <string name="search_copy_previous_event">Cari acara sebelumnya</string>
     <string name="action_add_template">Tambah Template</string>
     <string name="action_add_program_item">Tambah Bagian</string>
     <string name="action_move_up">Naik</string>
@@ -124,6 +126,11 @@
     <string name="form_period">Periode</string>
     <string name="form_amount">Nominal</string>
     <string name="form_visibility">Visibilitas</string>
+    <string name="label_search">Pencarian</string>
+    <string name="search_events">Cari acara</string>
+    <string name="search_members">Cari anggota</string>
+    <string name="search_finance">Cari laporan</string>
+    <string name="search_payments">Cari tagihan</string>
     <string name="form_visible_to_jemaat">Tampilkan kepada jemaat</string>
     <string name="form_member">Anggota</string>
     <string name="form_due_date">Jatuh Tempo</string>
@@ -157,5 +164,6 @@
     <string name="payment_status_unpaid">Belum Dibayar</string>
     <string name="payment_status_paid">Lunas</string>
     <string name="payment_status_overdue">Jatuh Tempo Lewat</string>
+    <string name="pagination_summary">%1$d dari %2$d data</string>
 
 </resources>

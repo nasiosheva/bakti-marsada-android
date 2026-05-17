@@ -49,12 +49,15 @@ describe("auth route", () => {
 
     expect(response.status).toBe(201);
     await expect(response.json()).resolves.toMatchObject({
-      authToken: "session-token",
-      userId: "user-1",
-      role: "JEMAAT",
-      user: {
-        id: "user-1",
-        role: "JEMAAT"
+      ok: true,
+      data: {
+        authToken: "session-token",
+        userId: "user-1",
+        role: "JEMAAT",
+        user: {
+          id: "user-1",
+          role: "JEMAAT"
+        }
       }
     });
   });

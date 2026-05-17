@@ -1,19 +1,29 @@
 import { Hono } from "hono";
+import { successResponse } from "./lib/api-response";
 import { createAuthRoute } from "./routes/auth";
+import { createEventRoute } from "./routes/events";
+import { createFinanceReportRoute } from "./routes/finance-reports";
 import { healthRoute } from "./routes/health";
+import { createMemberRoute } from "./routes/members";
+import { createPaymentObligationRoute } from "./routes/payment-obligations";
+import { createWorshipTemplateRoute } from "./routes/worship-templates";
 import type { AppBindings } from "./types/env";
 
 export const app = new Hono<{ Bindings: AppBindings }>();
 
 app.route("/health", healthRoute);
 app.route("/auth", createAuthRoute());
+app.route("/v1/events", createEventRoute());
+app.route("/v1/worship-templates", createWorshipTemplateRoute());
+app.route("/v1/members", createMemberRoute());
+app.route("/v1/finance-reports", createFinanceReportRoute());
+app.route("/v1/payment-obligations", createPaymentObligationRoute());
 app.post("/v1/device/fcm-token", async (c) => {
-  return c.json({ ok: true });
+  return successResponse(null, { message: "FCM token synced" });
 });
 
 app.get("/", (c) => {
-  return c.json({
-    ok: true,
+  return successResponse({
     service: "bakti-marsada-be"
   });
 });

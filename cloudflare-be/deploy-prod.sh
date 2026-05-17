@@ -39,7 +39,7 @@ else
 fi
 
 echo "[deploy-prod] applying remote migrations"
-npx wrangler d1 migrations apply "${DB_NAME}"
+npx wrangler d1 migrations apply "${DB_NAME}" --remote
 
 echo "[deploy-prod] deploying worker"
 npm run deploy
