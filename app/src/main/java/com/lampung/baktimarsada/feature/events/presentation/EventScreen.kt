@@ -14,7 +14,12 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
@@ -29,6 +34,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
@@ -80,7 +87,6 @@ fun EventRoute(
     viewModel: EventViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    var showTemplateManager by rememberSaveable { mutableStateOf(false) }
 
     EventContent(
         isAdmin = isAdmin,
@@ -88,20 +94,9 @@ fun EventRoute(
         onRefresh = viewModel::refresh,
         onDelete = viewModel::delete,
         onShowCreate = onOpenCreate,
-        onShowTemplates = { showTemplateManager = true },
         onShowDetail = { onOpenDetail(it.id) },
         onShowEdit = { onOpenEdit(it.id) }
     )
-
-    if (showTemplateManager) {
-        TemplateManagerDialog(
-            state = state,
-            session = session,
-            onDismiss = { showTemplateManager = false },
-            onSave = viewModel::saveTemplate,
-            onDelete = viewModel::deleteTemplate
-        )
-    }
 }
 
 @Composable
@@ -120,7 +115,9 @@ fun EventCreateRoute(
         isLoading = state.isLoading,
         errorMessage = state.errorMessage,
         onBack = onBack,
-        onSave = viewModel::save
+        onSave = viewModel::save,
+        onSaveTemplate = viewModel::saveTemplate,
+        onDeleteTemplate = viewModel::deleteTemplate
     )
 }
 
@@ -142,7 +139,9 @@ fun EventEditRoute(
         isLoading = state.isLoading,
         errorMessage = state.errorMessage,
         onBack = onBack,
-        onSave = viewModel::save
+        onSave = viewModel::save,
+        onSaveTemplate = viewModel::saveTemplate,
+        onDeleteTemplate = viewModel::deleteTemplate
     )
 }
 
@@ -155,16 +154,20 @@ private fun EventFormScreen(
     isLoading: Boolean,
     errorMessage: String?,
     onBack: () -> Unit,
-    onSave: (EventDetail) -> Unit
+    onSave: (EventDetail) -> Unit,
+    onSaveTemplate: (WorshipTemplate) -> Unit,
+    onDeleteTemplate: (String) -> Unit
 ) {
     var eventTitle by rememberSaveable(initial?.id) { mutableStateOf(initial?.title.orEmpty()) }
     var schedule by rememberSaveable(initial?.id) { mutableStateOf(initial?.scheduledAt.orEmpty()) }
     var location by rememberSaveable(initial?.id) { mutableStateOf(initial?.location.orEmpty()) }
     var description by rememberSaveable(initial?.id) { mutableStateOf(initial?.description.orEmpty()) }
-    var selectedTemplateTitle by rememberSaveable(initial?.id, templates.size) { mutableStateOf("") }
     var programItems by remember(initial?.id) {
         mutableStateOf(initial?.programItems?.sortedBy { it.orderIndex }.orEmpty())
     }
+    val isCreateMode = initial == null
+    var showTemplateMenu by rememberSaveable { mutableStateOf(false) }
+    var showTemplateManager by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(initial?.id) {
         if (initial != null) {
@@ -180,7 +183,45 @@ private fun EventFormScreen(
         topBar = {
             BaktiToolbar(
                 title = title,
-                onBack = onBack
+                onBack = onBack,
+                actions = {
+                    if (isCreateMode) {
+                        IconButton(onClick = { showTemplateMenu = true }) {
+                            Icon(
+                                imageVector = Icons.Filled.MoreVert,
+                                contentDescription = stringResource(id = R.string.action_manage_templates)
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = showTemplateMenu,
+                            onDismissRequest = { showTemplateMenu = false }
+                        ) {
+                            templates.forEach { template ->
+                                DropdownMenuItem(
+                                    text = { Text(text = template.title) },
+                                    onClick = {
+                                        showTemplateMenu = false
+                                        eventTitle = template.title
+                                        description = template.description
+                                        programItems = template.items.mapIndexed { index, item ->
+                                            item.toEventProgramItem(eventId = "", orderIndex = index)
+                                        }
+                                    }
+                                )
+                            }
+                            if (templates.isNotEmpty()) {
+                                HorizontalDivider()
+                            }
+                            DropdownMenuItem(
+                                text = { Text(text = stringResource(id = R.string.action_manage_templates)) },
+                                onClick = {
+                                    showTemplateMenu = false
+                                    showTemplateManager = true
+                                }
+                            )
+                        }
+                    }
+                }
             )
         }
     ) { innerPadding ->
@@ -215,20 +256,6 @@ private fun EventFormScreen(
                 label = stringResource(id = R.string.form_description),
                 onValueChange = { description = it }
             )
-                if (initial == null && templates.isNotEmpty()) {
-                    BaktiDropdown(
-                        selectedValue = selectedTemplateTitle,
-                        label = stringResource(id = R.string.form_event_template),
-                        options = templates.map { it.title },
-                    onValueSelected = { selected ->
-                        selectedTemplateTitle = selected
-                        val template = templates.firstOrNull { item -> item.title == selected }
-                        programItems = template?.items.orEmpty().mapIndexed { index, item ->
-                            item.toEventProgramItem(eventId = "", orderIndex = index)
-                        }
-                    }
-                )
-            }
             ProgramItemEditor(
                 items = programItems,
                 onItemsChanged = { programItems = it },
@@ -266,6 +293,16 @@ private fun EventFormScreen(
             }
         }
     }
+
+    if (isCreateMode && showTemplateManager) {
+        TemplateManagerDialog(
+            state = EventUiState(templates = templates),
+            session = session,
+            onDismiss = { showTemplateManager = false },
+            onSave = onSaveTemplate,
+            onDelete = onDeleteTemplate
+        )
+    }
 }
 
 @Composable
@@ -275,7 +312,6 @@ fun EventContent(
     onRefresh: () -> Unit,
     onDelete: (String) -> Unit,
     onShowCreate: () -> Unit,
-    onShowTemplates: () -> Unit,
     onShowDetail: (EventDetail) -> Unit,
     onShowEdit: (EventDetail) -> Unit
 ) {
@@ -309,20 +345,11 @@ fun EventContent(
                 ) {
                     item {
                         if (isAdmin) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = stringResource(id = R.string.event_title_admin),
-                                    style = MaterialTheme.typography.titleLarge,
-                                    modifier = Modifier.semantics { testTag = "event_title" }
-                                )
-                                OutlinedButton(onClick = onShowTemplates) {
-                                    Text(text = stringResource(id = R.string.action_manage_templates))
-                                }
-                            }
+                            Text(
+                                text = stringResource(id = R.string.event_title_admin),
+                                style = MaterialTheme.typography.titleLarge,
+                                modifier = Modifier.semantics { testTag = "event_title" }
+                            )
                         } else {
                             Column(
                                 verticalArrangement = Arrangement.spacedBy(4.dp),

@@ -12,6 +12,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -19,9 +20,11 @@ import androidx.compose.ui.unit.dp
 fun BaktiToolbar(
     title: String,
     subtitle: String? = null,
-    onBack: (() -> Unit)? = null
+    onBack: (() -> Unit)? = null,
+    actions: @Composable () -> Unit = {}
 ) {
     TopAppBar(
+        modifier = Modifier,
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = MaterialTheme.colorScheme.primaryContainer,
             titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -47,7 +50,8 @@ fun BaktiToolbar(
                     )
                 }
             }
-        }
+        },
+        actions = { actions() }
     )
 }
 

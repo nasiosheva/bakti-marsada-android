@@ -51,7 +51,6 @@ private fun EventContentAdminPreview() {
             onRefresh = {},
             onDelete = {},
             onShowCreate = {},
-            onShowTemplates = {},
             onShowDetail = {},
             onShowEdit = {}
         )
@@ -72,7 +71,6 @@ private fun EventContentJemaatPreview() {
             onRefresh = {},
             onDelete = {},
             onShowCreate = {},
-            onShowTemplates = {},
             onShowDetail = {},
             onShowEdit = {}
         )
@@ -89,7 +87,6 @@ private fun EventContentLoadingPreview() {
             onRefresh = {},
             onDelete = {},
             onShowCreate = {},
-            onShowTemplates = {},
             onShowDetail = {},
             onShowEdit = {}
         )
