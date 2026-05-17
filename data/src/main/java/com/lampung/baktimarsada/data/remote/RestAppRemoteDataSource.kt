@@ -21,6 +21,7 @@ abstract class RestAppRemoteDataSource(
         val response = apiService.login(
             BackendLoginRequestDto(
                 email = request.identifier.trim(),
+                identifier = request.identifier.trim(),
                 password = request.password
             )
         )

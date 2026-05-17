@@ -17,6 +17,8 @@
     <string name="login_error_identifier_required">Identifier wajib diisi</string>
     <string name="login_error_password_required">Password wajib diisi</string>
     <string name="login_error_simulation_reset_failed">Gagal mereset data simulasi</string>
+    <string name="login_password_show">Tampilkan password</string>
+    <string name="login_password_hide">Sembunyikan password</string>
     <string name="environment_simulate">Mode simulasi</string>
 
     <string name="jemaat_home_title">Portal Jemaat</string>
@@ -32,6 +34,9 @@
     <string name="action_toggle_visibility">Ubah Visibilitas</string>
     <string name="action_add_event">Tambah Acara</string>
     <string name="action_manage_templates">Template</string>
+    <string name="action_copy_previous_event">Salin dari acara sebelumnya</string>
+    <string name="copy_previous_event_title">Pilih Acara Sebelumnya</string>
+    <string name="copy_previous_event_empty">Belum ada acara sebelumnya untuk disalin.</string>
     <string name="action_add_template">Tambah Template</string>
     <string name="action_add_program_item">Tambah Bagian</string>
     <string name="action_move_up">Naik</string>
@@ -60,6 +65,7 @@
     <string name="template_manager_title">Template Acara</string>
     <string name="template_empty">Belum ada template acara.</string>
     <string name="template_item_count">%1$d bagian</string>
+    <string name="menu_event_option_title_schedule">%1$s • %2$s</string>
     <string name="dialog_add_template">Tambah Template Acara</string>
     <string name="dialog_edit_template">Ubah Template Acara</string>
     <string name="program_section_title">Susunan Acara</string>

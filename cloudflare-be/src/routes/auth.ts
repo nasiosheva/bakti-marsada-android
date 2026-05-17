@@ -1,7 +1,16 @@
 import { Hono } from "hono";
 import { AuthError } from "../lib/auth-errors";
 import type { AppBindings } from "../types/env";
-import { createAuthService, type AuthService } from "../services/auth.service";
+import { createAuthService, type AuthResult, type AuthService } from "../services/auth.service";
+
+const DEFAULT_TENANT = {
+  tenantId: "hkbp",
+  tenantName: "HKBP",
+  subTenantId: "hkbp-kedaton",
+  subTenantName: "HKBP Kedaton",
+  sectorId: "sector-1",
+  sectorName: "Sektor 1 HKBP"
+};
 
 type AuthRouteDependencies = {
   createService?: (db: D1Database) => AuthService;
@@ -26,7 +35,7 @@ export function createAuthRoute(deps: AuthRouteDependencies = {}) {
         fullName: body.fullName ?? ""
       });
 
-      return c.json(result, 201);
+      return c.json(toAuthResponse(result), 201);
     } catch (error) {
       return mapAuthError(error);
     }
@@ -35,17 +44,18 @@ export function createAuthRoute(deps: AuthRouteDependencies = {}) {
   route.post("/login", async (c) => {
     try {
       const body = await c.req.json<{
+        identifier?: string;
         email?: string;
         password?: string;
       }>();
 
       const service = createService(c.env.DB);
       const result = await service.login({
-        email: body.email ?? "",
+        identifier: body.identifier ?? body.email ?? "",
         password: body.password ?? ""
       });
 
-      return c.json(result);
+      return c.json(toAuthResponse(result));
     } catch (error) {
       return mapAuthError(error);
     }
@@ -93,6 +103,11 @@ function getBearerToken(header: string | undefined): string {
 
 function mapAuthError(error: unknown) {
   if (error instanceof AuthError) {
+    console.warn("auth_error", {
+      status: error.status,
+      code: error.code,
+      message: error.message
+    });
     return Response.json(
       {
         ok: false,
@@ -103,6 +118,7 @@ function mapAuthError(error: unknown) {
     );
   }
 
+  console.error("auth_unhandled_error", error);
   return Response.json(
     {
       ok: false,
@@ -111,4 +127,29 @@ function mapAuthError(error: unknown) {
     },
     { status: 500 }
   );
+}
+
+function toAuthResponse(result: AuthResult) {
+  const role = toAppRole(result.user.role);
+  return {
+    authToken: result.session.sessionToken,
+    userId: result.user.id,
+    displayName: result.user.fullName,
+    role,
+    ...DEFAULT_TENANT,
+    user: {
+      id: result.user.id,
+      fullName: result.user.fullName,
+      role
+    },
+    session: {
+      sessionId: result.session.sessionId,
+      sessionToken: result.session.sessionToken,
+      expiresAt: result.session.expiresAt
+    }
+  };
+}
+
+function toAppRole(role: string): "ADMIN" | "JEMAAT" {
+  return role.trim().toUpperCase() === "ADMIN" ? "ADMIN" : "JEMAAT";
 }

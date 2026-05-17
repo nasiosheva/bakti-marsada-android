@@ -15,6 +15,15 @@ android {
     namespace = "com.lampung.baktimarsada"
     compileSdk = 36
 
+    signingConfigs {
+        create("release") {
+            storeFile = rootProject.file("ibadah.jks")
+            storePassword = "123123"
+            keyAlias = "hkbp"
+            keyPassword = "123123"
+        }
+    }
+
     defaultConfig {
         applicationId = "com.lampung.baktimarsada"
         minSdk = 24
@@ -41,7 +50,7 @@ android {
             buildConfigField("String", "API_BASE_URL", "\"$debugCloudflareUrl\"")
             buildConfigField("String", "API_BASE_URL_CLOUDFLARE", "\"$debugCloudflareUrl\"")
             buildConfigField("String", "API_BASE_URL_PYTHON", "\"$debugPythonUrl\"")
-            buildConfigField("String", "DATA_SOURCE_PROVIDER", "\"$configuredDataSourceProvider\"")
+            buildConfigField("String", "DATA_SOURCE_PROVIDER", "\"cloudflare\"")
             buildConfigField("String", "TENANT_KEY", "\"$configuredTenantKey\"")
             buildConfigField("String", "APP_ENVIRONMENT", "\"debug\"")
             buildConfigField("String", "DATABASE_NAME", "\"bakti_marsada_debug.db\"")
@@ -67,6 +76,7 @@ android {
         }
         release {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("release")
             val releaseCloudflareUrl = configuredCloudflareBaseUrl ?: "https://bakti-marsada-be.deomories.workers.dev/"
             val releasePythonUrl = configuredPythonBaseUrl ?: "https://python-bakti-marsada.example.com/"
             buildConfigField("String", "API_BASE_URL", "\"$releaseCloudflareUrl\"")
@@ -137,6 +147,7 @@ dependencies {
 
     implementation(libs.retrofit)
     implementation(libs.retrofit.converter.moshi)
+    implementation(libs.moshi.kotlin)
     implementation(libs.okhttp.logging)
 
     implementation(platform(libs.firebase.bom))
@@ -159,5 +170,5 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.chucker)
     add("simulateImplementation", libs.chucker)
-    releaseImplementation(libs.chucker.no.op)
+    releaseImplementation(libs.chucker)
 }

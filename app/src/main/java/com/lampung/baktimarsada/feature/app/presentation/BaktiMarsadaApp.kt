@@ -24,12 +24,17 @@ import androidx.navigation.compose.rememberNavController
 import com.lampung.baktimarsada.R
 import com.lampung.baktimarsada.domain.model.SessionState
 import com.lampung.baktimarsada.domain.model.UserRole
+import com.lampung.baktimarsada.domain.repository.EventRepository
+import com.lampung.baktimarsada.domain.repository.FinanceReportRepository
+import com.lampung.baktimarsada.domain.repository.MemberRepository
+import com.lampung.baktimarsada.domain.repository.PaymentObligationRepository
 import com.lampung.baktimarsada.domain.usecase.BootstrapSessionUseCase
 import com.lampung.baktimarsada.domain.usecase.LogoutUseCase
 import com.lampung.baktimarsada.domain.usecase.ObserveSessionUseCase
 import com.lampung.baktimarsada.feature.app.navigation.AppRoutes
 import com.lampung.baktimarsada.feature.auth.presentation.LoginRoute
 import com.lampung.baktimarsada.feature.events.presentation.EventCreateRoute
+import com.lampung.baktimarsada.feature.events.presentation.EventCopySourceRoute
 import com.lampung.baktimarsada.feature.events.presentation.EventEditRoute
 import com.lampung.baktimarsada.feature.events.presentation.EventDetailRoute
 import com.lampung.baktimarsada.feature.home.presentation.AdminHomeRoute
@@ -37,10 +42,13 @@ import com.lampung.baktimarsada.feature.home.presentation.JemaatHomeRoute
 import com.lampung.baktimarsada.feature.profile.presentation.ProfileRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 @Composable
@@ -138,9 +146,39 @@ fun BaktiMarsadaApp(
             state.session?.let { session ->
                 EventCreateRoute(
                     session = session,
+                    copyFromEventId = null,
+                    onOpenCopyFromPrevious = {
+                        navController.navigate(AppRoutes.ADMIN_EVENT_COPY_SOURCE)
+                    },
                     onBack = { navController.navigateUp() }
                 )
             }
+        }
+        composable(AppRoutes.ADMIN_EVENT_CREATE_FROM) { backStackEntry ->
+            val sourceEventId = backStackEntry.arguments?.getString(AppRoutes.SOURCE_EVENT_ID_ARG)
+            state.session?.let { session ->
+                EventCreateRoute(
+                    session = session,
+                    copyFromEventId = sourceEventId,
+                    onOpenCopyFromPrevious = {
+                        navController.navigate(AppRoutes.ADMIN_EVENT_COPY_SOURCE)
+                    },
+                    onBack = { navController.navigateUp() }
+                )
+            }
+        }
+        composable(AppRoutes.ADMIN_EVENT_COPY_SOURCE) {
+            EventCopySourceRoute(
+                onBack = { navController.navigateUp() },
+                onSelectEvent = { eventId ->
+                    navController.navigate(AppRoutes.adminEventCreateFrom(eventId)) {
+                        popUpTo(AppRoutes.ADMIN_EVENT_CREATE) {
+                            inclusive = true
+                        }
+                        launchSingleTop = true
+                    }
+                }
+            )
         }
         composable(AppRoutes.ADMIN_EVENT_EDIT) { backStackEntry ->
             val eventId = backStackEntry.arguments?.getString(AppRoutes.EVENT_ID_ARG).orEmpty()
@@ -195,11 +233,16 @@ data class AppEntryUiState(
 class AppEntryViewModel @Inject constructor(
     private val observeSessionUseCase: ObserveSessionUseCase,
     private val bootstrapSessionUseCase: BootstrapSessionUseCase,
-    private val logoutUseCase: LogoutUseCase
+    private val logoutUseCase: LogoutUseCase,
+    private val eventRepository: EventRepository,
+    private val memberRepository: MemberRepository,
+    private val financeReportRepository: FinanceReportRepository,
+    private val paymentObligationRepository: PaymentObligationRepository
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(AppEntryUiState())
     val state: StateFlow<AppEntryUiState> = _state.asStateFlow()
+    private var syncJob: Job? = null
 
     init {
         observeSession()
@@ -221,8 +264,32 @@ class AppEntryViewModel @Inject constructor(
         viewModelScope.launch {
             observeSessionUseCase().collect { session ->
                 _state.update { it.copy(session = session) }
+                startOrStopDataSync(session)
             }
         }
+    }
+
+    private fun startOrStopDataSync(session: SessionState?) {
+        syncJob?.cancel()
+        if (session == null) return
+        syncJob = viewModelScope.launch {
+            while (isActive) {
+                syncAllModules(session)
+                delay(DATA_SYNC_INTERVAL_MS)
+            }
+        }
+    }
+
+    private suspend fun syncAllModules(session: SessionState) {
+        val sectorContext = session.sectorContext
+        eventRepository.refresh(sectorContext)
+        memberRepository.refresh(sectorContext)
+        financeReportRepository.refresh(sectorContext)
+        paymentObligationRepository.refresh(sectorContext)
+    }
+
+    companion object {
+        private const val DATA_SYNC_INTERVAL_MS = 60_000L
     }
 
     private fun bootstrapSession() {

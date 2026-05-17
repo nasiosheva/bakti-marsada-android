@@ -12,7 +12,8 @@ export interface RegisterInput {
 }
 
 export interface LoginInput {
-  email: string;
+  identifier?: string;
+  email?: string;
   password: string;
 }
 
@@ -46,14 +47,14 @@ export class AuthService {
       email,
       passwordHash,
       fullName: input.fullName.trim(),
-      role: "user"
+      role: "JEMAAT"
     });
 
     return this.createSessionForUser({
       id: userId,
       email,
       full_name: input.fullName.trim(),
-      role: "user",
+      role: "JEMAAT",
       is_active: 1,
       created_at: this.now().toISOString(),
       updated_at: this.now().toISOString(),
@@ -62,11 +63,13 @@ export class AuthService {
   }
 
   async login(input: LoginInput): Promise<AuthResult> {
-    const email = normalizeEmail(input.email);
-    this.assertEmail(email);
+    const identifier = normalizeIdentifier(input.identifier ?? input.email ?? "");
+    this.assertIdentifier(identifier);
     this.assertPassword(input.password);
 
-    const user = await this.repository.findUserByEmail(email);
+    const user = identifier.includes("@")
+      ? await this.repository.findUserByEmail(identifier)
+      : await this.repository.findAdminUserByUsername(identifier);
     if (!user || user.is_active !== 1) {
       throw new AuthError(401, "INVALID_CREDENTIALS", "Invalid credentials");
     }
@@ -147,6 +150,16 @@ export class AuthService {
     return session;
   }
 
+  private assertIdentifier(identifier: string) {
+    if (!identifier) {
+      throw new AuthError(400, "INVALID_IDENTIFIER", "Identifier is required");
+    }
+    if (identifier.includes("@")) return
+    if (identifier.length < 3) {
+      throw new AuthError(400, "INVALID_IDENTIFIER", "Identifier is too short");
+    }
+  }
+
   private assertEmail(email: string) {
     if (!email || !email.includes("@")) {
       throw new AuthError(400, "INVALID_EMAIL", "Invalid email");
@@ -172,4 +185,8 @@ export function createAuthService(db: D1Database): AuthService {
 
 function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
+}
+
+function normalizeIdentifier(identifier: string): string {
+  return identifier.trim().toLowerCase();
 }

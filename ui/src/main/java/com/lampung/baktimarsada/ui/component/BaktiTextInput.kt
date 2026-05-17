@@ -18,7 +18,8 @@ fun BaktiTextInput(
     errorMessage: String = "",
     singleLine: Boolean = true,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
-    visualTransformation: VisualTransformation = VisualTransformation.None
+    visualTransformation: VisualTransformation = VisualTransformation.None,
+    trailingIcon: (@Composable () -> Unit)? = null
 ) {
     OutlinedTextField(
         value = value,
@@ -29,6 +30,7 @@ fun BaktiTextInput(
         singleLine = singleLine,
         keyboardOptions = keyboardOptions,
         visualTransformation = visualTransformation,
+        trailingIcon = trailingIcon,
         supportingText = {
             if (isError && errorMessage.isNotEmpty()) {
                 Text(text = errorMessage)

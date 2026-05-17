@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -56,6 +57,7 @@ import com.lampung.baktimarsada.domain.model.WorshipTemplateItem
 import com.lampung.baktimarsada.domain.repository.AuthRepository
 import com.lampung.baktimarsada.domain.repository.EventRepository
 import com.lampung.baktimarsada.domain.repository.WorshipTemplateRepository
+import com.lampung.baktimarsada.feature.app.navigation.AppRoutes
 import com.lampung.baktimarsada.ui.component.BaktiDropdown
 import com.lampung.baktimarsada.ui.component.BaktiEmptyState
 import com.lampung.baktimarsada.ui.component.BaktiErrorState
@@ -102,23 +104,96 @@ fun EventRoute(
 @Composable
 fun EventCreateRoute(
     session: SessionState,
+    copyFromEventId: String?,
+    onOpenCopyFromPrevious: () -> Unit,
     onBack: () -> Unit,
     viewModel: EventViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val copyFromEvent = state.items.firstOrNull { it.id == copyFromEventId }
 
     EventFormScreen(
         title = stringResource(id = R.string.dialog_add_event),
         initial = null,
+        copyFromEvent = copyFromEvent,
         session = session,
         templates = state.templates,
+        previousEvents = state.items,
         isLoading = state.isLoading,
         errorMessage = state.errorMessage,
+        onOpenCopyFromPrevious = onOpenCopyFromPrevious,
         onBack = onBack,
         onSave = viewModel::save,
         onSaveTemplate = viewModel::saveTemplate,
         onDeleteTemplate = viewModel::deleteTemplate
     )
+}
+
+@Composable
+fun EventCopySourceRoute(
+    onBack: () -> Unit,
+    onSelectEvent: (String) -> Unit,
+    viewModel: EventViewModel = hiltViewModel()
+) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+
+    Scaffold(
+        topBar = {
+            BaktiToolbar(
+                title = stringResource(id = R.string.copy_previous_event_title),
+                onBack = onBack
+            )
+        }
+    ) { innerPadding ->
+        when {
+            state.isLoading && state.items.isEmpty() -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                ) {
+                    BaktiLoadingState()
+                }
+            }
+            state.items.isEmpty() -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                ) {
+                    BaktiEmptyState(message = stringResource(id = R.string.copy_previous_event_empty))
+                }
+            }
+            else -> {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    items(state.items, key = { it.id }) { event ->
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onSelectEvent(event.id) }
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(text = event.title, style = MaterialTheme.typography.titleMedium)
+                                Text(text = event.scheduledAt, style = MaterialTheme.typography.bodyMedium)
+                                Text(text = event.location, style = MaterialTheme.typography.bodySmall)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 @Composable
@@ -134,10 +209,13 @@ fun EventEditRoute(
     EventFormScreen(
         title = stringResource(id = R.string.dialog_edit_event),
         initial = initial,
+        copyFromEvent = null,
         session = session,
         templates = state.templates,
+        previousEvents = emptyList(),
         isLoading = state.isLoading,
         errorMessage = state.errorMessage,
+        onOpenCopyFromPrevious = {},
         onBack = onBack,
         onSave = viewModel::save,
         onSaveTemplate = viewModel::saveTemplate,
@@ -149,10 +227,13 @@ fun EventEditRoute(
 private fun EventFormScreen(
     title: String,
     initial: EventDetail?,
+    copyFromEvent: EventDetail?,
     session: SessionState,
     templates: List<WorshipTemplate>,
+    previousEvents: List<EventDetail>,
     isLoading: Boolean,
     errorMessage: String?,
+    onOpenCopyFromPrevious: () -> Unit,
     onBack: () -> Unit,
     onSave: (EventDetail) -> Unit,
     onSaveTemplate: (WorshipTemplate) -> Unit,
@@ -168,6 +249,7 @@ private fun EventFormScreen(
     val isCreateMode = initial == null
     var showTemplateMenu by rememberSaveable { mutableStateOf(false) }
     var showTemplateManager by rememberSaveable { mutableStateOf(false) }
+    var lastCopiedEventId by rememberSaveable { mutableStateOf("") }
 
     LaunchedEffect(initial?.id) {
         if (initial != null) {
@@ -176,6 +258,19 @@ private fun EventFormScreen(
             description = initial.description
             eventTitle = initial.title
             programItems = initial.programItems.sortedBy { it.orderIndex }
+        }
+    }
+    LaunchedEffect(copyFromEvent?.id) {
+        val source = copyFromEvent ?: return@LaunchedEffect
+        if (isCreateMode && source.id != lastCopiedEventId) {
+            eventTitle = source.title
+            schedule = source.scheduledAt
+            location = source.location
+            description = source.description
+            programItems = source.programItems.mapIndexed { index, item ->
+                item.copy(id = "", eventId = "", orderIndex = index)
+            }
+            lastCopiedEventId = source.id
         }
     }
 
@@ -196,6 +291,16 @@ private fun EventFormScreen(
                             expanded = showTemplateMenu,
                             onDismissRequest = { showTemplateMenu = false }
                         ) {
+                            if (previousEvents.isNotEmpty()) {
+                                DropdownMenuItem(
+                                    text = { Text(text = stringResource(id = R.string.action_copy_previous_event)) },
+                                    onClick = {
+                                        showTemplateMenu = false
+                                        onOpenCopyFromPrevious()
+                                    }
+                                )
+                                HorizontalDivider()
+                            }
                             templates.forEach { template ->
                                 DropdownMenuItem(
                                     text = { Text(text = template.title) },

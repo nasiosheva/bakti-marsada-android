@@ -6,7 +6,8 @@ data class LoginRequestDto(
 )
 
 data class BackendLoginRequestDto(
-    val email: String,
+    val email: String? = null,
+    val identifier: String? = null,
     val password: String
 )
 

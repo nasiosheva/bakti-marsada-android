@@ -35,7 +35,8 @@ export interface AuthCrypto {
 }
 
 export class WebAuthCrypto implements AuthCrypto {
-  private readonly iterations = 210000;
+  private readonly iterations = 100000;
+  private readonly maxSupportedIterations = 100000;
 
   async hashPassword(password: string): Promise<string> {
     const salt = webCrypto.getRandomValues(new Uint8Array(16));
@@ -50,6 +51,9 @@ export class WebAuthCrypto implements AuthCrypto {
     }
 
     const iterations = Number(parts[1]);
+    if (!Number.isFinite(iterations) || iterations <= 0 || iterations > this.maxSupportedIterations) {
+      return false;
+    }
     const salt = fromBase64Url(parts[2]);
     const expected = parts[3];
     const actual = await this.deriveBits(password, salt, iterations);

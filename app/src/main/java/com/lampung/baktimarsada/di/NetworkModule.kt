@@ -6,6 +6,8 @@ import com.lampung.baktimarsada.core.constants.AppBuildConfig
 import com.lampung.baktimarsada.core.constants.AppConstants
 import com.lampung.baktimarsada.data.remote.AppRemoteDataSource
 import com.lampung.baktimarsada.network.api.BaktiApiService
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import com.lampung.baktimarsada.security.SecureStorage
 import dagger.Module
 import dagger.Provides
@@ -23,6 +25,14 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
+    @Provides
+    @Singleton
+    fun provideMoshi(): Moshi {
+        return Moshi.Builder()
+            .add(KotlinJsonAdapterFactory())
+            .build()
+    }
+
 
     @Provides
     @Singleton
@@ -73,22 +83,28 @@ object NetworkModule {
     @Provides
     @Singleton
     @Named(AppConstants.QUALIFIER_CLOUDFLARE_API)
-    fun provideCloudflareRetrofit(client: OkHttpClient): Retrofit {
+    fun provideCloudflareRetrofit(
+        client: OkHttpClient,
+        moshi: Moshi
+    ): Retrofit {
         return Retrofit.Builder()
             .baseUrl(AppBuildConfig.cloudflareBaseUrl)
             .client(client)
-            .addConverterFactory(MoshiConverterFactory.create())
+            .addConverterFactory(MoshiConverterFactory.create(moshi))
             .build()
     }
 
     @Provides
     @Singleton
     @Named(AppConstants.QUALIFIER_PYTHON_API)
-    fun providePythonRetrofit(client: OkHttpClient): Retrofit {
+    fun providePythonRetrofit(
+        client: OkHttpClient,
+        moshi: Moshi
+    ): Retrofit {
         return Retrofit.Builder()
             .baseUrl(AppBuildConfig.pythonBaseUrl)
             .client(client)
-            .addConverterFactory(MoshiConverterFactory.create())
+            .addConverterFactory(MoshiConverterFactory.create(moshi))
             .build()
     }
 

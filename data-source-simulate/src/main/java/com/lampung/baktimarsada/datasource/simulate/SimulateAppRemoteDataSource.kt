@@ -332,9 +332,13 @@ class SimulateAppRemoteDataSource @Inject constructor() : AppRemoteDataSource {
     }
 
     override suspend fun login(request: LoginRequestDto): SessionResponseDto {
+        val normalizedIdentifier = request.identifier.trim()
         val account = accounts.firstOrNull {
-            it.identifier.equals(request.identifier.trim(), ignoreCase = true) &&
-                it.password == request.password
+            val isEmailMatch = it.identifier.equals(normalizedIdentifier, ignoreCase = true)
+            val isAdminUsernameMatch =
+                it.role == "ADMIN" &&
+                    it.identifier.substringBefore("@").equals(normalizedIdentifier, ignoreCase = true)
+            (isEmailMatch || isAdminUsernameMatch) && it.password == request.password
         } ?: throw IllegalArgumentException("Invalid credentials")
 
         val token = "token-${UUID.randomUUID()}"

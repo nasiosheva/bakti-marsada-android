@@ -49,8 +49,12 @@ describe("auth route", () => {
 
     expect(response.status).toBe(201);
     await expect(response.json()).resolves.toMatchObject({
+      authToken: "session-token",
+      userId: "user-1",
+      role: "JEMAAT",
       user: {
-        email: "user@example.com"
+        id: "user-1",
+        role: "JEMAAT"
       }
     });
   });

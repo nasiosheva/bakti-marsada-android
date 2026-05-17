@@ -44,6 +44,18 @@ export class AuthRepository {
       .first<UserRecord>();
   }
 
+  async findAdminUserByUsername(username: string): Promise<UserRecord | null> {
+    return this.db
+      .prepare(
+        `SELECT * FROM users
+         WHERE lower(substr(email, 1, instr(email, '@') - 1)) = ?1
+           AND upper(role) = 'ADMIN'
+         LIMIT 1`
+      )
+      .bind(username.toLowerCase())
+      .first<UserRecord>();
+  }
+
   async findUserById(userId: string): Promise<UserRecord | null> {
     return this.db
       .prepare("SELECT * FROM users WHERE id = ?1 LIMIT 1")
