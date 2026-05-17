@@ -18,6 +18,10 @@ class AppMappersTest {
             userId = "user-1",
             displayName = "Admin Sektor",
             role = UserRole.ADMIN.name,
+            tenantId = "hkbp",
+            tenantName = "HKBP",
+            subTenantId = "hkbp-kedaton",
+            subTenantName = "HKBP Kedaton",
             sectorId = "wijk-1",
             sectorName = "Wijk Marturia"
         )
@@ -25,6 +29,8 @@ class AppMappersTest {
         val domain = dto.toDomain()
 
         assertEquals(UserRole.ADMIN, domain.role)
+        assertEquals("hkbp", domain.tenantContext.tenantId)
+        assertEquals("HKBP Kedaton", domain.tenantContext.subTenantName)
         assertEquals("wijk-1", domain.sectorContext.sectorId)
         assertEquals("Wijk Marturia", domain.sectorContext.sectorName)
     }

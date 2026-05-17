@@ -30,10 +30,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import com.lampung.baktimarsada.R
 import com.lampung.baktimarsada.core.constants.AppBuildConfig
-import com.lampung.baktimarsada.core.constants.AppConstants
 import com.lampung.baktimarsada.core.dispatchers.DispatcherProvider
 import com.lampung.baktimarsada.core.resources.StringProvider
 import com.lampung.baktimarsada.core.result.AppResult
+import com.lampung.baktimarsada.core.tenant.TenantRuntime
 import com.lampung.baktimarsada.data.remote.AppRemoteDataSource
 import com.lampung.baktimarsada.domain.model.UserRole
 import com.lampung.baktimarsada.domain.usecase.LoginUseCase
@@ -80,6 +80,7 @@ fun LoginScreen(
     onResetAndLoginAsAdminClicked: () -> Unit = {},
     isSimulationEnabled: Boolean = AppBuildConfig.simulationEnabled
 ) {
+    val tenant = TenantRuntime.current
     Scaffold(
         modifier = Modifier.fillMaxSize()
     ) { innerPadding ->
@@ -92,7 +93,7 @@ fun LoginScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
-                text = stringResource(id = R.string.app_name),
+                text = tenant.appDisplayName,
                 style = MaterialTheme.typography.headlineSmall
             )
             Text(
@@ -168,16 +169,16 @@ fun LoginScreen(
                         Text(
                             text = stringResource(
                                 id = R.string.login_demo_admin,
-                                AppConstants.SAMPLE_ADMIN_IDENTIFIER,
-                                AppConstants.SAMPLE_ADMIN_PASSWORD
+                                tenant.sampleAdminIdentifier,
+                                tenant.sampleAdminPassword
                             ),
                             style = MaterialTheme.typography.bodyMedium
                         )
                         Text(
                             text = stringResource(
                                 id = R.string.login_demo_jemaat,
-                                AppConstants.SAMPLE_JEMAAT_IDENTIFIER,
-                                AppConstants.SAMPLE_JEMAAT_PASSWORD
+                                tenant.sampleJemaatIdentifier,
+                                tenant.sampleJemaatPassword
                             ),
                             style = MaterialTheme.typography.bodyMedium
                         )
@@ -232,6 +233,8 @@ class LoginViewModel @Inject constructor(
     private val stringProvider: StringProvider,
     private val remoteDataSource: AppRemoteDataSource
 ) : ViewModel() {
+    private val tenant
+        get() = TenantRuntime.current
 
     private val _state = MutableStateFlow(LoginUiState())
     val state: StateFlow<LoginUiState> = _state.asStateFlow()
@@ -265,15 +268,15 @@ class LoginViewModel @Inject constructor(
 
     fun submitWithDemoAdmin() {
         submitCredentials(
-            identifier = AppConstants.SAMPLE_ADMIN_IDENTIFIER,
-            password = AppConstants.SAMPLE_ADMIN_PASSWORD
+            identifier = tenant.sampleAdminIdentifier,
+            password = tenant.sampleAdminPassword
         )
     }
 
     fun submitWithDemoJemaat() {
         submitCredentials(
-            identifier = AppConstants.SAMPLE_JEMAAT_IDENTIFIER,
-            password = AppConstants.SAMPLE_JEMAAT_PASSWORD
+            identifier = tenant.sampleJemaatIdentifier,
+            password = tenant.sampleJemaatPassword
         )
     }
 
@@ -292,8 +295,8 @@ class LoginViewModel @Inject constructor(
                 return@launch
             }
             loginWithCredentials(
-                identifier = AppConstants.SAMPLE_ADMIN_IDENTIFIER,
-                password = AppConstants.SAMPLE_ADMIN_PASSWORD
+                identifier = tenant.sampleAdminIdentifier,
+                password = tenant.sampleAdminPassword
             )
         }
     }

@@ -1,6 +1,6 @@
 package com.lampung.baktimarsada.data.remote
 
-import com.lampung.baktimarsada.core.constants.AppConstants
+import com.lampung.baktimarsada.core.tenant.TenantRuntime
 import com.lampung.baktimarsada.datasource.simulate.SimulateAppRemoteDataSource
 import com.lampung.baktimarsada.network.dto.LoginRequestDto
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -11,14 +11,15 @@ import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SimulateAppRemoteDataSourceTest {
+    private val tenant = TenantRuntime.current
 
     @Test
     fun `resetSimulationData restores seeded records after mutations`() = runTest {
         val dataSource = SimulateAppRemoteDataSource()
         val session = dataSource.login(
             LoginRequestDto(
-                identifier = AppConstants.SAMPLE_ADMIN_IDENTIFIER,
-                password = AppConstants.SAMPLE_ADMIN_PASSWORD
+                identifier = tenant.sampleAdminIdentifier,
+                password = tenant.sampleAdminPassword
             )
         )
 

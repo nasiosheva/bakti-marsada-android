@@ -2,6 +2,7 @@ package com.lampung.baktimarsada.data.repository
 
 import com.lampung.baktimarsada.core.constants.AppConstants
 import com.lampung.baktimarsada.core.result.AppResult
+import com.lampung.baktimarsada.core.tenant.TenantRuntime
 import com.lampung.baktimarsada.datasource.simulate.SimulateAppRemoteDataSource
 import com.lampung.baktimarsada.domain.model.UserRole
 import com.lampung.baktimarsada.security.SecureStorage
@@ -14,6 +15,7 @@ import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class AuthRepositoryImplTest {
+    private val tenant = TenantRuntime.current
 
     @Test
     fun `login persists session and bootstrap restores it`() = runTest {
@@ -24,8 +26,8 @@ class AuthRepositoryImplTest {
         )
 
         val result = repository.login(
-            AppConstants.SAMPLE_ADMIN_IDENTIFIER,
-            AppConstants.SAMPLE_ADMIN_PASSWORD
+            tenant.sampleAdminIdentifier,
+            tenant.sampleAdminPassword
         )
 
         assertTrue(result is AppResult.Success)
@@ -47,8 +49,8 @@ class AuthRepositoryImplTest {
             remoteDataSource = SimulateAppRemoteDataSource()
         )
         repository.login(
-            AppConstants.SAMPLE_JEMAAT_IDENTIFIER,
-            AppConstants.SAMPLE_JEMAAT_PASSWORD
+            tenant.sampleJemaatIdentifier,
+            tenant.sampleJemaatPassword
         )
 
         repository.logout()

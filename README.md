@@ -67,6 +67,27 @@ Opsional override base URL:
 - `-PcloudflareApiBaseUrl=...`
 - `-PpythonApiBaseUrl=...`
 
+### Multi-tenant clone
+
+Tenant aktif bisa diganti saat build:
+
+```bash
+./gradlew :app:assembleDebug -PtenantKey=hkbp-kedaton
+./gradlew :app:assembleDebug -PtenantKey=hkbp-bandarjaya
+```
+
+Tenant profile terpusat di:
+
+- [`core/src/main/java/com/lampung/baktimarsada/core/tenant/TenantRegistry.kt`](./core/src/main/java/com/lampung/baktimarsada/core/tenant/TenantRegistry.kt)
+
+Struktur profile sudah mendukung:
+
+- `tenant` utama (contoh: `HKBP`)
+- `sub-tenant` / gereja lokal (contoh: `HKBP Kedaton`)
+- sektor/wijk tetap per user/session
+
+Untuk clone tenant baru, cukup tambah 1 profile baru di registry tanpa ubah flow domain/repository/datasource.
+
 ## Cloudflare Backend
 
 Lokasi:

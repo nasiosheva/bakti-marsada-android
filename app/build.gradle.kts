@@ -9,6 +9,7 @@ plugins {
 val configuredDataSourceProvider = providers.gradleProperty("dataSourceProvider").orNull ?: "cloudflare"
 val configuredCloudflareBaseUrl = providers.gradleProperty("cloudflareApiBaseUrl").orNull
 val configuredPythonBaseUrl = providers.gradleProperty("pythonApiBaseUrl").orNull
+val configuredTenantKey = providers.gradleProperty("tenantKey").orNull ?: "hkbp-kedaton"
 
 android {
     namespace = "com.lampung.baktimarsada"
@@ -24,6 +25,7 @@ android {
         buildConfigField("String", "API_BASE_URL_CLOUDFLARE", "\"https://example.com/\"")
         buildConfigField("String", "API_BASE_URL_PYTHON", "\"https://example.com/\"")
         buildConfigField("String", "DATA_SOURCE_PROVIDER", "\"$configuredDataSourceProvider\"")
+        buildConfigField("String", "TENANT_KEY", "\"$configuredTenantKey\"")
         buildConfigField("String", "APP_ENVIRONMENT", "\"debug\"")
         buildConfigField("String", "DATABASE_NAME", "\"bakti_marsada.db\"")
         buildConfigField("Boolean", "SIMULATION_ENABLED", "false")
@@ -40,6 +42,7 @@ android {
             buildConfigField("String", "API_BASE_URL_CLOUDFLARE", "\"$debugCloudflareUrl\"")
             buildConfigField("String", "API_BASE_URL_PYTHON", "\"$debugPythonUrl\"")
             buildConfigField("String", "DATA_SOURCE_PROVIDER", "\"$configuredDataSourceProvider\"")
+            buildConfigField("String", "TENANT_KEY", "\"$configuredTenantKey\"")
             buildConfigField("String", "APP_ENVIRONMENT", "\"debug\"")
             buildConfigField("String", "DATABASE_NAME", "\"bakti_marsada_debug.db\"")
             buildConfigField("Boolean", "SIMULATION_ENABLED", "false")
@@ -56,6 +59,7 @@ android {
             buildConfigField("String", "API_BASE_URL_CLOUDFLARE", "\"$simulateCloudflareUrl\"")
             buildConfigField("String", "API_BASE_URL_PYTHON", "\"$simulatePythonUrl\"")
             buildConfigField("String", "DATA_SOURCE_PROVIDER", "\"$configuredDataSourceProvider\"")
+            buildConfigField("String", "TENANT_KEY", "\"$configuredTenantKey\"")
             buildConfigField("String", "APP_ENVIRONMENT", "\"simulate\"")
             buildConfigField("String", "DATABASE_NAME", "\"bakti_marsada_simulate.db\"")
             buildConfigField("Boolean", "SIMULATION_ENABLED", "true")
@@ -69,6 +73,7 @@ android {
             buildConfigField("String", "API_BASE_URL_CLOUDFLARE", "\"$releaseCloudflareUrl\"")
             buildConfigField("String", "API_BASE_URL_PYTHON", "\"$releasePythonUrl\"")
             buildConfigField("String", "DATA_SOURCE_PROVIDER", "\"$configuredDataSourceProvider\"")
+            buildConfigField("String", "TENANT_KEY", "\"$configuredTenantKey\"")
             buildConfigField("String", "APP_ENVIRONMENT", "\"production\"")
             buildConfigField("String", "DATABASE_NAME", "\"bakti_marsada.db\"")
             buildConfigField("Boolean", "SIMULATION_ENABLED", "false")

@@ -1,10 +1,10 @@
 package com.lampung.baktimarsada.feature.auth.presentation
 
 import com.lampung.baktimarsada.R
-import com.lampung.baktimarsada.core.constants.AppConstants
 import com.lampung.baktimarsada.data.remote.AppRemoteDataSource
 import com.lampung.baktimarsada.core.resources.StringProvider
 import com.lampung.baktimarsada.core.result.AppResult
+import com.lampung.baktimarsada.core.tenant.TenantRuntime
 import com.lampung.baktimarsada.network.dto.EventDto
 import com.lampung.baktimarsada.network.dto.FinanceReportDto
 import com.lampung.baktimarsada.network.dto.LoginRequestDto
@@ -13,6 +13,7 @@ import com.lampung.baktimarsada.network.dto.PaymentObligationDto
 import com.lampung.baktimarsada.network.dto.SessionResponseDto
 import com.lampung.baktimarsada.domain.model.SectorContext
 import com.lampung.baktimarsada.domain.model.SessionState
+import com.lampung.baktimarsada.domain.model.TenantContext
 import com.lampung.baktimarsada.domain.model.UserRole
 import com.lampung.baktimarsada.domain.repository.AuthRepository
 import com.lampung.baktimarsada.domain.usecase.LoginUseCase
@@ -29,6 +30,7 @@ import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class LoginViewModelTest {
+    private val tenant = TenantRuntime.current
 
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
@@ -41,8 +43,8 @@ class LoginViewModelTest {
         viewModel.submitWithDemoAdmin()
         advanceUntilIdle()
 
-        assertEquals(AppConstants.SAMPLE_ADMIN_IDENTIFIER, repository.lastIdentifier)
-        assertEquals(AppConstants.SAMPLE_ADMIN_PASSWORD, repository.lastPassword)
+        assertEquals(tenant.sampleAdminIdentifier, repository.lastIdentifier)
+        assertEquals(tenant.sampleAdminPassword, repository.lastPassword)
         assertEquals(UserRole.ADMIN, viewModel.state.value.loggedInRole)
     }
 
@@ -54,8 +56,8 @@ class LoginViewModelTest {
         viewModel.submitWithDemoJemaat()
         advanceUntilIdle()
 
-        assertEquals(AppConstants.SAMPLE_JEMAAT_IDENTIFIER, repository.lastIdentifier)
-        assertEquals(AppConstants.SAMPLE_JEMAAT_PASSWORD, repository.lastPassword)
+        assertEquals(tenant.sampleJemaatIdentifier, repository.lastIdentifier)
+        assertEquals(tenant.sampleJemaatPassword, repository.lastPassword)
         assertEquals(UserRole.JEMAAT, viewModel.state.value.loggedInRole)
     }
 
@@ -69,8 +71,8 @@ class LoginViewModelTest {
         advanceUntilIdle()
 
         assertEquals(1, remoteDataSource.resetCalls)
-        assertEquals(AppConstants.SAMPLE_ADMIN_IDENTIFIER, repository.lastIdentifier)
-        assertEquals(AppConstants.SAMPLE_ADMIN_PASSWORD, repository.lastPassword)
+        assertEquals(tenant.sampleAdminIdentifier, repository.lastIdentifier)
+        assertEquals(tenant.sampleAdminPassword, repository.lastPassword)
         assertEquals(UserRole.ADMIN, viewModel.state.value.loggedInRole)
     }
 
@@ -108,6 +110,12 @@ class LoginViewModelTest {
                 userId = "user-$identifier",
                 displayName = "Demo User",
                 role = role,
+                tenantContext = TenantContext(
+                    tenantId = "hkbp",
+                    tenantName = "HKBP",
+                    subTenantId = "hkbp-kedaton",
+                    subTenantName = "HKBP Kedaton"
+                ),
                 sectorContext = SectorContext(
                     sectorId = "wijk-1",
                     sectorName = "Wijk Simulasi"

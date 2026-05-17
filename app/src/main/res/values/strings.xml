@@ -85,6 +85,8 @@
     <string name="profile_title">Akun Bakti Marsada</string>
     <string name="profile_role_admin">Admin</string>
     <string name="profile_role_jemaat">Jemaat</string>
+    <string name="profile_tenant_label">Sinode/Tenant</string>
+    <string name="profile_sub_tenant_label">Gereja/Sub-Tenant</string>
     <string name="profile_sector_label">Sektor/Wijk</string>
     <string name="profile_user_id_label">ID Pengguna</string>
     <string name="profile_environment_label">Environment</string>

@@ -59,6 +59,14 @@ fun ProfileScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 BaktiValueRow(
+                    label = stringResource(id = R.string.profile_tenant_label),
+                    value = session.tenantContext.tenantName
+                )
+                BaktiValueRow(
+                    label = stringResource(id = R.string.profile_sub_tenant_label),
+                    value = session.tenantContext.subTenantName
+                )
+                BaktiValueRow(
                     label = stringResource(id = R.string.profile_sector_label),
                     value = session.sectorContext.sectorName
                 )
