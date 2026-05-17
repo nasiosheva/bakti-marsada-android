@@ -17,13 +17,36 @@ android {
         versionCode = 1
         versionName = "1.0"
         buildConfigField("String", "API_BASE_URL", "\"https://example.com/\"")
+        buildConfigField("String", "APP_ENVIRONMENT", "\"debug\"")
+        buildConfigField("String", "DATABASE_NAME", "\"bakti_marsada.db\"")
+        buildConfigField("Boolean", "SIMULATION_ENABLED", "false")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
+        debug {
+            buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:8787/\"")
+            buildConfigField("String", "APP_ENVIRONMENT", "\"debug\"")
+            buildConfigField("String", "DATABASE_NAME", "\"bakti_marsada_debug.db\"")
+            buildConfigField("Boolean", "SIMULATION_ENABLED", "false")
+        }
+        create("simulate") {
+            initWith(getByName("debug"))
+            matchingFallbacks += listOf("debug")
+            applicationIdSuffix = ".simulate"
+            versionNameSuffix = "-simulate"
+            buildConfigField("String", "API_BASE_URL", "\"https://simulate.baktimarsada.local/\"")
+            buildConfigField("String", "APP_ENVIRONMENT", "\"simulate\"")
+            buildConfigField("String", "DATABASE_NAME", "\"bakti_marsada_simulate.db\"")
+            buildConfigField("Boolean", "SIMULATION_ENABLED", "true")
+        }
         release {
             isMinifyEnabled = false
+            buildConfigField("String", "API_BASE_URL", "\"https://bakti-marsada-be.deomories.workers.dev/\"")
+            buildConfigField("String", "APP_ENVIRONMENT", "\"production\"")
+            buildConfigField("String", "DATABASE_NAME", "\"bakti_marsada.db\"")
+            buildConfigField("Boolean", "SIMULATION_ENABLED", "false")
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
@@ -93,4 +116,7 @@ dependencies {
 
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
+    debugImplementation(libs.chucker)
+    add("simulateImplementation", libs.chucker)
+    releaseImplementation(libs.chucker.no.op)
 }

@@ -27,6 +27,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
@@ -42,11 +44,15 @@ import com.lampung.baktimarsada.domain.repository.FinanceReportRepository
 import com.lampung.baktimarsada.ui.component.BaktiAmountInput
 import com.lampung.baktimarsada.ui.component.BaktiCheckbox
 import com.lampung.baktimarsada.ui.component.BaktiEmptyState
+import com.lampung.baktimarsada.ui.component.BaktiErrorState
 import com.lampung.baktimarsada.ui.component.BaktiLoadingState
 import com.lampung.baktimarsada.ui.component.BaktiMultilineInput
 import com.lampung.baktimarsada.ui.component.BaktiSectionMessage
 import com.lampung.baktimarsada.ui.component.BaktiTextInput
 import com.lampung.baktimarsada.ui.component.BaktiValueRow
+import com.lampung.baktimarsada.ui.component.JemaatInfoCard
+import com.lampung.baktimarsada.ui.component.JemaatPill
+import com.lampung.baktimarsada.ui.component.JemaatSectionHeader
 import com.lampung.baktimarsada.ui.util.formatCurrency
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -63,105 +69,20 @@ fun FinanceRoute(
     viewModel: FinanceViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val displayItems = if (isAdmin) state.items else state.items.filter { it.isVisibleToJemaat }
     var detailTarget by remember { mutableStateOf<FinanceReportDetail?>(null) }
     var editTarget by remember { mutableStateOf<FinanceReportDetail?>(null) }
     var showCreateDialog by rememberSaveable { mutableStateOf(false) }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        when {
-            state.isLoading && displayItems.isEmpty() -> BaktiLoadingState()
-            displayItems.isEmpty() -> BaktiEmptyState(message = stringResource(id = R.string.finance_empty))
-            else -> {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    item {
-                        Text(
-                            text = stringResource(
-                                id = if (isAdmin) R.string.finance_title_admin else R.string.finance_title_jemaat
-                            ),
-                            style = MaterialTheme.typography.titleLarge
-                        )
-                    }
-                    state.errorMessage?.let { message ->
-                        item { BaktiSectionMessage(message = message) }
-                    }
-                    item {
-                        OutlinedButton(onClick = viewModel::refresh) {
-                            Text(text = stringResource(id = R.string.action_refresh))
-                        }
-                    }
-                    items(displayItems, key = { it.id }) { item ->
-                        Card(modifier = Modifier.fillMaxWidth()) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                verticalArrangement = Arrangement.spacedBy(10.dp)
-                            ) {
-                                Text(text = item.title, style = MaterialTheme.typography.titleMedium)
-                                BaktiValueRow(
-                                    label = stringResource(id = R.string.form_period),
-                                    value = item.periodLabel
-                                )
-                                BaktiValueRow(
-                                    label = stringResource(id = R.string.form_amount),
-                                    value = formatCurrency(item.amount)
-                                )
-                                if (isAdmin) {
-                                    BaktiValueRow(
-                                        label = stringResource(id = R.string.form_visibility),
-                                        value = stringResource(
-                                            id = if (item.isVisibleToJemaat) {
-                                                R.string.visibility_visible
-                                            } else {
-                                                R.string.visibility_hidden
-                                            }
-                                        )
-                                    )
-                                }
-                                Text(text = item.description, style = MaterialTheme.typography.bodyMedium)
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    OutlinedButton(onClick = { detailTarget = item }) {
-                                        Text(text = stringResource(id = R.string.action_detail))
-                                    }
-                                    if (isAdmin) {
-                                        OutlinedButton(onClick = { editTarget = item }) {
-                                            Text(text = stringResource(id = R.string.action_edit))
-                                        }
-                                        OutlinedButton(onClick = { viewModel.toggleVisibility(item) }) {
-                                            Text(text = stringResource(id = R.string.action_toggle_visibility))
-                                        }
-                                        Button(onClick = { viewModel.delete(item.id) }) {
-                                            Text(text = stringResource(id = R.string.action_delete))
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        if (isAdmin) {
-            ExtendedFloatingActionButton(
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(16.dp),
-                onClick = { showCreateDialog = true }
-            ) {
-                Text(text = stringResource(id = R.string.action_add_finance))
-            }
-        }
-    }
+    FinanceContent(
+        isAdmin = isAdmin,
+        state = state,
+        onRefresh = viewModel::refresh,
+        onDelete = viewModel::delete,
+        onToggleVisibility = viewModel::toggleVisibility,
+        onShowCreate = { showCreateDialog = true },
+        onShowDetail = { detailTarget = it },
+        onShowEdit = { editTarget = it }
+    )
 
     detailTarget?.let { item ->
         FinanceDetailDialog(item = item, onDismiss = { detailTarget = null })
@@ -189,6 +110,169 @@ fun FinanceRoute(
                 editTarget = null
             }
         )
+    }
+}
+
+@Composable
+fun FinanceContent(
+    isAdmin: Boolean,
+    state: FinanceUiState,
+    onRefresh: () -> Unit,
+    onDelete: (String) -> Unit,
+    onToggleVisibility: (FinanceReportDetail) -> Unit,
+    onShowCreate: () -> Unit,
+    onShowDetail: (FinanceReportDetail) -> Unit,
+    onShowEdit: (FinanceReportDetail) -> Unit
+) {
+    val displayItems = if (isAdmin) state.items else state.items.filter { it.isVisibleToJemaat }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        when {
+            state.isLoading && displayItems.isEmpty() -> BaktiLoadingState()
+            state.errorMessage != null && displayItems.isEmpty() -> {
+                BaktiErrorState(message = state.errorMessage, onRetry = onRefresh)
+            }
+            displayItems.isEmpty() -> BaktiEmptyState(message = stringResource(id = R.string.finance_empty))
+            else -> {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    item {
+                        if (isAdmin) {
+                            Text(
+                                text = stringResource(id = R.string.finance_title_admin),
+                                style = MaterialTheme.typography.titleLarge,
+                                modifier = Modifier.semantics { testTag = "finance_title" }
+                            )
+                        } else {
+                            JemaatSectionHeader(
+                                title = stringResource(id = R.string.finance_title_jemaat),
+                                countLabel = stringResource(id = R.string.jemaat_count_finance, displayItems.size),
+                                actionLabel = stringResource(id = R.string.action_refresh),
+                                onAction = onRefresh,
+                                modifier = Modifier.semantics { testTag = "finance_title" }
+                            )
+                        }
+                    }
+                    state.errorMessage?.let { message ->
+                        item { BaktiSectionMessage(message = message) }
+                    }
+                    if (isAdmin) item {
+                        OutlinedButton(
+                            onClick = onRefresh,
+                            modifier = Modifier.semantics { testTag = "finance_refresh_button" }
+                        ) {
+                            Text(text = stringResource(id = R.string.action_refresh))
+                        }
+                    }
+                    items(displayItems, key = { it.id }) { item ->
+                        if (isAdmin) {
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .semantics { testTag = "finance_item_${item.id}" }
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    Text(text = item.title, style = MaterialTheme.typography.titleMedium)
+                                    BaktiValueRow(
+                                        label = stringResource(id = R.string.form_period),
+                                        value = item.periodLabel
+                                    )
+                                    BaktiValueRow(
+                                        label = stringResource(id = R.string.form_amount),
+                                        value = formatCurrency(item.amount)
+                                    )
+                                    BaktiValueRow(
+                                        label = stringResource(id = R.string.form_visibility),
+                                        value = stringResource(
+                                            id = if (item.isVisibleToJemaat) {
+                                                R.string.visibility_visible
+                                            } else {
+                                                R.string.visibility_hidden
+                                            }
+                                        )
+                                    )
+                                    Text(text = item.description, style = MaterialTheme.typography.bodyMedium)
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        OutlinedButton(
+                                            onClick = { onShowDetail(item) },
+                                            modifier = Modifier.semantics { testTag = "finance_detail_${item.id}" }
+                                        ) {
+                                            Text(text = stringResource(id = R.string.action_detail))
+                                        }
+                                        OutlinedButton(
+                                            onClick = { onShowEdit(item) },
+                                            modifier = Modifier.semantics { testTag = "finance_edit_${item.id}" }
+                                        ) {
+                                            Text(text = stringResource(id = R.string.action_edit))
+                                        }
+                                        OutlinedButton(
+                                            onClick = { onToggleVisibility(item) },
+                                            modifier = Modifier.semantics { testTag = "finance_toggle_${item.id}" }
+                                        ) {
+                                            Text(text = stringResource(id = R.string.action_toggle_visibility))
+                                        }
+                                        Button(
+                                            onClick = { onDelete(item.id) },
+                                            modifier = Modifier.semantics { testTag = "finance_delete_${item.id}" }
+                                        ) {
+                                            Text(text = stringResource(id = R.string.action_delete))
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            JemaatInfoCard(
+                                title = item.title,
+                                subtitle = item.description,
+                                modifier = Modifier.semantics { testTag = "finance_item_${item.id}" },
+                                accentColor = MaterialTheme.colorScheme.tertiary,
+                                content = {
+                                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        Text(
+                                            text = formatCurrency(item.amount),
+                                            style = MaterialTheme.typography.headlineSmall
+                                        )
+                                        JemaatPill(text = item.periodLabel)
+                                    }
+                                },
+                                footer = {
+                                    OutlinedButton(
+                                        onClick = { onShowDetail(item) },
+                                        modifier = Modifier.semantics { testTag = "finance_detail_${item.id}" }
+                                    ) {
+                                        Text(text = stringResource(id = R.string.action_detail))
+                                    }
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        if (isAdmin) {
+            ExtendedFloatingActionButton(
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp)
+                    .semantics { testTag = "finance_add_fab" },
+                onClick = onShowCreate
+            ) {
+                Text(text = stringResource(id = R.string.action_add_finance))
+            }
+        }
     }
 }
 

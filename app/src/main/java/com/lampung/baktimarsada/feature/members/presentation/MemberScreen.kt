@@ -27,6 +27,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
@@ -40,10 +42,14 @@ import com.lampung.baktimarsada.domain.model.SessionState
 import com.lampung.baktimarsada.domain.repository.AuthRepository
 import com.lampung.baktimarsada.domain.repository.MemberRepository
 import com.lampung.baktimarsada.ui.component.BaktiEmptyState
+import com.lampung.baktimarsada.ui.component.BaktiErrorState
 import com.lampung.baktimarsada.ui.component.BaktiLoadingState
 import com.lampung.baktimarsada.ui.component.BaktiSectionMessage
 import com.lampung.baktimarsada.ui.component.BaktiTextInput
 import com.lampung.baktimarsada.ui.component.BaktiValueRow
+import com.lampung.baktimarsada.ui.component.JemaatInfoCard
+import com.lampung.baktimarsada.ui.component.JemaatPill
+import com.lampung.baktimarsada.ui.component.JemaatSectionHeader
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -63,84 +69,15 @@ fun MemberRoute(
     var editTarget by remember { mutableStateOf<MemberDetail?>(null) }
     var showCreateDialog by rememberSaveable { mutableStateOf(false) }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        when {
-            state.isLoading && state.items.isEmpty() -> BaktiLoadingState()
-            state.items.isEmpty() -> BaktiEmptyState(message = stringResource(id = R.string.member_empty))
-            else -> {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    item {
-                        Text(
-                            text = stringResource(
-                                id = if (isAdmin) R.string.member_title_admin else R.string.member_title_jemaat
-                            ),
-                            style = MaterialTheme.typography.titleLarge
-                        )
-                    }
-                    state.errorMessage?.let { message ->
-                        item { BaktiSectionMessage(message = message) }
-                    }
-                    item {
-                        OutlinedButton(onClick = viewModel::refresh) {
-                            Text(text = stringResource(id = R.string.action_refresh))
-                        }
-                    }
-                    items(state.items, key = { it.id }) { item ->
-                        Card(modifier = Modifier.fillMaxWidth()) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                verticalArrangement = Arrangement.spacedBy(10.dp)
-                            ) {
-                                Text(text = item.fullName, style = MaterialTheme.typography.titleMedium)
-                                BaktiValueRow(
-                                    label = stringResource(id = R.string.form_family_group),
-                                    value = item.familyGroup
-                                )
-                                BaktiValueRow(
-                                    label = stringResource(id = R.string.form_role_sector),
-                                    value = item.roleInSector
-                                )
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    OutlinedButton(onClick = { detailTarget = item }) {
-                                        Text(text = stringResource(id = R.string.action_detail))
-                                    }
-                                    if (isAdmin) {
-                                        OutlinedButton(onClick = { editTarget = item }) {
-                                            Text(text = stringResource(id = R.string.action_edit))
-                                        }
-                                        Button(onClick = { viewModel.delete(item.id) }) {
-                                            Text(text = stringResource(id = R.string.action_delete))
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        if (isAdmin) {
-            ExtendedFloatingActionButton(
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(16.dp),
-                onClick = { showCreateDialog = true }
-            ) {
-                Text(text = stringResource(id = R.string.action_add_member))
-            }
-        }
-    }
+    MemberContent(
+        isAdmin = isAdmin,
+        state = state,
+        onRefresh = viewModel::refresh,
+        onDelete = viewModel::delete,
+        onShowCreate = { showCreateDialog = true },
+        onShowDetail = { detailTarget = it },
+        onShowEdit = { editTarget = it }
+    )
 
     detailTarget?.let { item ->
         MemberDetailDialog(item = item, onDismiss = { detailTarget = null })
@@ -168,6 +105,143 @@ fun MemberRoute(
                 editTarget = null
             }
         )
+    }
+}
+
+@Composable
+fun MemberContent(
+    isAdmin: Boolean,
+    state: MemberUiState,
+    onRefresh: () -> Unit,
+    onDelete: (String) -> Unit,
+    onShowCreate: () -> Unit,
+    onShowDetail: (MemberDetail) -> Unit,
+    onShowEdit: (MemberDetail) -> Unit
+) {
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        when {
+            state.isLoading && state.items.isEmpty() -> BaktiLoadingState()
+            state.errorMessage != null && state.items.isEmpty() -> {
+                BaktiErrorState(message = state.errorMessage, onRetry = onRefresh)
+            }
+            state.items.isEmpty() -> BaktiEmptyState(message = stringResource(id = R.string.member_empty))
+            else -> {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    item {
+                        if (isAdmin) {
+                            Text(
+                                text = stringResource(id = R.string.member_title_admin),
+                                style = MaterialTheme.typography.titleLarge,
+                                modifier = Modifier.semantics { testTag = "member_title" }
+                            )
+                        } else {
+                            JemaatSectionHeader(
+                                title = stringResource(id = R.string.member_title_jemaat),
+                                countLabel = stringResource(id = R.string.jemaat_count_members, state.items.size),
+                                actionLabel = stringResource(id = R.string.action_refresh),
+                                onAction = onRefresh,
+                                modifier = Modifier.semantics { testTag = "member_title" }
+                            )
+                        }
+                    }
+                    state.errorMessage?.let { message ->
+                        item { BaktiSectionMessage(message = message) }
+                    }
+                    if (isAdmin) item {
+                        OutlinedButton(
+                            onClick = onRefresh,
+                            modifier = Modifier.semantics { testTag = "member_refresh_button" }
+                        ) {
+                            Text(text = stringResource(id = R.string.action_refresh))
+                        }
+                    }
+                    items(state.items, key = { it.id }) { item ->
+                        if (isAdmin) {
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .semantics { testTag = "member_item_${item.id}" }
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    Text(text = item.fullName, style = MaterialTheme.typography.titleMedium)
+                                    BaktiValueRow(
+                                        label = stringResource(id = R.string.form_family_group),
+                                        value = item.familyGroup
+                                    )
+                                    BaktiValueRow(
+                                        label = stringResource(id = R.string.form_role_sector),
+                                        value = item.roleInSector
+                                    )
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        OutlinedButton(
+                                            onClick = { onShowDetail(item) },
+                                            modifier = Modifier.semantics { testTag = "member_detail_${item.id}" }
+                                        ) {
+                                            Text(text = stringResource(id = R.string.action_detail))
+                                        }
+                                        OutlinedButton(
+                                            onClick = { onShowEdit(item) },
+                                            modifier = Modifier.semantics { testTag = "member_edit_${item.id}" }
+                                        ) {
+                                            Text(text = stringResource(id = R.string.action_edit))
+                                        }
+                                        Button(
+                                            onClick = { onDelete(item.id) },
+                                            modifier = Modifier.semantics { testTag = "member_delete_${item.id}" }
+                                        ) {
+                                            Text(text = stringResource(id = R.string.action_delete))
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            JemaatInfoCard(
+                                title = item.fullName,
+                                subtitle = item.familyGroup,
+                                modifier = Modifier.semantics { testTag = "member_item_${item.id}" },
+                                content = {
+                                    JemaatPill(text = item.roleInSector)
+                                },
+                                footer = {
+                                    OutlinedButton(
+                                        onClick = { onShowDetail(item) },
+                                        modifier = Modifier.semantics { testTag = "member_detail_${item.id}" }
+                                    ) {
+                                        Text(text = stringResource(id = R.string.action_detail))
+                                    }
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        if (isAdmin) {
+            ExtendedFloatingActionButton(
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp)
+                    .semantics { testTag = "member_add_fab" },
+                onClick = onShowCreate
+            ) {
+                Text(text = stringResource(id = R.string.action_add_member))
+            }
+        }
     }
 }
 

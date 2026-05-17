@@ -2,7 +2,7 @@ package com.lampung.baktimarsada.data.repository
 
 import com.lampung.baktimarsada.core.constants.AppConstants
 import com.lampung.baktimarsada.core.result.AppResult
-import com.lampung.baktimarsada.data.remote.FakeAppRemoteDataSource
+import com.lampung.baktimarsada.data.remote.SimulateAppRemoteDataSource
 import com.lampung.baktimarsada.domain.model.UserRole
 import com.lampung.baktimarsada.security.SecureStorage
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -20,7 +20,7 @@ class AuthRepositoryImplTest {
         val storage = FakeSecureStorage()
         val repository = AuthRepositoryImpl(
             secureStorage = storage,
-            remoteDataSource = FakeAppRemoteDataSource()
+            remoteDataSource = SimulateAppRemoteDataSource()
         )
 
         val result = repository.login(
@@ -44,7 +44,7 @@ class AuthRepositoryImplTest {
         val storage = FakeSecureStorage()
         val repository = AuthRepositoryImpl(
             secureStorage = storage,
-            remoteDataSource = FakeAppRemoteDataSource()
+            remoteDataSource = SimulateAppRemoteDataSource()
         )
         repository.login(
             AppConstants.SAMPLE_JEMAAT_IDENTIFIER,

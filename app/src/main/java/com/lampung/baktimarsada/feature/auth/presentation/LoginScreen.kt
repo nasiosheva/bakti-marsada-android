@@ -10,6 +10,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -32,6 +33,7 @@ import com.lampung.baktimarsada.core.constants.AppConstants
 import com.lampung.baktimarsada.core.dispatchers.DispatcherProvider
 import com.lampung.baktimarsada.core.resources.StringProvider
 import com.lampung.baktimarsada.core.result.AppResult
+import com.lampung.baktimarsada.data.remote.AppRemoteDataSource
 import com.lampung.baktimarsada.domain.model.UserRole
 import com.lampung.baktimarsada.domain.usecase.LoginUseCase
 import com.lampung.baktimarsada.ui.component.BaktiSectionMessage
@@ -59,16 +61,23 @@ fun LoginRoute(
         state = state,
         onIdentifierChanged = viewModel::onIdentifierChanged,
         onPasswordChanged = viewModel::onPasswordChanged,
-        onLoginClicked = viewModel::submit
+        onLoginClicked = viewModel::submit,
+        onLoginAsAdminClicked = viewModel::submitWithDemoAdmin,
+        onLoginAsJemaatClicked = viewModel::submitWithDemoJemaat,
+        onResetAndLoginAsAdminClicked = viewModel::resetSimulationAndLoginAsAdmin
     )
 }
 
 @Composable
-private fun LoginScreen(
+fun LoginScreen(
     state: LoginUiState,
     onIdentifierChanged: (String) -> Unit,
     onPasswordChanged: (String) -> Unit,
-    onLoginClicked: () -> Unit
+    onLoginClicked: () -> Unit,
+    onLoginAsAdminClicked: () -> Unit = {},
+    onLoginAsJemaatClicked: () -> Unit = {},
+    onResetAndLoginAsAdminClicked: () -> Unit = {},
+    isSimulationEnabled: Boolean = AppConstants.SIMULATION_ENABLED
 ) {
     Scaffold(
         modifier = Modifier.fillMaxSize()
@@ -89,6 +98,15 @@ private fun LoginScreen(
                 text = stringResource(id = R.string.login_subtitle),
                 style = MaterialTheme.typography.bodyMedium
             )
+            if (isSimulationEnabled) {
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        text = stringResource(id = R.string.login_simulate_badge),
+                        modifier = Modifier.padding(16.dp),
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                }
+            }
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(
                     modifier = Modifier
@@ -134,33 +152,62 @@ private fun LoginScreen(
                     }
                 }
             }
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(
-                        text = stringResource(id = R.string.login_demo_title),
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                    Text(
-                        text = stringResource(
-                            id = R.string.login_demo_admin,
-                            AppConstants.SAMPLE_ADMIN_IDENTIFIER,
-                            AppConstants.SAMPLE_ADMIN_PASSWORD
-                        ),
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                    Text(
-                        text = stringResource(
-                            id = R.string.login_demo_jemaat,
-                            AppConstants.SAMPLE_JEMAAT_IDENTIFIER,
-                            AppConstants.SAMPLE_JEMAAT_PASSWORD
-                        ),
-                        style = MaterialTheme.typography.bodyMedium
-                    )
+            if (isSimulationEnabled) {
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = stringResource(id = R.string.login_demo_title),
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Text(
+                            text = stringResource(
+                                id = R.string.login_demo_admin,
+                                AppConstants.SAMPLE_ADMIN_IDENTIFIER,
+                                AppConstants.SAMPLE_ADMIN_PASSWORD
+                            ),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Text(
+                            text = stringResource(
+                                id = R.string.login_demo_jemaat,
+                                AppConstants.SAMPLE_JEMAAT_IDENTIFIER,
+                                AppConstants.SAMPLE_JEMAAT_PASSWORD
+                            ),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        OutlinedButton(
+                            onClick = onLoginAsAdminClicked,
+                            enabled = !state.isLoading,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .semantics { testTag = "login_demo_admin_button" }
+                        ) {
+                            Text(text = stringResource(id = R.string.login_demo_admin_button))
+                        }
+                        OutlinedButton(
+                            onClick = onLoginAsJemaatClicked,
+                            enabled = !state.isLoading,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .semantics { testTag = "login_demo_jemaat_button" }
+                        ) {
+                            Text(text = stringResource(id = R.string.login_demo_jemaat_button))
+                        }
+                        OutlinedButton(
+                            onClick = onResetAndLoginAsAdminClicked,
+                            enabled = !state.isLoading,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .semantics { testTag = "login_demo_reset_admin_button" }
+                        ) {
+                            Text(text = stringResource(id = R.string.login_demo_reset_admin_button))
+                        }
+                    }
                 }
             }
         }
@@ -181,7 +228,8 @@ data class LoginUiState(
 class LoginViewModel @Inject constructor(
     private val loginUseCase: LoginUseCase,
     private val dispatcherProvider: DispatcherProvider,
-    private val stringProvider: StringProvider
+    private val stringProvider: StringProvider,
+    private val remoteDataSource: AppRemoteDataSource
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(LoginUiState())
@@ -211,36 +259,90 @@ class LoginViewModel @Inject constructor(
 
     fun submit() {
         val snapshot = _state.value
+        submitCredentials(snapshot.identifier, snapshot.password)
+    }
+
+    fun submitWithDemoAdmin() {
+        submitCredentials(
+            identifier = AppConstants.SAMPLE_ADMIN_IDENTIFIER,
+            password = AppConstants.SAMPLE_ADMIN_PASSWORD
+        )
+    }
+
+    fun submitWithDemoJemaat() {
+        submitCredentials(
+            identifier = AppConstants.SAMPLE_JEMAAT_IDENTIFIER,
+            password = AppConstants.SAMPLE_JEMAAT_PASSWORD
+        )
+    }
+
+    fun resetSimulationAndLoginAsAdmin() {
+        viewModelScope.launch(dispatcherProvider.io) {
+            _state.update { it.copy(isLoading = true, errorMessage = null, loggedInRole = null) }
+            runCatching {
+                remoteDataSource.resetSimulationData()
+            }.onFailure { throwable ->
+                _state.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = throwable.message ?: stringProvider.get(R.string.login_error_simulation_reset_failed)
+                    )
+                }
+                return@launch
+            }
+            loginWithCredentials(
+                identifier = AppConstants.SAMPLE_ADMIN_IDENTIFIER,
+                password = AppConstants.SAMPLE_ADMIN_PASSWORD
+            )
+        }
+    }
+
+    private fun submitCredentials(identifier: String, password: String) {
         var hasError = false
-        if (snapshot.identifier.isBlank()) {
+        if (identifier.isBlank()) {
             hasError = true
             _state.update { it.copy(identifierError = stringProvider.get(R.string.login_error_identifier_required)) }
         }
-        if (snapshot.password.isBlank()) {
+        if (password.isBlank()) {
             hasError = true
             _state.update { it.copy(passwordError = stringProvider.get(R.string.login_error_password_required)) }
         }
         if (hasError) return
 
+        val normalizedIdentifier = identifier.trim()
+        _state.update {
+            it.copy(
+                identifier = normalizedIdentifier,
+                password = password,
+                identifierError = null,
+                passwordError = null,
+                errorMessage = null,
+                loggedInRole = null
+            )
+        }
         viewModelScope.launch(dispatcherProvider.io) {
-            _state.update { it.copy(isLoading = true, errorMessage = null, loggedInRole = null) }
-            when (val result = loginUseCase(snapshot.identifier.trim(), snapshot.password)) {
-                is AppResult.Success -> {
-                    _state.update {
-                        it.copy(
-                            isLoading = false,
-                            errorMessage = null,
-                            loggedInRole = result.data.role
-                        )
-                    }
+            loginWithCredentials(normalizedIdentifier, password)
+        }
+    }
+
+    private suspend fun loginWithCredentials(identifier: String, password: String) {
+        _state.update { it.copy(isLoading = true, errorMessage = null, loggedInRole = null) }
+        when (val result = loginUseCase(identifier, password)) {
+            is AppResult.Success -> {
+                _state.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = null,
+                        loggedInRole = result.data.role
+                    )
                 }
-                is AppResult.Error -> {
-                    _state.update {
-                        it.copy(
-                            isLoading = false,
-                            errorMessage = result.message
-                        )
-                    }
+            }
+            is AppResult.Error -> {
+                _state.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = result.message
+                    )
                 }
             }
         }

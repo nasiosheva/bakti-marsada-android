@@ -27,6 +27,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
@@ -45,11 +47,15 @@ import com.lampung.baktimarsada.domain.repository.PaymentObligationRepository
 import com.lampung.baktimarsada.ui.component.BaktiAmountInput
 import com.lampung.baktimarsada.ui.component.BaktiDropdown
 import com.lampung.baktimarsada.ui.component.BaktiEmptyState
+import com.lampung.baktimarsada.ui.component.BaktiErrorState
 import com.lampung.baktimarsada.ui.component.BaktiLoadingState
 import com.lampung.baktimarsada.ui.component.BaktiMultilineInput
 import com.lampung.baktimarsada.ui.component.BaktiSectionMessage
 import com.lampung.baktimarsada.ui.component.BaktiTextInput
 import com.lampung.baktimarsada.ui.component.BaktiValueRow
+import com.lampung.baktimarsada.ui.component.JemaatInfoCard
+import com.lampung.baktimarsada.ui.component.JemaatPill
+import com.lampung.baktimarsada.ui.component.JemaatSectionHeader
 import com.lampung.baktimarsada.ui.component.PaymentStatusChip
 import com.lampung.baktimarsada.ui.util.formatCurrency
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -71,93 +77,15 @@ fun PaymentRoute(
     var editTarget by remember { mutableStateOf<PaymentObligationDetail?>(null) }
     var showCreateDialog by rememberSaveable { mutableStateOf(false) }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        when {
-            state.isLoading && state.items.isEmpty() -> BaktiLoadingState()
-            state.items.isEmpty() -> BaktiEmptyState(message = stringResource(id = R.string.payment_empty))
-            else -> {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    item {
-                        Text(
-                            text = stringResource(
-                                id = if (isAdmin) R.string.payment_title_admin else R.string.payment_title_jemaat
-                            ),
-                            style = MaterialTheme.typography.titleLarge
-                        )
-                    }
-                    state.errorMessage?.let { message ->
-                        item { BaktiSectionMessage(message = message) }
-                    }
-                    item {
-                        OutlinedButton(onClick = viewModel::refresh) {
-                            Text(text = stringResource(id = R.string.action_refresh))
-                        }
-                    }
-                    items(state.items, key = { it.id }) { item ->
-                        Card(modifier = Modifier.fillMaxWidth()) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                verticalArrangement = Arrangement.spacedBy(10.dp)
-                            ) {
-                                Text(text = item.title, style = MaterialTheme.typography.titleMedium)
-                                BaktiValueRow(
-                                    label = stringResource(id = R.string.form_member),
-                                    value = item.memberName
-                                )
-                                BaktiValueRow(
-                                    label = stringResource(id = R.string.form_due_date),
-                                    value = item.dueDate
-                                )
-                                BaktiValueRow(
-                                    label = stringResource(id = R.string.form_amount),
-                                    value = formatCurrency(item.amount)
-                                )
-                                PaymentStatusChip(
-                                    status = item.status,
-                                    label = paymentStatusLabel(item.status)
-                                )
-                                Text(text = item.description, style = MaterialTheme.typography.bodyMedium)
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    OutlinedButton(onClick = { detailTarget = item }) {
-                                        Text(text = stringResource(id = R.string.action_detail))
-                                    }
-                                    if (isAdmin) {
-                                        OutlinedButton(onClick = { editTarget = item }) {
-                                            Text(text = stringResource(id = R.string.action_edit))
-                                        }
-                                        Button(onClick = { viewModel.delete(item.id) }) {
-                                            Text(text = stringResource(id = R.string.action_delete))
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        if (isAdmin) {
-            ExtendedFloatingActionButton(
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(16.dp),
-                onClick = { showCreateDialog = true }
-            ) {
-                Text(text = stringResource(id = R.string.action_add_payment))
-            }
-        }
-    }
+    PaymentContent(
+        isAdmin = isAdmin,
+        state = state,
+        onRefresh = viewModel::refresh,
+        onDelete = viewModel::delete,
+        onShowCreate = { showCreateDialog = true },
+        onShowDetail = { detailTarget = it },
+        onShowEdit = { editTarget = it }
+    )
 
     detailTarget?.let { item ->
         PaymentDetailDialog(item = item, onDismiss = { detailTarget = null })
@@ -187,6 +115,169 @@ fun PaymentRoute(
                 editTarget = null
             }
         )
+    }
+}
+
+@Composable
+fun PaymentContent(
+    isAdmin: Boolean,
+    state: PaymentUiState,
+    onRefresh: () -> Unit,
+    onDelete: (String) -> Unit,
+    onShowCreate: () -> Unit,
+    onShowDetail: (PaymentObligationDetail) -> Unit,
+    onShowEdit: (PaymentObligationDetail) -> Unit
+) {
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        when {
+            state.isLoading && state.items.isEmpty() -> BaktiLoadingState()
+            state.errorMessage != null && state.items.isEmpty() -> {
+                BaktiErrorState(message = state.errorMessage, onRetry = onRefresh)
+            }
+            state.items.isEmpty() -> BaktiEmptyState(message = stringResource(id = R.string.payment_empty))
+            else -> {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    item {
+                        if (isAdmin) {
+                            Text(
+                                text = stringResource(id = R.string.payment_title_admin),
+                                style = MaterialTheme.typography.titleLarge,
+                                modifier = Modifier.semantics { testTag = "payment_title" }
+                            )
+                        } else {
+                            JemaatSectionHeader(
+                                title = stringResource(id = R.string.payment_title_jemaat),
+                                countLabel = stringResource(id = R.string.jemaat_count_payments, state.items.size),
+                                actionLabel = stringResource(id = R.string.action_refresh),
+                                onAction = onRefresh,
+                                modifier = Modifier.semantics { testTag = "payment_title" }
+                            )
+                        }
+                    }
+                    state.errorMessage?.let { message ->
+                        item { BaktiSectionMessage(message = message) }
+                    }
+                    if (isAdmin) item {
+                        OutlinedButton(
+                            onClick = onRefresh,
+                            modifier = Modifier.semantics { testTag = "payment_refresh_button" }
+                        ) {
+                            Text(text = stringResource(id = R.string.action_refresh))
+                        }
+                    }
+                    items(state.items, key = { it.id }) { item ->
+                        if (isAdmin) {
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .semantics { testTag = "payment_item_${item.id}" }
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    Text(text = item.title, style = MaterialTheme.typography.titleMedium)
+                                    BaktiValueRow(
+                                        label = stringResource(id = R.string.form_member),
+                                        value = item.memberName
+                                    )
+                                    BaktiValueRow(
+                                        label = stringResource(id = R.string.form_due_date),
+                                        value = item.dueDate
+                                    )
+                                    BaktiValueRow(
+                                        label = stringResource(id = R.string.form_amount),
+                                        value = formatCurrency(item.amount)
+                                    )
+                                    PaymentStatusChip(
+                                        status = item.status,
+                                        label = paymentStatusLabel(item.status)
+                                    )
+                                    Text(text = item.description, style = MaterialTheme.typography.bodyMedium)
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        OutlinedButton(
+                                            onClick = { onShowDetail(item) },
+                                            modifier = Modifier.semantics { testTag = "payment_detail_${item.id}" }
+                                        ) {
+                                            Text(text = stringResource(id = R.string.action_detail))
+                                        }
+                                        OutlinedButton(
+                                            onClick = { onShowEdit(item) },
+                                            modifier = Modifier.semantics { testTag = "payment_edit_${item.id}" }
+                                        ) {
+                                            Text(text = stringResource(id = R.string.action_edit))
+                                        }
+                                        Button(
+                                            onClick = { onDelete(item.id) },
+                                            modifier = Modifier.semantics { testTag = "payment_delete_${item.id}" }
+                                        ) {
+                                            Text(text = stringResource(id = R.string.action_delete))
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            JemaatInfoCard(
+                                title = item.title,
+                                subtitle = item.memberName,
+                                modifier = Modifier.semantics { testTag = "payment_item_${item.id}" },
+                                accentColor = when (item.status) {
+                                    PaymentStatus.PAID -> MaterialTheme.colorScheme.primary
+                                    PaymentStatus.UNPAID -> MaterialTheme.colorScheme.secondary
+                                    PaymentStatus.OVERDUE -> MaterialTheme.colorScheme.error
+                                },
+                                content = {
+                                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        Text(
+                                            text = formatCurrency(item.amount),
+                                            style = MaterialTheme.typography.headlineSmall
+                                        )
+                                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            JemaatPill(text = item.dueDate)
+                                            PaymentStatusChip(
+                                                status = item.status,
+                                                label = paymentStatusLabel(item.status)
+                                            )
+                                        }
+                                    }
+                                },
+                                footer = {
+                                    OutlinedButton(
+                                        onClick = { onShowDetail(item) },
+                                        modifier = Modifier.semantics { testTag = "payment_detail_${item.id}" }
+                                    ) {
+                                        Text(text = stringResource(id = R.string.action_detail))
+                                    }
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        if (isAdmin) {
+            ExtendedFloatingActionButton(
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp)
+                    .semantics { testTag = "payment_add_fab" },
+                onClick = onShowCreate
+            ) {
+                Text(text = stringResource(id = R.string.action_add_payment))
+            }
+        }
     }
 }
 

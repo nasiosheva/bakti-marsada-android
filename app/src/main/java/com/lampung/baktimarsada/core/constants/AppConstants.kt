@@ -3,7 +3,7 @@ package com.lampung.baktimarsada.core.constants
 import com.lampung.baktimarsada.BuildConfig
 
 object AppConstants {
-    const val DATABASE_NAME = "bakti_marsada.db"
+    val DATABASE_NAME: String = BuildConfig.DATABASE_NAME
     const val ENCRYPTED_PREFS_NAME = "bakti_marsada_encrypted_prefs"
 
     const val KEY_FCM_TOKEN = "key_fcm_token"
@@ -32,6 +32,12 @@ object AppConstants {
     const val TRACKING_EVENT_TOKEN_REFRESHED = "fcm_token_refreshed"
     const val TRACKING_EVENT_MESSAGE_RECEIVED = "fcm_message_received"
     const val ROUTE_SYNC_FCM_TOKEN = "v1/device/fcm-token"
+    const val ROUTE_AUTH_LOGIN = "auth/login"
+    const val ROUTE_AUTH_LOGOUT = "auth/logout"
+    const val ROUTE_EVENTS = "v1/events"
+    const val ROUTE_MEMBERS = "v1/members"
+    const val ROUTE_FINANCE_REPORTS = "v1/finance-reports"
+    const val ROUTE_PAYMENT_OBLIGATIONS = "v1/payment-obligations"
 
     const val DEFAULT_SECTOR_ID = "sector-1"
     const val DEFAULT_SECTOR_NAME = "Sektor 1 HKBP"
@@ -41,4 +47,6 @@ object AppConstants {
     const val SAMPLE_JEMAAT_PASSWORD = "jemaat123"
 
     val NETWORK_BASE_URL: String = BuildConfig.API_BASE_URL
+    val APP_ENVIRONMENT: String = BuildConfig.APP_ENVIRONMENT
+    val SIMULATION_ENABLED: Boolean = BuildConfig.SIMULATION_ENABLED
 }

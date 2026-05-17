@@ -35,6 +35,18 @@ Jalankan test:
 ./gradlew test
 ```
 
+Flow real backend (non-simulate):
+
+- Build type `debug` sekarang default ke `http://10.0.2.2:8787/` untuk emulator Android.
+- Jalankan backend lokal dulu:
+
+```bash
+cd cloudflare-be
+npm run dev
+```
+
+- Lalu jalankan app debug dan login dengan akun yang sudah terdaftar di endpoint `/auth/login`.
+
 ## Cloudflare Backend
 
 Lokasi:

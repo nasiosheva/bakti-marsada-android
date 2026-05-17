@@ -1,19 +1,22 @@
 package com.lampung.baktimarsada.feature.home.presentation
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.ScrollableTabRow
-import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
@@ -22,12 +25,14 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.lampung.baktimarsada.R
+import com.lampung.baktimarsada.core.constants.AppConstants
 import com.lampung.baktimarsada.domain.model.SessionState
 import com.lampung.baktimarsada.feature.app.navigation.AppRoutes
 import com.lampung.baktimarsada.feature.events.presentation.EventRoute
 import com.lampung.baktimarsada.feature.finance.presentation.FinanceRoute
 import com.lampung.baktimarsada.feature.members.presentation.MemberRoute
 import com.lampung.baktimarsada.feature.payments.presentation.PaymentRoute
+import com.lampung.baktimarsada.feature.profile.presentation.ProfileRoute
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -35,19 +40,47 @@ fun JemaatHomeRoute(
     session: SessionState,
     onLogout: () -> Unit
 ) {
+    JemaatHomeScreen(
+        session = session,
+        onLogout = onLogout,
+        eventsContent = { EventRoute(isAdmin = false, session = session) },
+        membersContent = { MemberRoute(isAdmin = false, session = session) },
+        financeContent = { FinanceRoute(isAdmin = false, session = session) },
+        paymentsContent = { PaymentRoute(isAdmin = false, session = session) },
+        profileContent = { ProfileRoute(session = session, onLogout = onLogout) }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun JemaatHomeScreen(
+    session: SessionState,
+    onLogout: () -> Unit,
+    eventsContent: @Composable () -> Unit,
+    membersContent: @Composable () -> Unit,
+    financeContent: @Composable () -> Unit,
+    paymentsContent: @Composable () -> Unit,
+    profileContent: @Composable () -> Unit = { ProfileRoute(session = session, onLogout = onLogout) }
+) {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route ?: AppRoutes.JEMAAT_EVENTS
-    val tabs = listOf(
-        JemaatShellTab(AppRoutes.JEMAAT_EVENTS, stringResource(id = R.string.tab_events)),
-        JemaatShellTab(AppRoutes.JEMAAT_MEMBERS, stringResource(id = R.string.tab_members)),
-        JemaatShellTab(AppRoutes.JEMAAT_FINANCE, stringResource(id = R.string.tab_finance)),
-        JemaatShellTab(AppRoutes.JEMAAT_PAYMENTS, stringResource(id = R.string.tab_payments))
+    val destinations = listOf(
+        JemaatBottomDestination(AppRoutes.JEMAAT_EVENTS, stringResource(id = R.string.tab_events)),
+        JemaatBottomDestination(AppRoutes.JEMAAT_MEMBERS, stringResource(id = R.string.tab_members)),
+        JemaatBottomDestination(AppRoutes.JEMAAT_FINANCE, stringResource(id = R.string.tab_finance)),
+        JemaatBottomDestination(AppRoutes.JEMAAT_PAYMENTS, stringResource(id = R.string.tab_payments)),
+        JemaatBottomDestination(AppRoutes.JEMAAT_PROFILE, stringResource(id = R.string.tab_profile))
     )
 
     Scaffold(
         topBar = {
             TopAppBar(
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    actionIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                ),
                 title = {
                     Column {
                         Text(text = stringResource(id = R.string.jemaat_home_title))
@@ -55,58 +88,77 @@ fun JemaatHomeRoute(
                             text = session.sectorContext.sectorName,
                             style = MaterialTheme.typography.bodySmall
                         )
-                    }
-                },
-                actions = {
-                    TextButton(onClick = onLogout) {
-                        Text(text = stringResource(id = R.string.action_logout))
+                        if (AppConstants.SIMULATION_ENABLED) {
+                            Text(
+                                text = stringResource(id = R.string.environment_simulate),
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
                     }
                 }
             )
-        }
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-        ) {
-            ScrollableTabRow(selectedTabIndex = tabs.indexOfFirst { it.route == currentRoute }.coerceAtLeast(0)) {
-                tabs.forEach { tab ->
-                    Tab(
-                        selected = currentRoute == tab.route,
+        },
+        bottomBar = {
+            NavigationBar {
+                destinations.forEach { destination ->
+                    NavigationBarItem(
+                        selected = currentRoute == destination.route,
                         onClick = {
-                            navController.navigate(tab.route) {
+                            navController.navigate(destination.route) {
                                 launchSingleTop = true
+                                restoreState = true
+                                popUpTo(AppRoutes.JEMAAT_EVENTS) {
+                                    saveState = true
+                                }
                             }
                         },
-                        modifier = Modifier.semantics { testTag = "jemaat_tab_${tab.route}" },
-                        text = { Text(text = tab.label) }
+                        modifier = Modifier.semantics { testTag = "jemaat_bottom_nav_${destination.route}" },
+                        label = { Text(text = destination.label) },
+                        icon = {}
                     )
                 }
             }
+        }
+    ) { innerPadding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.20f),
+                            MaterialTheme.colorScheme.background
+                        )
+                    )
+                )
+        ) {
             NavHost(
                 navController = navController,
                 startDestination = AppRoutes.JEMAAT_EVENTS,
                 modifier = Modifier.fillMaxSize()
             ) {
                 composable(AppRoutes.JEMAAT_EVENTS) {
-                    EventRoute(isAdmin = false, session = session)
+                    eventsContent()
                 }
                 composable(AppRoutes.JEMAAT_MEMBERS) {
-                    MemberRoute(isAdmin = false, session = session)
+                    membersContent()
                 }
                 composable(AppRoutes.JEMAAT_FINANCE) {
-                    FinanceRoute(isAdmin = false, session = session)
+                    financeContent()
                 }
                 composable(AppRoutes.JEMAAT_PAYMENTS) {
-                    PaymentRoute(isAdmin = false, session = session)
+                    paymentsContent()
+                }
+                composable(AppRoutes.JEMAAT_PROFILE) {
+                    profileContent()
                 }
             }
         }
     }
 }
 
-private data class JemaatShellTab(
+private data class JemaatBottomDestination(
     val route: String,
     val label: String
 )

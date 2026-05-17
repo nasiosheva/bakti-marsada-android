@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -20,8 +21,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import com.lampung.baktimarsada.R
+import com.lampung.baktimarsada.core.constants.AppConstants
 import com.lampung.baktimarsada.core.dispatchers.DispatcherProvider
 import com.lampung.baktimarsada.core.result.AppResult
+import com.lampung.baktimarsada.data.remote.AppRemoteDataSource
 import com.lampung.baktimarsada.domain.model.SessionState
 import com.lampung.baktimarsada.domain.repository.AuthRepository
 import com.lampung.baktimarsada.domain.repository.EventRepository
@@ -88,6 +91,16 @@ fun AdminDashboardRoute(
         state.errorMessage?.let { message ->
             item { BaktiSectionMessage(message = message) }
         }
+        if (AppConstants.SIMULATION_ENABLED) {
+            item {
+                OutlinedButton(
+                    onClick = viewModel::resetSimulationData,
+                    enabled = !state.isLoading
+                ) {
+                    Text(text = stringResource(id = R.string.dashboard_simulation_reset_action))
+                }
+            }
+        }
         items(cards) { card ->
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(
@@ -131,6 +144,7 @@ class AdminDashboardViewModel @Inject constructor(
     private val memberRepository: MemberRepository,
     private val financeReportRepository: FinanceReportRepository,
     private val paymentObligationRepository: PaymentObligationRepository,
+    private val remoteDataSource: AppRemoteDataSource,
     private val dispatcherProvider: DispatcherProvider
 ) : ViewModel() {
 
@@ -185,6 +199,24 @@ class AdminDashboardViewModel @Inject constructor(
                     errorMessage = firstError?.message
                 )
             }
+        }
+    }
+
+    fun resetSimulationData() {
+        viewModelScope.launch(dispatcherProvider.io) {
+            _state.update { it.copy(isLoading = true, errorMessage = null) }
+            runCatching {
+                remoteDataSource.resetSimulationData()
+            }.onFailure { throwable ->
+                _state.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = throwable.message ?: "Failed to reset simulation data"
+                    )
+                }
+                return@launch
+            }
+            refreshAll()
         }
     }
 }
