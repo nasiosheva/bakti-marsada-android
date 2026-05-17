@@ -1,24 +1,22 @@
-package com.lampung.baktimarsada.network.dto
+package com.lampung.baktimarsada.domain.model
 
-data class EventDto(
+data class WorshipTemplate(
     val id: String,
+    val tenantId: String,
+    val sectorId: String?,
     val title: String,
     val description: String,
-    val scheduledAt: String,
-    val location: String,
-    val sectorId: String,
-    val sectorName: String,
-    val programItems: List<EventProgramItemDto> = emptyList()
+    val items: List<WorshipTemplateItem> = emptyList()
 )
 
-data class EventProgramItemDto(
+data class WorshipTemplateItem(
     val id: String,
-    val eventId: String,
+    val templateId: String,
     val orderIndex: Int,
     val title: String,
     val content: String,
     val leader: String,
-    val type: String,
+    val type: ProgramItemType,
     val scriptureReference: String = "",
     val scriptureText: String = "",
     val note: String = ""

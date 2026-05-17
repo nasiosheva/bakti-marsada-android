@@ -31,6 +31,11 @@
     <string name="action_save">Simpan</string>
     <string name="action_toggle_visibility">Ubah Visibilitas</string>
     <string name="action_add_event">Tambah Acara</string>
+    <string name="action_manage_templates">Template</string>
+    <string name="action_add_template">Tambah Template</string>
+    <string name="action_add_program_item">Tambah Bagian</string>
+    <string name="action_move_up">Naik</string>
+    <string name="action_move_down">Turun</string>
     <string name="action_add_member">Tambah Anggota</string>
     <string name="action_add_finance">Tambah Laporan</string>
     <string name="action_add_payment">Tambah Tagihan</string>
@@ -52,6 +57,15 @@
     <string name="event_empty">Belum ada acara partangiangan untuk sektor ini.</string>
     <string name="dialog_add_event">Tambah Acara Partangiangan</string>
     <string name="dialog_edit_event">Ubah Acara Partangiangan</string>
+    <string name="template_manager_title">Template Acara</string>
+    <string name="template_empty">Belum ada template acara.</string>
+    <string name="template_item_count">%1$d bagian</string>
+    <string name="dialog_add_template">Tambah Template Acara</string>
+    <string name="dialog_edit_template">Ubah Template Acara</string>
+    <string name="program_section_title">Susunan Acara</string>
+    <string name="program_empty">Belum ada susunan acara.</string>
+    <string name="template_program_empty">Belum ada bagian template.</string>
+    <string name="program_item_number">Bagian %1$d</string>
 
     <string name="member_title_jemaat">Direktori Anggota Sektor</string>
     <string name="member_title_admin">Kelola Direktori Anggota</string>
@@ -108,6 +122,28 @@
     <string name="form_member">Anggota</string>
     <string name="form_due_date">Jatuh Tempo</string>
     <string name="form_status">Status</string>
+    <string name="form_event_template">Template Acara</string>
+    <string name="form_program_title">Judul Bagian</string>
+    <string name="form_program_song_title">Judul Lagu</string>
+    <string name="form_program_leader">Pelayan/Liturgis</string>
+    <string name="form_program_prayer_leader">Pemimpin Doa</string>
+    <string name="form_program_type">Tipe Bagian</string>
+    <string name="form_program_content">Isi Teks</string>
+    <string name="form_program_song_content">Lirik/Catatan Lagu</string>
+    <string name="form_program_prayer_content">Pokok Doa</string>
+    <string name="form_program_announcement_content">Isi Pengumuman</string>
+    <string name="form_program_scripture_reference">Ayat</string>
+    <string name="form_program_scripture_text">Isi Ayat</string>
+    <string name="form_program_note">Catatan</string>
+    <string name="program_type_opening">Pembukaan</string>
+    <string name="program_type_song">Nyanyian</string>
+    <string name="program_type_prayer">Doa</string>
+    <string name="program_type_scripture">Pembacaan Alkitab</string>
+    <string name="program_type_sermon">Khotbah / Renungan</string>
+    <string name="program_type_offering">Persembahan</string>
+    <string name="program_type_announcement">Pengumuman</string>
+    <string name="program_type_closing">Penutup</string>
+    <string name="program_type_custom">Lainnya</string>
 
     <string name="visibility_visible">Terlihat oleh jemaat</string>
     <string name="visibility_hidden">Hanya admin</string>

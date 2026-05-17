@@ -18,6 +18,7 @@ import com.lampung.baktimarsada.network.dto.LoginRequestDto
 import com.lampung.baktimarsada.network.dto.MemberDto
 import com.lampung.baktimarsada.network.dto.PaymentObligationDto
 import com.lampung.baktimarsada.network.dto.SessionResponseDto
+import com.lampung.baktimarsada.network.dto.WorshipTemplateDto
 import com.lampung.baktimarsada.test.MainDispatcherRule
 import com.lampung.baktimarsada.test.fakes.FakeAuthRepository
 import com.lampung.baktimarsada.test.fakes.TestDispatcherProvider
@@ -199,6 +200,9 @@ class AdminDashboardViewModelTest {
         override suspend fun fetchPaymentObligations(sectorId: String): List<PaymentObligationDto> = unsupported()
         override suspend fun savePaymentObligation(obligation: PaymentObligationDto): PaymentObligationDto = unsupported()
         override suspend fun deletePaymentObligation(obligationId: String): Unit = unsupported()
+        override suspend fun fetchWorshipTemplates(sectorId: String): List<WorshipTemplateDto> = unsupported()
+        override suspend fun saveWorshipTemplate(template: WorshipTemplateDto): WorshipTemplateDto = unsupported()
+        override suspend fun deleteWorshipTemplate(templateId: String): Unit = unsupported()
         private fun unsupported(): Nothing = error("unsupported in this test")
     }
 }

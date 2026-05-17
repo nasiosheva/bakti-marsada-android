@@ -103,6 +103,7 @@ dependencies {
     implementation(project(":core"))
     implementation(project(":domain"))
     implementation(project(":data"))
+    implementation(project(":ui"))
     implementation(project(":data-source-cloudflare"))
     implementation(project(":data-source-python"))
     implementation(project(":data-source-firebase"))

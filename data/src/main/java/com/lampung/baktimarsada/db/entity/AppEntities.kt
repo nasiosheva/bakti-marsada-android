@@ -19,6 +19,26 @@ data class EventEntity(
     val sectorName: String
 )
 
+@Entity(tableName = "event_program_items")
+data class EventProgramItemEntity(
+    @PrimaryKey
+    val id: String,
+    @ColumnInfo(name = "event_id")
+    val eventId: String,
+    @ColumnInfo(name = "order_index")
+    val orderIndex: Int,
+    val title: String,
+    val content: String,
+    val leader: String,
+    val type: String,
+    @ColumnInfo(name = "scripture_reference", defaultValue = "")
+    val scriptureReference: String = "",
+    @ColumnInfo(name = "scripture_text", defaultValue = "")
+    val scriptureText: String = "",
+    @ColumnInfo(defaultValue = "")
+    val note: String = ""
+)
+
 @Entity(tableName = "members")
 data class MemberEntity(
     @PrimaryKey
@@ -73,6 +93,38 @@ data class PaymentObligationEntity(
     val sectorId: String,
     @ColumnInfo(name = "sector_name")
     val sectorName: String
+)
+
+@Entity(tableName = "worship_templates")
+data class WorshipTemplateEntity(
+    @PrimaryKey
+    val id: String,
+    @ColumnInfo(name = "tenant_id")
+    val tenantId: String,
+    @ColumnInfo(name = "sector_id")
+    val sectorId: String?,
+    val title: String,
+    val description: String
+)
+
+@Entity(tableName = "worship_template_items")
+data class WorshipTemplateItemEntity(
+    @PrimaryKey
+    val id: String,
+    @ColumnInfo(name = "template_id")
+    val templateId: String,
+    @ColumnInfo(name = "order_index")
+    val orderIndex: Int,
+    val title: String,
+    val content: String,
+    val leader: String,
+    val type: String,
+    @ColumnInfo(name = "scripture_reference", defaultValue = "")
+    val scriptureReference: String = "",
+    @ColumnInfo(name = "scripture_text", defaultValue = "")
+    val scriptureText: String = "",
+    @ColumnInfo(defaultValue = "")
+    val note: String = ""
 )
 
 // created by Mories Deo Hutapea, S.E.,S.Kom

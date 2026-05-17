@@ -15,6 +15,7 @@ import com.lampung.baktimarsada.domain.model.FinanceReportDetail
 import com.lampung.baktimarsada.domain.model.MemberDetail
 import com.lampung.baktimarsada.domain.model.PaymentObligationDetail
 import com.lampung.baktimarsada.domain.model.PaymentStatus
+import com.lampung.baktimarsada.domain.model.TenantContext
 import com.lampung.baktimarsada.domain.model.UserRole
 import com.lampung.baktimarsada.feature.auth.presentation.LoginScreen
 import com.lampung.baktimarsada.feature.auth.presentation.LoginUiState
@@ -120,12 +121,12 @@ class FeatureComposeTest {
         composeRule.setContent {
             AdminHomeScreen(
                 session = sampleSession(),
-                onLogout = {},
                 dashboardContent = { Text("Dashboard Content") },
                 eventsContent = { Text("Events Content") },
                 membersContent = { Text("Members Content") },
                 financeContent = { Text("Finance Content") },
-                paymentsContent = { Text("Payments Content") }
+                paymentsContent = { Text("Payments Content") },
+                onOpenProfile = {}
             )
         }
 
@@ -145,6 +146,7 @@ class FeatureComposeTest {
                 onRefresh = {},
                 onDelete = {},
                 onShowCreate = {},
+                onShowTemplates = {},
                 onShowDetail = {},
                 onShowEdit = {}
             )
@@ -226,6 +228,7 @@ class FeatureComposeTest {
                 onRefresh = {},
                 onDelete = {},
                 onShowCreate = {},
+                onShowTemplates = {},
                 onShowDetail = {},
                 onShowEdit = {}
             )
@@ -295,6 +298,12 @@ class FeatureComposeTest {
             userId = "user-1",
             displayName = "Tester",
             role = UserRole.ADMIN,
+            tenantContext = TenantContext(
+                tenantId = "tenant-1",
+                tenantName = "HKBP",
+                subTenantId = "hkbp-kedaton",
+                subTenantName = "HKBP Kedaton"
+            ),
             sectorContext = SectorContext(
                 sectorId = "sector-1",
                 sectorName = "Sektor 1 HKBP"

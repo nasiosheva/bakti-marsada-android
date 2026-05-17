@@ -8,6 +8,7 @@ import com.lampung.baktimarsada.network.dto.FcmTokenRequestDto
 import com.lampung.baktimarsada.network.dto.FinanceReportDto
 import com.lampung.baktimarsada.network.dto.MemberDto
 import com.lampung.baktimarsada.network.dto.PaymentObligationDto
+import com.lampung.baktimarsada.network.dto.WorshipTemplateDto
 import retrofit2.Response
 import retrofit2.http.DELETE
 import retrofit2.http.Body
@@ -35,6 +36,15 @@ interface BaktiApiService {
 
     @DELETE("${AppConstants.ROUTE_EVENTS}/{id}")
     suspend fun deleteEvent(@Path("id") eventId: String): Response<Unit>
+
+    @GET(AppConstants.ROUTE_WORSHIP_TEMPLATES)
+    suspend fun fetchWorshipTemplates(@Query("sectorId") sectorId: String): Response<List<WorshipTemplateDto>>
+
+    @POST(AppConstants.ROUTE_WORSHIP_TEMPLATES)
+    suspend fun saveWorshipTemplate(@Body template: WorshipTemplateDto): Response<WorshipTemplateDto>
+
+    @DELETE("${AppConstants.ROUTE_WORSHIP_TEMPLATES}/{id}")
+    suspend fun deleteWorshipTemplate(@Path("id") templateId: String): Response<Unit>
 
     @GET(AppConstants.ROUTE_MEMBERS)
     suspend fun fetchMembers(@Query("sectorId") sectorId: String): Response<List<MemberDto>>

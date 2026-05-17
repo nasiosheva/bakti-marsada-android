@@ -22,6 +22,7 @@ dependencyResolutionManagement {
 rootProject.name = "Bakti Marsada"
 include(":app")
 include(":core")
+include(":ui")
 include(":domain")
 include(":data")
 include(":data-source-cloudflare")

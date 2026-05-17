@@ -30,6 +30,8 @@ import com.lampung.baktimarsada.R
 import com.lampung.baktimarsada.core.dispatchers.DispatcherProvider
 import com.lampung.baktimarsada.core.result.AppResult
 import com.lampung.baktimarsada.domain.model.EventDetail
+import com.lampung.baktimarsada.domain.model.EventProgramItem
+import com.lampung.baktimarsada.domain.model.ProgramItemType
 import com.lampung.baktimarsada.domain.model.SessionState
 import com.lampung.baktimarsada.domain.repository.AuthRepository
 import com.lampung.baktimarsada.domain.repository.EventRepository
@@ -107,7 +109,7 @@ fun EventDetailRoute(
 }
 
 @Composable
-private fun EventDetailContent(
+fun EventDetailContent(
     item: EventDetail?,
     isAdmin: Boolean,
     session: SessionState
@@ -183,6 +185,84 @@ private fun EventDetailContent(
                 }
             }
         }
+        item {
+            Text(
+                text = stringResource(id = R.string.program_section_title),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
+        if (event.programItems.isEmpty()) {
+            item {
+                Card(
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                ) {
+                    Text(
+                        text = event.description,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
+        } else {
+            items(event.programItems.sortedBy { it.orderIndex }.size) { index ->
+                val programItem = event.programItems.sortedBy { it.orderIndex }[index]
+                Card(
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            JemaatPill(text = "${index + 1}")
+                            JemaatPill(text = programItem.type.name)
+                        }
+                        if (programItem.title.isNotBlank()) {
+                            Text(
+                                text = programItem.title,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                        if (programItem.leader.isNotBlank()) {
+                            Text(
+                                text = programItem.leader,
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        ProgramItemBody(programItem = programItem)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProgramItemBody(programItem: EventProgramItem) {
+    val bodyText = when (programItem.type) {
+        ProgramItemType.SCRIPTURE -> listOf(
+            programItem.scriptureReference,
+            programItem.scriptureText.ifBlank { programItem.content }
+        ).filter { it.isNotBlank() }.joinToString(separator = "\n")
+        ProgramItemType.OFFERING -> programItem.note.ifBlank { programItem.content }
+        else -> programItem.content
+    }
+    if (bodyText.isNotBlank()) {
+        Text(
+            text = bodyText,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 

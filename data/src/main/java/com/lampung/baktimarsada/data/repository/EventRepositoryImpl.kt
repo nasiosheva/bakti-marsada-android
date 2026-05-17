@@ -8,10 +8,12 @@ import com.lampung.baktimarsada.data.mapper.toEntity
 import com.lampung.baktimarsada.data.remote.AppRemoteDataSource
 import com.lampung.baktimarsada.db.AppDatabase
 import com.lampung.baktimarsada.db.dao.EventDao
+import com.lampung.baktimarsada.db.dao.EventProgramItemDao
 import com.lampung.baktimarsada.domain.model.EventDetail
 import com.lampung.baktimarsada.domain.model.SectorContext
 import com.lampung.baktimarsada.domain.repository.EventRepository
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -19,20 +21,33 @@ import javax.inject.Singleton
 @Singleton
 class EventRepositoryImpl @Inject constructor(
     private val dao: EventDao,
+    private val programItemDao: EventProgramItemDao,
     private val database: AppDatabase,
     private val remoteDataSource: AppRemoteDataSource
 ) : EventRepository {
 
     override fun observeEvents(): Flow<List<EventDetail>> {
-        return dao.observeAll().map { entities -> entities.map { it.toDomain() } }
+        return combine(
+            dao.observeAll(),
+            programItemDao.observeAll()
+        ) { events, programItems ->
+            val itemsByEvent = programItems.map { it.toDomain() }.groupBy { it.eventId }
+            events.map { event -> event.toDomain(itemsByEvent[event.id].orEmpty()) }
+        }
     }
 
     override suspend fun refresh(sectorContext: SectorContext): AppResult<Unit> {
         return runCatching {
-            val items = remoteDataSource.fetchEvents(sectorContext.sectorId).map { it.toEntity() }
+            val remoteItems = remoteDataSource.fetchEvents(sectorContext.sectorId)
+            val items = remoteItems.map { it.toEntity() }
+            val programItems = remoteItems.flatMap { event ->
+                event.programItems.map { it.toEntity(event.id) }
+            }
             database.withTransaction {
                 dao.clearAll()
+                programItemDao.clearAll()
                 dao.insertAll(items)
+                programItemDao.insertAll(programItems)
             }
         }.fold(
             onSuccess = { AppResult.Success(Unit) },

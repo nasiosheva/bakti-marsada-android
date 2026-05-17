@@ -24,7 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import com.lampung.baktimarsada.R
+import com.lampung.baktimarsada.ui.R
 import com.lampung.baktimarsada.domain.model.PaymentStatus
 
 @OptIn(ExperimentalMaterial3Api::class)

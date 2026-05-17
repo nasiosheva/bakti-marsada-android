@@ -1,8 +1,14 @@
 package com.lampung.baktimarsada.data.mapper
 
 import com.lampung.baktimarsada.db.entity.PaymentObligationEntity
+import com.lampung.baktimarsada.domain.model.EventProgramItem
 import com.lampung.baktimarsada.domain.model.PaymentStatus
+import com.lampung.baktimarsada.domain.model.ProgramItemType
 import com.lampung.baktimarsada.domain.model.UserRole
+import com.lampung.baktimarsada.domain.model.WorshipTemplate
+import com.lampung.baktimarsada.domain.model.WorshipTemplateItem
+import com.lampung.baktimarsada.network.dto.EventDto
+import com.lampung.baktimarsada.network.dto.EventProgramItemDto
 import com.lampung.baktimarsada.network.dto.FinanceReportDto
 import com.lampung.baktimarsada.network.dto.SessionResponseDto
 import org.junit.Assert.assertEquals
@@ -74,6 +80,71 @@ class AppMappersTest {
 
         assertEquals(PaymentStatus.OVERDUE, domain.status)
         assertEquals("wijk-1", domain.sectorId)
+    }
+
+    @Test
+    fun `event dto preserves ordered program items through entity and domain mapping`() {
+        val dto = EventDto(
+            id = "event-1",
+            title = "Partangiangan",
+            description = "Rutin",
+            scheduledAt = "2026-05-20 19:30",
+            location = "Rumah Jemaat",
+            sectorId = "wijk-1",
+            sectorName = "Wijk Marturia",
+            programItems = listOf(
+                EventProgramItemDto("item-2", "event-1", 1, "Doa", "Doa bersama", "Liturgis", "PRAYER"),
+                EventProgramItemDto(
+                    id = "item-1",
+                    eventId = "event-1",
+                    orderIndex = 0,
+                    title = "Pembacaan Alkitab",
+                    content = "Isi fallback",
+                    leader = "Liturgis",
+                    type = "SCRIPTURE",
+                    scriptureReference = "Mazmur 100:1-5",
+                    scriptureText = "Isi ayat"
+                )
+            )
+        )
+
+        val eventEntity = dto.toEntity()
+        val programItems = dto.programItems.map { it.toEntity(dto.id).toDomain() }
+        val domain = eventEntity.toDomain(programItems)
+
+        assertEquals("Pembacaan Alkitab", domain.programItems.first().title)
+        assertEquals("Mazmur 100:1-5", domain.programItems.first().scriptureReference)
+        assertEquals("Isi ayat", domain.programItems.first().scriptureText)
+        assertEquals(ProgramItemType.PRAYER, domain.programItems.last().type)
+    }
+
+    @Test
+    fun `worship template maps nested items to dto`() {
+        val template = WorshipTemplate(
+            id = "template-1",
+            tenantId = "tenant-1",
+            sectorId = "wijk-1",
+            title = "Partangiangan Sektor",
+            description = "Template rutin",
+            items = listOf(
+                WorshipTemplateItem(
+                    id = "template-item-1",
+                    templateId = "template-1",
+                    orderIndex = 0,
+                    title = "Renungan",
+                    content = "Renungan singkat",
+                    leader = "Pelayan",
+                    type = ProgramItemType.SERMON,
+                    note = "Catatan template"
+                )
+            )
+        )
+
+        val dto = template.toDto()
+
+        assertEquals("template-1", dto.items.first().templateId)
+        assertEquals("SERMON", dto.items.first().type)
+        assertEquals("Catatan template", dto.items.first().note)
     }
 }
 

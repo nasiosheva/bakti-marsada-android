@@ -10,6 +10,7 @@ import com.lampung.baktimarsada.network.dto.LoginRequestDto
 import com.lampung.baktimarsada.network.dto.MemberDto
 import com.lampung.baktimarsada.network.dto.PaymentObligationDto
 import com.lampung.baktimarsada.network.dto.SessionResponseDto
+import com.lampung.baktimarsada.network.dto.WorshipTemplateDto
 import retrofit2.Response
 
 abstract class RestAppRemoteDataSource(
@@ -69,6 +70,18 @@ abstract class RestAppRemoteDataSource(
 
     override suspend fun deleteEvent(eventId: String) {
         apiService.deleteEvent(eventId).requireSuccess("Failed to delete event")
+    }
+
+    override suspend fun fetchWorshipTemplates(sectorId: String): List<WorshipTemplateDto> {
+        return apiService.fetchWorshipTemplates(sectorId).requireBody("Failed to load worship templates")
+    }
+
+    override suspend fun saveWorshipTemplate(template: WorshipTemplateDto): WorshipTemplateDto {
+        return apiService.saveWorshipTemplate(template).requireBody("Failed to save worship template")
+    }
+
+    override suspend fun deleteWorshipTemplate(templateId: String) {
+        apiService.deleteWorshipTemplate(templateId).requireSuccess("Failed to delete worship template")
     }
 
     override suspend fun fetchMembers(sectorId: String): List<MemberDto> {

@@ -10,11 +10,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -30,67 +33,87 @@ import com.lampung.baktimarsada.R
 import com.lampung.baktimarsada.core.constants.AppBuildConfig
 import com.lampung.baktimarsada.domain.model.SessionState
 import com.lampung.baktimarsada.domain.model.UserRole
+import com.lampung.baktimarsada.ui.component.BaktiToolbar
 import com.lampung.baktimarsada.ui.component.BaktiValueRow
 import com.lampung.baktimarsada.ui.component.JemaatPill
 
 @Composable
 fun ProfileRoute(
     session: SessionState,
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    onBack: (() -> Unit)? = null
 ) {
-    ProfileScreen(session = session, onLogout = onLogout)
+    ProfileScreen(
+        session = session,
+        onLogout = onLogout,
+        onBack = onBack
+    )
 }
 
 @Composable
 fun ProfileScreen(
     session: SessionState,
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    onBack: (() -> Unit)? = null
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
-    ) {
-        ProfileHeader(session = session)
-        OutlinedCard(modifier = Modifier.fillMaxWidth()) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                BaktiValueRow(
-                    label = stringResource(id = R.string.profile_tenant_label),
-                    value = session.tenantContext.tenantName
-                )
-                BaktiValueRow(
-                    label = stringResource(id = R.string.profile_sub_tenant_label),
-                    value = session.tenantContext.subTenantName
-                )
-                BaktiValueRow(
-                    label = stringResource(id = R.string.profile_sector_label),
-                    value = session.sectorContext.sectorName
-                )
-                BaktiValueRow(
-                    label = stringResource(id = R.string.profile_user_id_label),
-                    value = session.userId
-                )
-                BaktiValueRow(
-                    label = stringResource(id = R.string.profile_environment_label),
-                    value = AppBuildConfig.appEnvironment
-                )
-                BaktiValueRow(
-                    label = stringResource(id = R.string.profile_data_source_label),
-                    value = AppBuildConfig.dataSourceLabel
+    Scaffold(
+        topBar = {
+            onBack?.let {
+                BaktiToolbar(
+                    title = stringResource(id = R.string.profile_title),
+                    onBack = it
                 )
             }
         }
-        Button(
-            onClick = onLogout,
+    ) { innerPadding ->
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .semantics { testTag = "profile_logout_button" }
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            Text(text = stringResource(id = R.string.action_logout))
+            ProfileHeader(session = session)
+            OutlinedCard(modifier = Modifier.fillMaxWidth()) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    BaktiValueRow(
+                        label = stringResource(id = R.string.profile_tenant_label),
+                        value = session.tenantContext.tenantName
+                    )
+                    BaktiValueRow(
+                        label = stringResource(id = R.string.profile_sub_tenant_label),
+                        value = session.tenantContext.subTenantName
+                    )
+                    BaktiValueRow(
+                        label = stringResource(id = R.string.profile_sector_label),
+                        value = session.sectorContext.sectorName
+                    )
+                    BaktiValueRow(
+                        label = stringResource(id = R.string.profile_user_id_label),
+                        value = session.userId
+                    )
+                    BaktiValueRow(
+                        label = stringResource(id = R.string.profile_environment_label),
+                        value = AppBuildConfig.appEnvironment
+                    )
+                    BaktiValueRow(
+                        label = stringResource(id = R.string.profile_data_source_label),
+                        value = AppBuildConfig.dataSourceLabel
+                    )
+                }
+            }
+            Button(
+                onClick = onLogout,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .semantics { testTag = "profile_logout_button" }
+            ) {
+                Text(text = stringResource(id = R.string.action_logout))
+            }
         }
     }
 }

@@ -18,6 +18,8 @@ object AppRoutes {
 
     const val ADMIN_DASHBOARD = "admin_dashboard"
     const val ADMIN_EVENTS = "admin_events"
+    const val ADMIN_EVENT_CREATE = "admin_event_create"
+    const val ADMIN_EVENT_EDIT = "admin_event_edit/{$EVENT_ID_ARG}"
     const val ADMIN_MEMBERS = "admin_members"
     const val ADMIN_FINANCE = "admin_finance"
     const val ADMIN_PAYMENTS = "admin_payments"
@@ -26,6 +28,8 @@ object AppRoutes {
     fun jemaatEventDetail(eventId: String): String = "jemaat_event_detail/$eventId"
 
     fun adminEventDetail(eventId: String): String = "admin_event_detail/$eventId"
+
+    fun adminEventEdit(eventId: String): String = "admin_event_edit/$eventId"
 }
 
 // created by Mories Deo Hutapea, S.E.,S.Kom

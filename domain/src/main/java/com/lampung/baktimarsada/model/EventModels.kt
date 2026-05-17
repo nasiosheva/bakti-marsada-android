@@ -15,7 +15,8 @@ data class EventDetail(
     val scheduledAt: String,
     val location: String,
     val sectorId: String,
-    val sectorName: String
+    val sectorName: String,
+    val programItems: List<EventProgramItem> = emptyList()
 ) {
     fun toSummary(): EventSummary {
         return EventSummary(
@@ -27,5 +28,30 @@ data class EventDetail(
         )
     }
 }
+
+enum class ProgramItemType {
+    OPENING,
+    SONG,
+    PRAYER,
+    SCRIPTURE,
+    SERMON,
+    OFFERING,
+    ANNOUNCEMENT,
+    CLOSING,
+    CUSTOM
+}
+
+data class EventProgramItem(
+    val id: String,
+    val eventId: String,
+    val orderIndex: Int,
+    val title: String,
+    val content: String,
+    val leader: String,
+    val type: ProgramItemType,
+    val scriptureReference: String = "",
+    val scriptureText: String = "",
+    val note: String = ""
+)
 
 // created by Mories Deo Hutapea, S.E.,S.Kom

@@ -8,10 +8,12 @@ import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.Groups
-import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Payments
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -38,24 +40,32 @@ import com.lampung.baktimarsada.feature.events.presentation.EventRoute
 import com.lampung.baktimarsada.feature.finance.presentation.FinanceRoute
 import com.lampung.baktimarsada.feature.members.presentation.MemberRoute
 import com.lampung.baktimarsada.feature.payments.presentation.PaymentRoute
-import com.lampung.baktimarsada.feature.profile.presentation.ProfileRoute
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminHomeRoute(
     session: SessionState,
-    onLogout: () -> Unit,
-    onOpenEventDetail: (String) -> Unit
+    onOpenEventDetail: (String) -> Unit,
+    onOpenAddEvent: () -> Unit = {},
+    onOpenEditEvent: (String) -> Unit = {},
+    onOpenProfile: () -> Unit
 ) {
     AdminHomeScreen(
         session = session,
-        onLogout = onLogout,
         dashboardContent = { AdminDashboardRoute(session = session) },
-        eventsContent = { EventRoute(isAdmin = true, session = session, onOpenDetail = onOpenEventDetail) },
+        eventsContent = {
+            EventRoute(
+                isAdmin = true,
+                session = session,
+                onOpenDetail = onOpenEventDetail,
+                onOpenCreate = onOpenAddEvent,
+                onOpenEdit = onOpenEditEvent
+            )
+        },
         membersContent = { MemberRoute(isAdmin = true, session = session) },
         financeContent = { FinanceRoute(isAdmin = true, session = session) },
         paymentsContent = { PaymentRoute(isAdmin = true, session = session) },
-        profileContent = { ProfileRoute(session = session, onLogout = onLogout) }
+        onOpenProfile = onOpenProfile
     )
 }
 
@@ -63,13 +73,12 @@ fun AdminHomeRoute(
 @Composable
 fun AdminHomeScreen(
     session: SessionState,
-    onLogout: () -> Unit,
     dashboardContent: @Composable () -> Unit,
     eventsContent: @Composable () -> Unit,
     membersContent: @Composable () -> Unit,
     financeContent: @Composable () -> Unit,
     paymentsContent: @Composable () -> Unit,
-    profileContent: @Composable () -> Unit = { ProfileRoute(session = session, onLogout = onLogout) }
+    onOpenProfile: () -> Unit
 ) {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
@@ -79,13 +88,17 @@ fun AdminHomeScreen(
         AdminBottomDestination(AppRoutes.ADMIN_EVENTS, stringResource(id = R.string.tab_events), Icons.Filled.Event),
         AdminBottomDestination(AppRoutes.ADMIN_MEMBERS, stringResource(id = R.string.tab_members), Icons.Filled.Groups),
         AdminBottomDestination(AppRoutes.ADMIN_FINANCE, stringResource(id = R.string.tab_finance), Icons.Filled.AccountBalanceWallet),
-        AdminBottomDestination(AppRoutes.ADMIN_PAYMENTS, stringResource(id = R.string.tab_payments), Icons.Filled.Payments),
-        AdminBottomDestination(AppRoutes.ADMIN_PROFILE, stringResource(id = R.string.tab_profile), Icons.Filled.Person)
+        AdminBottomDestination(AppRoutes.ADMIN_PAYMENTS, stringResource(id = R.string.tab_payments), Icons.Filled.Payments)
     )
 
     Scaffold(
         topBar = {
             TopAppBar(
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    actionIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                ),
                 title = {
                     Column {
                         Text(text = stringResource(id = R.string.admin_home_title))
@@ -97,6 +110,16 @@ fun AdminHomeScreen(
                             Text(
                                 text = stringResource(id = R.string.environment_simulate),
                                 style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+                },
+                actions = {
+                    if (currentRoute == AppRoutes.ADMIN_DASHBOARD) {
+                        IconButton(onClick = onOpenProfile) {
+                            Icon(
+                                imageVector = Icons.Filled.Person,
+                                contentDescription = stringResource(id = R.string.tab_profile)
                             )
                         }
                     }
@@ -151,9 +174,6 @@ fun AdminHomeScreen(
             }
             composable(AppRoutes.ADMIN_PAYMENTS) {
                 paymentsContent()
-            }
-            composable(AppRoutes.ADMIN_PROFILE) {
-                profileContent()
             }
         }
     }

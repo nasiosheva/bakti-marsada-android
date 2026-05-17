@@ -6,6 +6,7 @@ import com.lampung.baktimarsada.network.dto.LoginRequestDto
 import com.lampung.baktimarsada.network.dto.MemberDto
 import com.lampung.baktimarsada.network.dto.PaymentObligationDto
 import com.lampung.baktimarsada.network.dto.SessionResponseDto
+import com.lampung.baktimarsada.network.dto.WorshipTemplateDto
 
 interface AppRemoteDataSource {
     suspend fun login(request: LoginRequestDto): SessionResponseDto
@@ -23,6 +24,9 @@ interface AppRemoteDataSource {
     suspend fun fetchPaymentObligations(sectorId: String): List<PaymentObligationDto>
     suspend fun savePaymentObligation(obligation: PaymentObligationDto): PaymentObligationDto
     suspend fun deletePaymentObligation(obligationId: String)
+    suspend fun fetchWorshipTemplates(sectorId: String): List<WorshipTemplateDto>
+    suspend fun saveWorshipTemplate(template: WorshipTemplateDto): WorshipTemplateDto
+    suspend fun deleteWorshipTemplate(templateId: String)
     suspend fun resetSimulationData()
 }
 

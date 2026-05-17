@@ -8,11 +8,14 @@ import com.lampung.baktimarsada.core.constants.DataSourceProvider
 import com.lampung.baktimarsada.core.di.DataSourceBindingKey
 import com.lampung.baktimarsada.data.remote.AppRemoteDataSource
 import com.lampung.baktimarsada.network.dto.EventDto
+import com.lampung.baktimarsada.network.dto.EventProgramItemDto
 import com.lampung.baktimarsada.network.dto.FinanceReportDto
 import com.lampung.baktimarsada.network.dto.LoginRequestDto
 import com.lampung.baktimarsada.network.dto.MemberDto
 import com.lampung.baktimarsada.network.dto.PaymentObligationDto
 import com.lampung.baktimarsada.network.dto.SessionResponseDto
+import com.lampung.baktimarsada.network.dto.WorshipTemplateDto
+import com.lampung.baktimarsada.network.dto.WorshipTemplateItemDto
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -99,7 +102,8 @@ class FirebaseAppRemoteDataSource @Inject constructor(
                     AppConstants.FIRESTORE_FIELD_SCHEDULED_AT to resolved.scheduledAt,
                     AppConstants.FIRESTORE_FIELD_LOCATION to resolved.location,
                     AppConstants.FIRESTORE_FIELD_SECTOR_ID to resolved.sectorId,
-                    AppConstants.FIRESTORE_FIELD_SECTOR_NAME to resolved.sectorName
+                    AppConstants.FIRESTORE_FIELD_SECTOR_NAME to resolved.sectorName,
+                    AppConstants.FIRESTORE_FIELD_PROGRAM_ITEMS to resolved.programItems.map { it.toMap() }
                 )
             )
             .await()
@@ -109,6 +113,40 @@ class FirebaseAppRemoteDataSource @Inject constructor(
     override suspend fun deleteEvent(eventId: String) {
         firestore.collection(AppConstants.FIRESTORE_COLLECTION_EVENTS)
             .document(eventId)
+            .delete()
+            .await()
+    }
+
+    override suspend fun fetchWorshipTemplates(sectorId: String): List<WorshipTemplateDto> {
+        return firestore.collection(AppConstants.FIRESTORE_COLLECTION_WORSHIP_TEMPLATES)
+            .whereEqualTo(AppConstants.FIRESTORE_FIELD_SECTOR_ID, sectorId)
+            .orderBy(AppConstants.FIRESTORE_FIELD_TITLE, Query.Direction.ASCENDING)
+            .get()
+            .await()
+            .documents
+            .mapNotNull { it.toWorshipTemplateDto() }
+    }
+
+    override suspend fun saveWorshipTemplate(template: WorshipTemplateDto): WorshipTemplateDto {
+        val resolved = template.withIdIfNeeded(prefix = "template")
+        firestore.collection(AppConstants.FIRESTORE_COLLECTION_WORSHIP_TEMPLATES)
+            .document(resolved.id)
+            .set(
+                mapOf(
+                    AppConstants.FIRESTORE_FIELD_TENANT_ID to resolved.tenantId,
+                    AppConstants.FIRESTORE_FIELD_SECTOR_ID to resolved.sectorId,
+                    AppConstants.FIRESTORE_FIELD_TITLE to resolved.title,
+                    AppConstants.FIRESTORE_FIELD_DESCRIPTION to resolved.description,
+                    AppConstants.FIRESTORE_FIELD_TEMPLATE_ITEMS to resolved.items.map { it.toMap() }
+                )
+            )
+            .await()
+        return resolved
+    }
+
+    override suspend fun deleteWorshipTemplate(templateId: String) {
+        firestore.collection(AppConstants.FIRESTORE_COLLECTION_WORSHIP_TEMPLATES)
+            .document(templateId)
             .delete()
             .await()
     }
@@ -268,7 +306,27 @@ class FirebaseAppRemoteDataSource @Inject constructor(
             scheduledAt = scheduledAt,
             location = location,
             sectorId = sectorId,
-            sectorName = sectorName
+            sectorName = sectorName,
+            programItems = listField(AppConstants.FIRESTORE_FIELD_PROGRAM_ITEMS).mapIndexedNotNull { index, item ->
+                item.toEventProgramItemDto(id, index)
+            }
+        )
+    }
+
+    private fun com.google.firebase.firestore.DocumentSnapshot.toWorshipTemplateDto(): WorshipTemplateDto? {
+        val title = stringField(AppConstants.FIRESTORE_FIELD_TITLE) ?: return null
+        val description = stringField(AppConstants.FIRESTORE_FIELD_DESCRIPTION) ?: ""
+        val tenantId = stringField(AppConstants.FIRESTORE_FIELD_TENANT_ID) ?: TenantRuntime.current.tenantId
+        val sectorId = stringField(AppConstants.FIRESTORE_FIELD_SECTOR_ID)
+        return WorshipTemplateDto(
+            id = id,
+            tenantId = tenantId,
+            sectorId = sectorId,
+            title = title,
+            description = description,
+            items = listField(AppConstants.FIRESTORE_FIELD_TEMPLATE_ITEMS).mapIndexedNotNull { index, item ->
+                item.toWorshipTemplateItemDto(id, index)
+            }
         )
     }
 
@@ -348,9 +406,88 @@ class FirebaseAppRemoteDataSource @Inject constructor(
         return getBoolean(field) ?: false
     }
 
+    private fun com.google.firebase.firestore.DocumentSnapshot.listField(field: String): List<Map<String, Any?>> {
+        return (get(field) as? List<*>)?.mapNotNull { value ->
+            (value as? Map<*, *>)?.entries?.associate { (key, itemValue) -> key.toString() to itemValue }
+        }.orEmpty()
+    }
+
+    private fun Map<String, Any?>.stringField(field: String): String? {
+        return (this[field] as? String)?.trim()?.takeIf { it.isNotEmpty() }
+    }
+
+    private fun Map<String, Any?>.longField(field: String): Long {
+        val value = this[field]
+        return when (value) {
+            is Long -> value
+            is Int -> value.toLong()
+            is Double -> value.toLong()
+            else -> 0L
+        }
+    }
+
+    private fun Map<String, Any?>.toEventProgramItemDto(eventId: String, fallbackIndex: Int): EventProgramItemDto? {
+        val title = stringField(AppConstants.FIRESTORE_FIELD_TITLE) ?: return null
+        return EventProgramItemDto(
+            id = stringField(AppConstants.FIRESTORE_FIELD_ID) ?: "$eventId-program-$fallbackIndex",
+            eventId = stringField(AppConstants.FIRESTORE_FIELD_EVENT_ID) ?: eventId,
+            orderIndex = longField(AppConstants.FIRESTORE_FIELD_ORDER_INDEX).toInt(),
+            title = title,
+            content = stringField(AppConstants.FIRESTORE_FIELD_CONTENT) ?: "",
+            leader = stringField(AppConstants.FIRESTORE_FIELD_LEADER) ?: "",
+            type = stringField(AppConstants.FIRESTORE_FIELD_TYPE) ?: "CUSTOM"
+        )
+    }
+
+    private fun Map<String, Any?>.toWorshipTemplateItemDto(templateId: String, fallbackIndex: Int): WorshipTemplateItemDto? {
+        val title = stringField(AppConstants.FIRESTORE_FIELD_TITLE) ?: return null
+        return WorshipTemplateItemDto(
+            id = stringField(AppConstants.FIRESTORE_FIELD_ID) ?: "$templateId-item-$fallbackIndex",
+            templateId = stringField(AppConstants.FIRESTORE_FIELD_TEMPLATE_ID) ?: templateId,
+            orderIndex = longField(AppConstants.FIRESTORE_FIELD_ORDER_INDEX).toInt(),
+            title = title,
+            content = stringField(AppConstants.FIRESTORE_FIELD_CONTENT) ?: "",
+            leader = stringField(AppConstants.FIRESTORE_FIELD_LEADER) ?: "",
+            type = stringField(AppConstants.FIRESTORE_FIELD_TYPE) ?: "CUSTOM"
+        )
+    }
+
+    private fun EventProgramItemDto.toMap(): Map<String, Any?> {
+        return mapOf(
+            AppConstants.FIRESTORE_FIELD_ID to id,
+            AppConstants.FIRESTORE_FIELD_EVENT_ID to eventId,
+            AppConstants.FIRESTORE_FIELD_ORDER_INDEX to orderIndex,
+            AppConstants.FIRESTORE_FIELD_TITLE to title,
+            AppConstants.FIRESTORE_FIELD_CONTENT to content,
+            AppConstants.FIRESTORE_FIELD_LEADER to leader,
+            AppConstants.FIRESTORE_FIELD_TYPE to type
+        )
+    }
+
+    private fun WorshipTemplateItemDto.toMap(): Map<String, Any?> {
+        return mapOf(
+            AppConstants.FIRESTORE_FIELD_ID to id,
+            AppConstants.FIRESTORE_FIELD_TEMPLATE_ID to templateId,
+            AppConstants.FIRESTORE_FIELD_ORDER_INDEX to orderIndex,
+            AppConstants.FIRESTORE_FIELD_TITLE to title,
+            AppConstants.FIRESTORE_FIELD_CONTENT to content,
+            AppConstants.FIRESTORE_FIELD_LEADER to leader,
+            AppConstants.FIRESTORE_FIELD_TYPE to type
+        )
+    }
+
     private fun EventDto.withIdIfNeeded(prefix: String): EventDto {
-        if (id.isNotBlank()) return this
-        return copy(id = "$prefix-${UUID.randomUUID()}")
+        val resolvedId = id.ifBlank { "$prefix-${UUID.randomUUID()}" }
+        return copy(
+            id = resolvedId,
+            programItems = programItems.mapIndexed { index, item ->
+                item.copy(
+                    id = item.id.ifBlank { "$resolvedId-program-$index" },
+                    eventId = resolvedId,
+                    orderIndex = index
+                )
+            }
+        )
     }
 
     private fun MemberDto.withIdIfNeeded(prefix: String): MemberDto {
@@ -366,6 +503,21 @@ class FirebaseAppRemoteDataSource @Inject constructor(
     private fun PaymentObligationDto.withIdIfNeeded(prefix: String): PaymentObligationDto {
         if (id.isNotBlank()) return this
         return copy(id = "$prefix-${UUID.randomUUID()}")
+    }
+
+    private fun WorshipTemplateDto.withIdIfNeeded(prefix: String): WorshipTemplateDto {
+        if (id.isNotBlank()) return this
+        val resolvedId = "$prefix-${UUID.randomUUID()}"
+        return copy(
+            id = resolvedId,
+            items = items.mapIndexed { index, item ->
+                item.copy(
+                    id = item.id.ifBlank { "$resolvedId-item-$index" },
+                    templateId = resolvedId,
+                    orderIndex = index
+                )
+            }
+        )
     }
 
     private data class FallbackAccount(

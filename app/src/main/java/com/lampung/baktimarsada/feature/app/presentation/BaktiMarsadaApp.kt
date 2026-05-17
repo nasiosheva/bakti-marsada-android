@@ -29,9 +29,12 @@ import com.lampung.baktimarsada.domain.usecase.LogoutUseCase
 import com.lampung.baktimarsada.domain.usecase.ObserveSessionUseCase
 import com.lampung.baktimarsada.feature.app.navigation.AppRoutes
 import com.lampung.baktimarsada.feature.auth.presentation.LoginRoute
+import com.lampung.baktimarsada.feature.events.presentation.EventCreateRoute
+import com.lampung.baktimarsada.feature.events.presentation.EventEditRoute
 import com.lampung.baktimarsada.feature.events.presentation.EventDetailRoute
 import com.lampung.baktimarsada.feature.home.presentation.AdminHomeRoute
 import com.lampung.baktimarsada.feature.home.presentation.JemaatHomeRoute
+import com.lampung.baktimarsada.feature.profile.presentation.ProfileRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -83,10 +86,29 @@ fun BaktiMarsadaApp(
             state.session?.let { session ->
                 AdminHomeRoute(
                     session = session,
-                    onLogout = { viewModel.logout() },
                     onOpenEventDetail = { eventId ->
                         navController.navigate(AppRoutes.adminEventDetail(eventId))
+                    },
+                    onOpenAddEvent = {
+                        navController.navigate(AppRoutes.ADMIN_EVENT_CREATE)
+                    },
+                    onOpenEditEvent = { eventId ->
+                        navController.navigate(AppRoutes.adminEventEdit(eventId))
+                    },
+                    onOpenProfile = {
+                        navController.navigate(AppRoutes.ADMIN_PROFILE) {
+                            launchSingleTop = true
+                        }
                     }
+                )
+            }
+        }
+        composable(AppRoutes.ADMIN_PROFILE) {
+            state.session?.let { session ->
+                ProfileRoute(
+                    session = session,
+                    onBack = { navController.navigateUp() },
+                    onLogout = { viewModel.logout() }
                 )
             }
         }
@@ -107,6 +129,24 @@ fun BaktiMarsadaApp(
                 EventDetailRoute(
                     eventId = eventId,
                     isAdmin = true,
+                    session = session,
+                    onBack = { navController.navigateUp() }
+                )
+            }
+        }
+        composable(AppRoutes.ADMIN_EVENT_CREATE) {
+            state.session?.let { session ->
+                EventCreateRoute(
+                    session = session,
+                    onBack = { navController.navigateUp() }
+                )
+            }
+        }
+        composable(AppRoutes.ADMIN_EVENT_EDIT) { backStackEntry ->
+            val eventId = backStackEntry.arguments?.getString(AppRoutes.EVENT_ID_ARG).orEmpty()
+            state.session?.let { session ->
+                EventEditRoute(
+                    eventId = eventId,
                     session = session,
                     onBack = { navController.navigateUp() }
                 )

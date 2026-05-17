@@ -4,11 +4,14 @@ import com.lampung.baktimarsada.core.constants.AppConstants
 import com.lampung.baktimarsada.core.tenant.TenantRuntime
 import com.lampung.baktimarsada.data.remote.AppRemoteDataSource
 import com.lampung.baktimarsada.network.dto.EventDto
+import com.lampung.baktimarsada.network.dto.EventProgramItemDto
 import com.lampung.baktimarsada.network.dto.FinanceReportDto
 import com.lampung.baktimarsada.network.dto.LoginRequestDto
 import com.lampung.baktimarsada.network.dto.MemberDto
 import com.lampung.baktimarsada.network.dto.PaymentObligationDto
 import com.lampung.baktimarsada.network.dto.SessionResponseDto
+import com.lampung.baktimarsada.network.dto.WorshipTemplateDto
+import com.lampung.baktimarsada.network.dto.WorshipTemplateItemDto
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -46,6 +49,8 @@ class SimulateAppRemoteDataSource @Inject constructor() : AppRemoteDataSource {
 
     private val events = mutableListOf<EventDto>()
 
+    private val worshipTemplates = mutableListOf<WorshipTemplateDto>()
+
     private val members = mutableListOf<MemberDto>()
 
     private val financeReports = mutableListOf<FinanceReportDto>()
@@ -65,7 +70,8 @@ class SimulateAppRemoteDataSource @Inject constructor() : AppRemoteDataSource {
                 scheduledAt = "2026-05-20 19:30",
                 location = "Rumah Keluarga Sinaga",
                 sectorId = TenantRuntime.current.defaultSectorId,
-                sectorName = TenantRuntime.current.defaultSectorName
+                sectorName = TenantRuntime.current.defaultSectorName,
+                programItems = templateItemsForEvent("event-1", seedSectorTemplateItems("template-sector"))
             ),
             EventDto(
                 id = "event-2",
@@ -74,7 +80,8 @@ class SimulateAppRemoteDataSource @Inject constructor() : AppRemoteDataSource {
                 scheduledAt = "2026-05-23 18:30",
                 location = "Aula Wijk Bethesda",
                 sectorId = TenantRuntime.current.defaultSectorId,
-                sectorName = TenantRuntime.current.defaultSectorName
+                sectorName = TenantRuntime.current.defaultSectorName,
+                programItems = templateItemsForEvent("event-2", seedFamilyTemplateItems("template-family"))
             ),
             EventDto(
                 id = "event-3",
@@ -86,6 +93,131 @@ class SimulateAppRemoteDataSource @Inject constructor() : AppRemoteDataSource {
                 sectorName = TenantRuntime.current.defaultSectorName
             )
         )
+    }
+
+    private fun seedWorshipTemplates(): List<WorshipTemplateDto> {
+        return listOf(
+            WorshipTemplateDto(
+                id = "template-sector",
+                tenantId = TenantRuntime.current.tenantId,
+                sectorId = TenantRuntime.current.defaultSectorId,
+                title = "Partangiangan Sektor/Wijk",
+                description = "Susunan umum partangiangan rutin sektor atau wijk.",
+                items = seedSectorTemplateItems("template-sector")
+            ),
+            WorshipTemplateDto(
+                id = "template-family",
+                tenantId = TenantRuntime.current.tenantId,
+                sectorId = TenantRuntime.current.defaultSectorId,
+                title = "Partangiangan Keluarga",
+                description = "Susunan ringkas untuk ibadah keluarga dan pembinaan rumah tangga.",
+                items = seedFamilyTemplateItems("template-family")
+            ),
+            WorshipTemplateDto(
+                id = "template-thanksgiving",
+                tenantId = TenantRuntime.current.tenantId,
+                sectorId = TenantRuntime.current.defaultSectorId,
+                title = "Partangiangan Syukuran",
+                description = "Susunan acara untuk ucapan syukur keluarga atau sektor.",
+                items = seedThanksgivingTemplateItems("template-thanksgiving")
+            )
+        )
+    }
+
+    private fun seedSectorTemplateItems(templateId: String): List<WorshipTemplateItemDto> {
+        return listOf(
+            templateItem(templateId, 0, "Pembukaan", "Pelayan membuka ibadah dan mengajak jemaat memusatkan hati kepada Tuhan.", "Liturgis", "OPENING"),
+            templateItem(templateId, 1, "Nyanyian Pembuka", "Pilih satu nyanyian pembuka yang sesuai dengan tema persekutuan.", "Song Leader", "SONG"),
+            templateItem(templateId, 2, "Doa Pembuka", "Doa singkat untuk menyerahkan persekutuan, keluarga tuan rumah, dan seluruh warga sektor.", "Liturgis", "PRAYER"),
+            templateItem(
+                templateId = templateId,
+                orderIndex = 3,
+                title = "Pembacaan Alkitab",
+                content = "Bacakan nas pilihan, lalu beri jeda singkat untuk perenungan pribadi.",
+                leader = "Pembaca Alkitab",
+                type = "SCRIPTURE",
+                scriptureReference = "Mazmur 100:1-5",
+                scriptureText = "Baca nas pilihan sesuai tema partangiangan."
+            ),
+            templateItem(templateId, 4, "Renungan Singkat", "Renungan diarahkan pada penguatan iman, kebersamaan sektor, dan pelayanan sehari-hari.", "Pembawa Renungan", "SERMON"),
+            templateItem(templateId, 5, "Doa Syafaat", "Doakan keluarga, warga yang sakit, pelayanan gereja, dan pergumulan sektor.", "Liturgis", "PRAYER"),
+            templateItem(templateId, 6, "Persembahan", "Jemaat memberi persembahan sebagai ungkapan syukur dan dukungan pelayanan sektor.", "Bendahara Sektor", "OFFERING"),
+            templateItem(templateId, 7, "Pengumuman", "Sampaikan agenda sektor, informasi pelayanan, dan kewajiban yang perlu diperhatikan.", "Pengurus Sektor", "ANNOUNCEMENT"),
+            templateItem(templateId, 8, "Doa Penutup", "Tutup ibadah dengan doa syukur dan permohonan penyertaan Tuhan.", "Liturgis", "CLOSING")
+        )
+    }
+
+    private fun seedFamilyTemplateItems(templateId: String): List<WorshipTemplateItemDto> {
+        return listOf(
+            templateItem(templateId, 0, "Sapaan Keluarga", "Tuan rumah atau liturgis menyapa peserta dan menyampaikan pokok syukur/pergumulan.", "Tuan Rumah", "OPENING"),
+            templateItem(templateId, 1, "Nyanyian", "Nyanyian dipilih yang mudah dinyanyikan bersama keluarga.", "Song Leader", "SONG"),
+            templateItem(templateId, 2, "Doa", "Doa pembuka untuk keluarga, anak-anak, dan kehidupan rumah tangga.", "Liturgis", "PRAYER"),
+            templateItem(templateId, 3, "Firman Tuhan", "Pembacaan nas dan renungan singkat yang dekat dengan kehidupan keluarga.", "Pembawa Renungan", "SERMON"),
+            templateItem(templateId, 4, "Sharing dan Doa Syafaat", "Keluarga dapat menyampaikan pokok doa sebelum didoakan bersama.", "Liturgis", "PRAYER"),
+            templateItem(templateId, 5, "Penutup", "Akhiri dengan doa dan salam persekutuan.", "Liturgis", "CLOSING")
+        )
+    }
+
+    private fun seedThanksgivingTemplateItems(templateId: String): List<WorshipTemplateItemDto> {
+        return listOf(
+            templateItem(templateId, 0, "Pembukaan Syukur", "Liturgis membuka acara dan menyebut pokok ucapan syukur secara ringkas.", "Liturgis", "OPENING"),
+            templateItem(templateId, 1, "Nyanyian Syukur", "Nyanyikan lagu yang menekankan ucapan syukur dan penyertaan Tuhan.", "Song Leader", "SONG"),
+            templateItem(templateId, 2, "Doa Syukur", "Doa berfokus pada rasa terima kasih dan penyerahan rencana keluarga ke depan.", "Liturgis", "PRAYER"),
+            templateItem(
+                templateId = templateId,
+                orderIndex = 3,
+                title = "Pembacaan Firman",
+                content = "Bacaan dan renungan menguatkan keluarga untuk hidup dalam syukur.",
+                leader = "Pembawa Renungan",
+                type = "SCRIPTURE",
+                scriptureReference = "1 Tesalonika 5:16-18",
+                scriptureText = "Baca nas pilihan tentang ucapan syukur."
+            ),
+            templateItem(templateId, 4, "Ucapan Syukur Keluarga", "Perwakilan keluarga dapat menyampaikan kesaksian singkat.", "Tuan Rumah", "ANNOUNCEMENT"),
+            templateItem(templateId, 5, "Doa Penutup", "Tutup acara dengan doa berkat bagi keluarga dan jemaat yang hadir.", "Liturgis", "CLOSING")
+        )
+    }
+
+    private fun templateItem(
+        templateId: String,
+        orderIndex: Int,
+        title: String,
+        content: String,
+        leader: String,
+        type: String,
+        scriptureReference: String = "",
+        scriptureText: String = "",
+        note: String = ""
+    ): WorshipTemplateItemDto {
+        return WorshipTemplateItemDto(
+            id = "$templateId-item-$orderIndex",
+            templateId = templateId,
+            orderIndex = orderIndex,
+            title = title,
+            content = content,
+            leader = leader,
+            type = type,
+            scriptureReference = scriptureReference,
+            scriptureText = scriptureText,
+            note = note
+        )
+    }
+
+    private fun templateItemsForEvent(eventId: String, items: List<WorshipTemplateItemDto>): List<EventProgramItemDto> {
+        return items.map { item ->
+            EventProgramItemDto(
+                id = "$eventId-program-${item.orderIndex}",
+                eventId = eventId,
+                orderIndex = item.orderIndex,
+                title = item.title,
+                content = item.content,
+                leader = item.leader,
+                type = item.type,
+                scriptureReference = item.scriptureReference,
+                scriptureText = item.scriptureText,
+                note = item.note
+            )
+        }
     }
 
     private fun seedMembers(): List<MemberDto> {
@@ -242,6 +374,21 @@ class SimulateAppRemoteDataSource @Inject constructor() : AppRemoteDataSource {
         events.removeAll { it.id == eventId }
     }
 
+    override suspend fun fetchWorshipTemplates(sectorId: String): List<WorshipTemplateDto> {
+        return worshipTemplates.filter { it.sectorId == null || it.sectorId == sectorId }.sortedBy { it.title }
+    }
+
+    override suspend fun saveWorshipTemplate(template: WorshipTemplateDto): WorshipTemplateDto {
+        val resolved = template.withIdIfNeeded(prefix = "template")
+        worshipTemplates.removeAll { it.id == resolved.id }
+        worshipTemplates.add(resolved)
+        return resolved
+    }
+
+    override suspend fun deleteWorshipTemplate(templateId: String) {
+        worshipTemplates.removeAll { it.id == templateId }
+    }
+
     override suspend fun fetchMembers(sectorId: String): List<MemberDto> {
         return members.filter { it.sectorId == sectorId }.sortedBy { it.fullName }
     }
@@ -295,6 +442,8 @@ class SimulateAppRemoteDataSource @Inject constructor() : AppRemoteDataSource {
     private fun resetDataInternal() {
         events.clear()
         events.addAll(seedEvents())
+        worshipTemplates.clear()
+        worshipTemplates.addAll(seedWorshipTemplates())
         members.clear()
         members.addAll(seedMembers())
         financeReports.clear()
@@ -304,8 +453,17 @@ class SimulateAppRemoteDataSource @Inject constructor() : AppRemoteDataSource {
     }
 
     private fun EventDto.withIdIfNeeded(prefix: String): EventDto {
-        if (id.isNotBlank()) return this
-        return copy(id = "$prefix-${UUID.randomUUID()}")
+        val resolvedId = id.ifBlank { "$prefix-${UUID.randomUUID()}" }
+        return copy(
+            id = resolvedId,
+            programItems = programItems.mapIndexed { index, item ->
+                item.copy(
+                    id = item.id.ifBlank { "$resolvedId-program-$index" },
+                    eventId = resolvedId,
+                    orderIndex = index
+                )
+            }
+        )
     }
 
     private fun MemberDto.withIdIfNeeded(prefix: String): MemberDto {
@@ -321,6 +479,21 @@ class SimulateAppRemoteDataSource @Inject constructor() : AppRemoteDataSource {
     private fun PaymentObligationDto.withIdIfNeeded(prefix: String): PaymentObligationDto {
         if (id.isNotBlank()) return this
         return copy(id = "$prefix-${UUID.randomUUID()}")
+    }
+
+    private fun WorshipTemplateDto.withIdIfNeeded(prefix: String): WorshipTemplateDto {
+        if (id.isNotBlank()) return this
+        val resolvedId = "$prefix-${UUID.randomUUID()}"
+        return copy(
+            id = resolvedId,
+            items = items.mapIndexed { index, item ->
+                item.copy(
+                    id = item.id.ifBlank { "$resolvedId-item-$index" },
+                    templateId = resolvedId,
+                    orderIndex = index
+                )
+            }
+        )
     }
 
     private data class SampleAccount(

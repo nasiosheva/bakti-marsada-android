@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Card
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -44,13 +45,26 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminDashboardRoute(
     session: SessionState,
     viewModel: AdminDashboardViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    AdminDashboardContent(
+        state = state,
+        onRefresh = viewModel::refreshAll,
+        onResetSimulation = viewModel::resetSimulationData
+    )
+}
 
+@Composable
+fun AdminDashboardContent(
+    state: AdminDashboardUiState,
+    onRefresh: () -> Unit,
+    onResetSimulation: () -> Unit
+) {
     val cards = listOf(
         DashboardCardUi(
             title = stringResource(id = R.string.dashboard_events_title),
@@ -76,7 +90,7 @@ fun AdminDashboardRoute(
 
     BaktiPullToRefreshBox(
         isRefreshing = state.isLoading,
-        onRefresh = viewModel::refreshAll,
+        onRefresh = onRefresh,
         modifier = Modifier
             .fillMaxSize()
     ) {
@@ -89,19 +103,13 @@ fun AdminDashboardRoute(
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                item {
-                    Text(
-                        text = stringResource(id = R.string.admin_dashboard_title, session.sectorContext.sectorName),
-                        style = MaterialTheme.typography.titleLarge
-                    )
-                }
                 state.errorMessage?.let { message ->
                     item { BaktiSectionMessage(message = message) }
                 }
                 if (AppBuildConfig.simulationEnabled) {
                     item {
                         OutlinedButton(
-                            onClick = viewModel::resetSimulationData,
+                            onClick = onResetSimulation,
                             enabled = !state.isLoading
                         ) {
                             Text(text = stringResource(id = R.string.dashboard_simulation_reset_action))
@@ -126,25 +134,6 @@ fun AdminDashboardRoute(
         }
     }
 }
-
-data class DashboardCardUi(
-    val title: String,
-    val value: String,
-    val description: String
-)
-
-data class DashboardCounts(
-    val eventCount: Int = 0,
-    val memberCount: Int = 0,
-    val financeCount: Int = 0,
-    val paymentCount: Int = 0
-)
-
-data class AdminDashboardUiState(
-    val cards: DashboardCounts = DashboardCounts(),
-    val isLoading: Boolean = true,
-    val errorMessage: String? = null
-)
 
 @HiltViewModel
 class AdminDashboardViewModel @Inject constructor(

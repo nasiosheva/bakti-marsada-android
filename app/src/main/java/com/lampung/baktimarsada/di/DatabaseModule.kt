@@ -5,9 +5,12 @@ import androidx.room.Room
 import com.lampung.baktimarsada.core.constants.AppBuildConfig
 import com.lampung.baktimarsada.db.AppDatabase
 import com.lampung.baktimarsada.db.dao.EventDao
+import com.lampung.baktimarsada.db.dao.EventProgramItemDao
 import com.lampung.baktimarsada.db.dao.FinanceReportDao
 import com.lampung.baktimarsada.db.dao.MemberDao
 import com.lampung.baktimarsada.db.dao.PaymentObligationDao
+import com.lampung.baktimarsada.db.dao.WorshipTemplateDao
+import com.lampung.baktimarsada.db.dao.WorshipTemplateItemDao
 import com.lampung.baktimarsada.security.DatabaseEncryptionProvider
 import dagger.Module
 import dagger.Provides
@@ -40,6 +43,10 @@ object DatabaseModule {
     fun provideEventDao(database: AppDatabase): EventDao = database.eventDao()
 
     @Provides
+    fun provideEventProgramItemDao(database: AppDatabase): EventProgramItemDao =
+        database.eventProgramItemDao()
+
+    @Provides
     fun provideMemberDao(database: AppDatabase): MemberDao = database.memberDao()
 
     @Provides
@@ -48,6 +55,14 @@ object DatabaseModule {
     @Provides
     fun providePaymentObligationDao(database: AppDatabase): PaymentObligationDao =
         database.paymentObligationDao()
+
+    @Provides
+    fun provideWorshipTemplateDao(database: AppDatabase): WorshipTemplateDao =
+        database.worshipTemplateDao()
+
+    @Provides
+    fun provideWorshipTemplateItemDao(database: AppDatabase): WorshipTemplateItemDao =
+        database.worshipTemplateItemDao()
 
 }
 
