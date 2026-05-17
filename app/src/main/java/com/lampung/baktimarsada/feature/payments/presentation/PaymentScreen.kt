@@ -50,7 +50,9 @@ import com.lampung.baktimarsada.ui.component.BaktiEmptyState
 import com.lampung.baktimarsada.ui.component.BaktiErrorState
 import com.lampung.baktimarsada.ui.component.BaktiLoadingState
 import com.lampung.baktimarsada.ui.component.BaktiMultilineInput
+import com.lampung.baktimarsada.ui.component.BaktiPullToRefreshBox
 import com.lampung.baktimarsada.ui.component.BaktiSectionMessage
+import com.lampung.baktimarsada.ui.component.BaktiScrollableStateView
 import com.lampung.baktimarsada.ui.component.BaktiTextInput
 import com.lampung.baktimarsada.ui.component.BaktiValueRow
 import com.lampung.baktimarsada.ui.component.JemaatInfoCard
@@ -129,13 +131,26 @@ fun PaymentContent(
     onShowEdit: (PaymentObligationDetail) -> Unit
 ) {
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    BaktiPullToRefreshBox(
+        isRefreshing = state.isLoading,
+        onRefresh = onRefresh,
+        modifier = Modifier.fillMaxSize()
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
         when {
-            state.isLoading && state.items.isEmpty() -> BaktiLoadingState()
-            state.errorMessage != null && state.items.isEmpty() -> {
-                BaktiErrorState(message = state.errorMessage, onRetry = onRefresh)
+            state.isLoading && state.items.isEmpty() -> {
+                BaktiScrollableStateView { BaktiLoadingState() }
             }
-            state.items.isEmpty() -> BaktiEmptyState(message = stringResource(id = R.string.payment_empty))
+            state.errorMessage != null && state.items.isEmpty() -> {
+                BaktiScrollableStateView {
+                    BaktiErrorState(message = state.errorMessage, onRetry = onRefresh)
+                }
+            }
+            state.items.isEmpty() -> {
+                BaktiScrollableStateView {
+                    BaktiEmptyState(message = stringResource(id = R.string.payment_empty))
+                }
+            }
             else -> {
                 LazyColumn(
                     modifier = Modifier
@@ -279,6 +294,7 @@ fun PaymentContent(
             }
         }
     }
+}
 }
 
 @Composable

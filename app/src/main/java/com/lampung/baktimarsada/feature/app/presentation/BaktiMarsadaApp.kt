@@ -29,6 +29,7 @@ import com.lampung.baktimarsada.domain.usecase.LogoutUseCase
 import com.lampung.baktimarsada.domain.usecase.ObserveSessionUseCase
 import com.lampung.baktimarsada.feature.app.navigation.AppRoutes
 import com.lampung.baktimarsada.feature.auth.presentation.LoginRoute
+import com.lampung.baktimarsada.feature.events.presentation.EventDetailRoute
 import com.lampung.baktimarsada.feature.home.presentation.AdminHomeRoute
 import com.lampung.baktimarsada.feature.home.presentation.JemaatHomeRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -71,7 +72,10 @@ fun BaktiMarsadaApp(
             state.session?.let { session ->
                 JemaatHomeRoute(
                     session = session,
-                    onLogout = { viewModel.logout() }
+                    onLogout = { viewModel.logout() },
+                    onOpenEventDetail = { eventId ->
+                        navController.navigate(AppRoutes.jemaatEventDetail(eventId))
+                    }
                 )
             }
         }
@@ -79,7 +83,32 @@ fun BaktiMarsadaApp(
             state.session?.let { session ->
                 AdminHomeRoute(
                     session = session,
-                    onLogout = { viewModel.logout() }
+                    onLogout = { viewModel.logout() },
+                    onOpenEventDetail = { eventId ->
+                        navController.navigate(AppRoutes.adminEventDetail(eventId))
+                    }
+                )
+            }
+        }
+        composable(AppRoutes.JEMAAT_EVENT_DETAIL) { backStackEntry ->
+            val eventId = backStackEntry.arguments?.getString(AppRoutes.EVENT_ID_ARG).orEmpty()
+            state.session?.let { session ->
+                EventDetailRoute(
+                    eventId = eventId,
+                    isAdmin = false,
+                    session = session,
+                    onBack = { navController.navigateUp() }
+                )
+            }
+        }
+        composable(AppRoutes.ADMIN_EVENT_DETAIL) { backStackEntry ->
+            val eventId = backStackEntry.arguments?.getString(AppRoutes.EVENT_ID_ARG).orEmpty()
+            state.session?.let { session ->
+                EventDetailRoute(
+                    eventId = eventId,
+                    isAdmin = true,
+                    session = session,
+                    onBack = { navController.navigateUp() }
                 )
             }
         }

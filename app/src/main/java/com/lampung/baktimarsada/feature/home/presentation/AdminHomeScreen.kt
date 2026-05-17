@@ -3,7 +3,15 @@ package com.lampung.baktimarsada.feature.home.presentation
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountBalanceWallet
+import androidx.compose.material.icons.filled.Dashboard
+import androidx.compose.material.icons.filled.Event
+import androidx.compose.material.icons.filled.Groups
+import androidx.compose.material.icons.filled.Payments
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -13,6 +21,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
@@ -35,13 +44,14 @@ import com.lampung.baktimarsada.feature.profile.presentation.ProfileRoute
 @Composable
 fun AdminHomeRoute(
     session: SessionState,
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    onOpenEventDetail: (String) -> Unit
 ) {
     AdminHomeScreen(
         session = session,
         onLogout = onLogout,
         dashboardContent = { AdminDashboardRoute(session = session) },
-        eventsContent = { EventRoute(isAdmin = true, session = session) },
+        eventsContent = { EventRoute(isAdmin = true, session = session, onOpenDetail = onOpenEventDetail) },
         membersContent = { MemberRoute(isAdmin = true, session = session) },
         financeContent = { FinanceRoute(isAdmin = true, session = session) },
         paymentsContent = { PaymentRoute(isAdmin = true, session = session) },
@@ -65,12 +75,12 @@ fun AdminHomeScreen(
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route ?: AppRoutes.ADMIN_DASHBOARD
     val destinations = listOf(
-        AdminBottomDestination(AppRoutes.ADMIN_DASHBOARD, stringResource(id = R.string.tab_dashboard)),
-        AdminBottomDestination(AppRoutes.ADMIN_EVENTS, stringResource(id = R.string.tab_events)),
-        AdminBottomDestination(AppRoutes.ADMIN_MEMBERS, stringResource(id = R.string.tab_members)),
-        AdminBottomDestination(AppRoutes.ADMIN_FINANCE, stringResource(id = R.string.tab_finance)),
-        AdminBottomDestination(AppRoutes.ADMIN_PAYMENTS, stringResource(id = R.string.tab_payments)),
-        AdminBottomDestination(AppRoutes.ADMIN_PROFILE, stringResource(id = R.string.tab_profile))
+        AdminBottomDestination(AppRoutes.ADMIN_DASHBOARD, stringResource(id = R.string.tab_dashboard), Icons.Filled.Dashboard),
+        AdminBottomDestination(AppRoutes.ADMIN_EVENTS, stringResource(id = R.string.tab_events), Icons.Filled.Event),
+        AdminBottomDestination(AppRoutes.ADMIN_MEMBERS, stringResource(id = R.string.tab_members), Icons.Filled.Groups),
+        AdminBottomDestination(AppRoutes.ADMIN_FINANCE, stringResource(id = R.string.tab_finance), Icons.Filled.AccountBalanceWallet),
+        AdminBottomDestination(AppRoutes.ADMIN_PAYMENTS, stringResource(id = R.string.tab_payments), Icons.Filled.Payments),
+        AdminBottomDestination(AppRoutes.ADMIN_PROFILE, stringResource(id = R.string.tab_profile), Icons.Filled.Person)
     )
 
     Scaffold(
@@ -109,7 +119,12 @@ fun AdminHomeScreen(
                         },
                         modifier = Modifier.semantics { testTag = "admin_bottom_nav_${destination.route}" },
                         label = { Text(text = destination.label) },
-                        icon = {}
+                        icon = {
+                            Icon(
+                                imageVector = destination.icon,
+                                contentDescription = destination.label
+                            )
+                        }
                     )
                 }
             }
@@ -146,5 +161,6 @@ fun AdminHomeScreen(
 
 private data class AdminBottomDestination(
     val route: String,
-    val label: String
+    val label: String,
+    val icon: ImageVector
 )

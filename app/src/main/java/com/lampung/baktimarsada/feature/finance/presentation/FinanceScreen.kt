@@ -47,7 +47,9 @@ import com.lampung.baktimarsada.ui.component.BaktiEmptyState
 import com.lampung.baktimarsada.ui.component.BaktiErrorState
 import com.lampung.baktimarsada.ui.component.BaktiLoadingState
 import com.lampung.baktimarsada.ui.component.BaktiMultilineInput
+import com.lampung.baktimarsada.ui.component.BaktiPullToRefreshBox
 import com.lampung.baktimarsada.ui.component.BaktiSectionMessage
+import com.lampung.baktimarsada.ui.component.BaktiScrollableStateView
 import com.lampung.baktimarsada.ui.component.BaktiTextInput
 import com.lampung.baktimarsada.ui.component.BaktiValueRow
 import com.lampung.baktimarsada.ui.component.JemaatInfoCard
@@ -126,13 +128,26 @@ fun FinanceContent(
 ) {
     val displayItems = if (isAdmin) state.items else state.items.filter { it.isVisibleToJemaat }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    BaktiPullToRefreshBox(
+        isRefreshing = state.isLoading,
+        onRefresh = onRefresh,
+        modifier = Modifier.fillMaxSize()
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
         when {
-            state.isLoading && displayItems.isEmpty() -> BaktiLoadingState()
-            state.errorMessage != null && displayItems.isEmpty() -> {
-                BaktiErrorState(message = state.errorMessage, onRetry = onRefresh)
+            state.isLoading && displayItems.isEmpty() -> {
+                BaktiScrollableStateView { BaktiLoadingState() }
             }
-            displayItems.isEmpty() -> BaktiEmptyState(message = stringResource(id = R.string.finance_empty))
+            state.errorMessage != null && displayItems.isEmpty() -> {
+                BaktiScrollableStateView {
+                    BaktiErrorState(message = state.errorMessage, onRetry = onRefresh)
+                }
+            }
+            displayItems.isEmpty() -> {
+                BaktiScrollableStateView {
+                    BaktiEmptyState(message = stringResource(id = R.string.finance_empty))
+                }
+            }
             else -> {
                 LazyColumn(
                     modifier = Modifier
@@ -274,6 +289,7 @@ fun FinanceContent(
             }
         }
     }
+}
 }
 
 @Composable

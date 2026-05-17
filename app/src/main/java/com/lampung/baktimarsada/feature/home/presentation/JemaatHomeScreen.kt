@@ -5,6 +5,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountBalanceWallet
+import androidx.compose.material.icons.filled.Event
+import androidx.compose.material.icons.filled.Groups
+import androidx.compose.material.icons.filled.Payments
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.NavigationBar
@@ -17,6 +24,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
@@ -38,12 +46,13 @@ import com.lampung.baktimarsada.feature.profile.presentation.ProfileRoute
 @Composable
 fun JemaatHomeRoute(
     session: SessionState,
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    onOpenEventDetail: (String) -> Unit
 ) {
     JemaatHomeScreen(
         session = session,
         onLogout = onLogout,
-        eventsContent = { EventRoute(isAdmin = false, session = session) },
+        eventsContent = { EventRoute(isAdmin = false, session = session, onOpenDetail = onOpenEventDetail) },
         membersContent = { MemberRoute(isAdmin = false, session = session) },
         financeContent = { FinanceRoute(isAdmin = false, session = session) },
         paymentsContent = { PaymentRoute(isAdmin = false, session = session) },
@@ -66,11 +75,11 @@ fun JemaatHomeScreen(
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route ?: AppRoutes.JEMAAT_EVENTS
     val destinations = listOf(
-        JemaatBottomDestination(AppRoutes.JEMAAT_EVENTS, stringResource(id = R.string.tab_events)),
-        JemaatBottomDestination(AppRoutes.JEMAAT_MEMBERS, stringResource(id = R.string.tab_members)),
-        JemaatBottomDestination(AppRoutes.JEMAAT_FINANCE, stringResource(id = R.string.tab_finance)),
-        JemaatBottomDestination(AppRoutes.JEMAAT_PAYMENTS, stringResource(id = R.string.tab_payments)),
-        JemaatBottomDestination(AppRoutes.JEMAAT_PROFILE, stringResource(id = R.string.tab_profile))
+        JemaatBottomDestination(AppRoutes.JEMAAT_EVENTS, stringResource(id = R.string.tab_events), Icons.Filled.Event),
+        JemaatBottomDestination(AppRoutes.JEMAAT_MEMBERS, stringResource(id = R.string.tab_members), Icons.Filled.Groups),
+        JemaatBottomDestination(AppRoutes.JEMAAT_FINANCE, stringResource(id = R.string.tab_finance), Icons.Filled.AccountBalanceWallet),
+        JemaatBottomDestination(AppRoutes.JEMAAT_PAYMENTS, stringResource(id = R.string.tab_payments), Icons.Filled.Payments),
+        JemaatBottomDestination(AppRoutes.JEMAAT_PROFILE, stringResource(id = R.string.tab_profile), Icons.Filled.Person)
     )
 
     Scaffold(
@@ -114,7 +123,12 @@ fun JemaatHomeScreen(
                         },
                         modifier = Modifier.semantics { testTag = "jemaat_bottom_nav_${destination.route}" },
                         label = { Text(text = destination.label) },
-                        icon = {}
+                        icon = {
+                            Icon(
+                                imageVector = destination.icon,
+                                contentDescription = destination.label
+                            )
+                        }
                     )
                 }
             }
@@ -160,5 +174,6 @@ fun JemaatHomeScreen(
 
 private data class JemaatBottomDestination(
     val route: String,
-    val label: String
+    val label: String,
+    val icon: ImageVector
 )

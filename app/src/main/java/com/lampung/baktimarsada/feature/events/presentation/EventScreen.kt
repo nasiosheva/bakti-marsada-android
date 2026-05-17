@@ -1,6 +1,5 @@
 package com.lampung.baktimarsada.feature.events.presentation
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -12,18 +11,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.ui.window.Dialog
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -36,7 +31,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
@@ -53,12 +47,13 @@ import com.lampung.baktimarsada.ui.component.BaktiEmptyState
 import com.lampung.baktimarsada.ui.component.BaktiErrorState
 import com.lampung.baktimarsada.ui.component.BaktiLoadingState
 import com.lampung.baktimarsada.ui.component.BaktiMultilineInput
+import com.lampung.baktimarsada.ui.component.BaktiPullToRefreshBox
 import com.lampung.baktimarsada.ui.component.BaktiSectionMessage
+import com.lampung.baktimarsada.ui.component.BaktiScrollableStateView
 import com.lampung.baktimarsada.ui.component.BaktiTextInput
 import com.lampung.baktimarsada.ui.component.BaktiValueRow
 import com.lampung.baktimarsada.ui.component.JemaatInfoCard
 import com.lampung.baktimarsada.ui.component.JemaatPill
-import com.lampung.baktimarsada.ui.component.JemaatSectionHeader
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -71,10 +66,10 @@ import kotlinx.coroutines.launch
 fun EventRoute(
     isAdmin: Boolean,
     session: SessionState,
+    onOpenDetail: (String) -> Unit,
     viewModel: EventViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    var detailTarget by remember { mutableStateOf<EventDetail?>(null) }
     var editTarget by remember { mutableStateOf<EventDetail?>(null) }
     var showCreateDialog by rememberSaveable { mutableStateOf(false) }
 
@@ -84,13 +79,9 @@ fun EventRoute(
         onRefresh = viewModel::refresh,
         onDelete = viewModel::delete,
         onShowCreate = { showCreateDialog = true },
-        onShowDetail = { detailTarget = it },
+        onShowDetail = { onOpenDetail(it.id) },
         onShowEdit = { editTarget = it }
     )
-
-    detailTarget?.let { item ->
-        EventDetailDialog(item = item, onDismiss = { detailTarget = null })
-    }
 
     if (showCreateDialog) {
         EventFormDialog(
@@ -128,13 +119,26 @@ fun EventContent(
     onShowEdit: (EventDetail) -> Unit
 ) {
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    BaktiPullToRefreshBox(
+        isRefreshing = state.isLoading,
+        onRefresh = onRefresh,
+        modifier = Modifier.fillMaxSize()
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
         when {
-            state.isLoading && state.items.isEmpty() -> BaktiLoadingState()
-            state.errorMessage != null && state.items.isEmpty() -> {
-                BaktiErrorState(message = state.errorMessage, onRetry = onRefresh)
+            state.isLoading && state.items.isEmpty() -> {
+                BaktiScrollableStateView { BaktiLoadingState() }
             }
-            state.items.isEmpty() -> BaktiEmptyState(message = stringResource(id = R.string.event_empty))
+            state.errorMessage != null && state.items.isEmpty() -> {
+                BaktiScrollableStateView {
+                    BaktiErrorState(message = state.errorMessage, onRetry = onRefresh)
+                }
+            }
+            state.items.isEmpty() -> {
+                BaktiScrollableStateView {
+                    BaktiEmptyState(message = stringResource(id = R.string.event_empty))
+                }
+            }
             else -> {
                 LazyColumn(
                     modifier = Modifier
@@ -150,25 +154,24 @@ fun EventContent(
                                 modifier = Modifier.semantics { testTag = "event_title" }
                             )
                         } else {
-                            JemaatSectionHeader(
-                                title = stringResource(id = R.string.event_title_jemaat),
-                                countLabel = stringResource(id = R.string.jemaat_count_events, state.items.size),
-                                actionLabel = stringResource(id = R.string.action_refresh),
-                                onAction = onRefresh,
+                            Column(
+                                verticalArrangement = Arrangement.spacedBy(4.dp),
                                 modifier = Modifier.semantics { testTag = "event_title" }
-                            )
+                            ) {
+                                Text(
+                                    text = stringResource(id = R.string.event_title_jemaat),
+                                    style = MaterialTheme.typography.titleLarge
+                                )
+                                Text(
+                                    text = stringResource(id = R.string.jemaat_count_events, state.items.size),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         }
                     }
                     state.errorMessage?.let { message ->
                         item { BaktiSectionMessage(message = message) }
-                    }
-                    if (isAdmin) item {
-                        OutlinedButton(
-                            onClick = onRefresh,
-                            modifier = Modifier.semantics { testTag = "event_refresh_button" }
-                        ) {
-                            Text(text = stringResource(id = R.string.action_refresh))
-                        }
                     }
                     items(state.items, key = { it.id }) { item ->
                         if (isAdmin) {
@@ -256,72 +259,6 @@ fun EventContent(
             }
         }
     }
-}
-
-@Composable
-private fun EventDetailDialog(
-    item: EventDetail,
-    onDismiss: () -> Unit
-) {
-    Dialog(onDismissRequest = onDismiss) {
-        Surface(
-            shape = RoundedCornerShape(12.dp),
-            tonalElevation = 6.dp,
-            color = MaterialTheme.colorScheme.surface
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(
-                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.42f),
-                                MaterialTheme.colorScheme.surface
-                            )
-                        )
-                    )
-                    .padding(18.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
-            ) {
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text(
-                        text = stringResource(id = R.string.event_detail_title),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    Text(
-                        text = item.title,
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    JemaatPill(text = item.scheduledAt)
-                    JemaatPill(text = item.location)
-                }
-                Card(
-                    shape = RoundedCornerShape(8.dp),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.84f)
-                    )
-                ) {
-                    Text(
-                        text = item.description,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(14.dp),
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-                }
-                Button(
-                    onClick = onDismiss,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(text = stringResource(id = R.string.action_close))
-                }
-            }
-        }
     }
 }
 

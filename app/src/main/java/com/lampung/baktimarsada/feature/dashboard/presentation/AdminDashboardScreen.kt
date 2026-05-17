@@ -32,7 +32,9 @@ import com.lampung.baktimarsada.domain.repository.FinanceReportRepository
 import com.lampung.baktimarsada.domain.repository.MemberRepository
 import com.lampung.baktimarsada.domain.repository.PaymentObligationRepository
 import com.lampung.baktimarsada.ui.component.BaktiLoadingState
+import com.lampung.baktimarsada.ui.component.BaktiPullToRefreshBox
 import com.lampung.baktimarsada.ui.component.BaktiSectionMessage
+import com.lampung.baktimarsada.ui.component.BaktiScrollableStateView
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -48,10 +50,6 @@ fun AdminDashboardRoute(
     viewModel: AdminDashboardViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    if (state.isLoading) {
-        BaktiLoadingState()
-        return
-    }
 
     val cards = listOf(
         DashboardCardUi(
@@ -76,42 +74,53 @@ fun AdminDashboardRoute(
         )
     )
 
-    LazyColumn(
+    BaktiPullToRefreshBox(
+        isRefreshing = state.isLoading,
+        onRefresh = viewModel::refreshAll,
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        item {
-            Text(
-                text = stringResource(id = R.string.admin_dashboard_title, session.sectorContext.sectorName),
-                style = MaterialTheme.typography.titleLarge
-            )
-        }
-        state.errorMessage?.let { message ->
-            item { BaktiSectionMessage(message = message) }
-        }
-        if (AppConstants.SIMULATION_ENABLED) {
-            item {
-                OutlinedButton(
-                    onClick = viewModel::resetSimulationData,
-                    enabled = !state.isLoading
-                ) {
-                    Text(text = stringResource(id = R.string.dashboard_simulation_reset_action))
+        if (state.isLoading && state.cards == DashboardCounts()) {
+            BaktiScrollableStateView { BaktiLoadingState() }
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                item {
+                    Text(
+                        text = stringResource(id = R.string.admin_dashboard_title, session.sectorContext.sectorName),
+                        style = MaterialTheme.typography.titleLarge
+                    )
                 }
-            }
-        }
-        items(cards) { card ->
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Text(text = card.title, style = MaterialTheme.typography.titleMedium)
-                    Text(text = card.value, style = MaterialTheme.typography.headlineSmall)
-                    Text(text = card.description, style = MaterialTheme.typography.bodyMedium)
+                state.errorMessage?.let { message ->
+                    item { BaktiSectionMessage(message = message) }
+                }
+                if (AppConstants.SIMULATION_ENABLED) {
+                    item {
+                        OutlinedButton(
+                            onClick = viewModel::resetSimulationData,
+                            enabled = !state.isLoading
+                        ) {
+                            Text(text = stringResource(id = R.string.dashboard_simulation_reset_action))
+                        }
+                    }
+                }
+                items(cards) { card ->
+                    Card(modifier = Modifier.fillMaxWidth()) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Text(text = card.title, style = MaterialTheme.typography.titleMedium)
+                            Text(text = card.value, style = MaterialTheme.typography.headlineSmall)
+                            Text(text = card.description, style = MaterialTheme.typography.bodyMedium)
+                        }
+                    }
                 }
             }
         }
@@ -182,7 +191,7 @@ class AdminDashboardViewModel @Inject constructor(
         }
     }
 
-    private fun refreshAll() {
+    fun refreshAll() {
         viewModelScope.launch(dispatcherProvider.io) {
             val session = authRepository.getCurrentSession() ?: return@launch
             _state.update { it.copy(isLoading = true, errorMessage = null) }
