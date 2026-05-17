@@ -92,3 +92,5 @@ class EventViewModelTest {
         }
     }
 }
+
+// created by Mories Deo Hutapea, S.E.,S.Kom

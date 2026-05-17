@@ -27,3 +27,5 @@ class DatabaseEncryptionProviderImpl @Inject constructor(
         return UUID.randomUUID().toString() + System.currentTimeMillis()
     }
 }
+
+// created by Mories Deo Hutapea, S.E.,S.Kom

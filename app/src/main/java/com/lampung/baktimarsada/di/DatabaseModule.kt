@@ -2,7 +2,7 @@ package com.lampung.baktimarsada.di
 
 import android.content.Context
 import androidx.room.Room
-import com.lampung.baktimarsada.core.constants.AppConstants
+import com.lampung.baktimarsada.core.constants.AppBuildConfig
 import com.lampung.baktimarsada.db.AppDatabase
 import com.lampung.baktimarsada.db.dao.EventDao
 import com.lampung.baktimarsada.db.dao.FinanceReportDao
@@ -29,7 +29,7 @@ object DatabaseModule {
         return Room.databaseBuilder(
             context,
             AppDatabase::class.java,
-            AppConstants.DATABASE_NAME
+            AppBuildConfig.databaseName
         )
             .openHelperFactory(net.sqlcipher.database.SupportFactory(encryptionProvider.getOrCreatePassphrase()))
             .fallbackToDestructiveMigration()
@@ -50,3 +50,5 @@ object DatabaseModule {
         database.paymentObligationDao()
 
 }
+
+// created by Mories Deo Hutapea, S.E.,S.Kom

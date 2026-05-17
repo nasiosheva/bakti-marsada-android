@@ -10,6 +10,13 @@ Monorepo untuk:
 ```text
 AndroidStudioProjects/BaktiMarsada
 ├── app
+├── core
+├── domain
+├── data
+├── data-source-cloudflare
+├── data-source-python
+├── data-source-firebase
+├── data-source-simulate
 └── cloudflare-be
 ```
 
@@ -46,6 +53,19 @@ npm run dev
 ```
 
 - Lalu jalankan app debug dan login dengan akun yang sudah terdaftar di endpoint `/auth/login`.
+
+Switch sumber data app (`cloudflare` default):
+
+```bash
+./gradlew :app:assembleDebug -PdataSourceProvider=cloudflare
+./gradlew :app:assembleDebug -PdataSourceProvider=python -PpythonApiBaseUrl=http://10.0.2.2:8000/
+./gradlew :app:assembleDebug -PdataSourceProvider=firebase
+```
+
+Opsional override base URL:
+
+- `-PcloudflareApiBaseUrl=...`
+- `-PpythonApiBaseUrl=...`
 
 ## Cloudflare Backend
 

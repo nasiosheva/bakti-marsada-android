@@ -21,7 +21,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import com.lampung.baktimarsada.R
-import com.lampung.baktimarsada.core.constants.AppConstants
+import com.lampung.baktimarsada.core.constants.AppBuildConfig
 import com.lampung.baktimarsada.core.dispatchers.DispatcherProvider
 import com.lampung.baktimarsada.core.result.AppResult
 import com.lampung.baktimarsada.data.remote.AppRemoteDataSource
@@ -98,7 +98,7 @@ fun AdminDashboardRoute(
                 state.errorMessage?.let { message ->
                     item { BaktiSectionMessage(message = message) }
                 }
-                if (AppConstants.SIMULATION_ENABLED) {
+                if (AppBuildConfig.simulationEnabled) {
                     item {
                         OutlinedButton(
                             onClick = viewModel::resetSimulationData,
@@ -229,3 +229,5 @@ class AdminDashboardViewModel @Inject constructor(
         }
     }
 }
+
+// created by Mories Deo Hutapea, S.E.,S.Kom

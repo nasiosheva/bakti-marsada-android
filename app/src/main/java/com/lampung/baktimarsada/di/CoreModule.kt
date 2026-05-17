@@ -16,3 +16,5 @@ abstract class CoreModule {
     @Singleton
     abstract fun bindStringProvider(impl: AndroidStringProvider): StringProvider
 }
+
+// created by Mories Deo Hutapea, S.E.,S.Kom

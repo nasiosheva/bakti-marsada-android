@@ -21,3 +21,10 @@ dependencyResolutionManagement {
 
 rootProject.name = "Bakti Marsada"
 include(":app")
+include(":core")
+include(":domain")
+include(":data")
+include(":data-source-cloudflare")
+include(":data-source-python")
+include(":data-source-firebase")
+include(":data-source-simulate")

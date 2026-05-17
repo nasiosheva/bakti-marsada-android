@@ -6,6 +6,10 @@ plugins {
     alias(libs.plugins.hilt.android)
 }
 
+val configuredDataSourceProvider = providers.gradleProperty("dataSourceProvider").orNull ?: "cloudflare"
+val configuredCloudflareBaseUrl = providers.gradleProperty("cloudflareApiBaseUrl").orNull
+val configuredPythonBaseUrl = providers.gradleProperty("pythonApiBaseUrl").orNull
+
 android {
     namespace = "com.lampung.baktimarsada"
     compileSdk = 36
@@ -17,6 +21,9 @@ android {
         versionCode = 1
         versionName = "1.0"
         buildConfigField("String", "API_BASE_URL", "\"https://example.com/\"")
+        buildConfigField("String", "API_BASE_URL_CLOUDFLARE", "\"https://example.com/\"")
+        buildConfigField("String", "API_BASE_URL_PYTHON", "\"https://example.com/\"")
+        buildConfigField("String", "DATA_SOURCE_PROVIDER", "\"$configuredDataSourceProvider\"")
         buildConfigField("String", "APP_ENVIRONMENT", "\"debug\"")
         buildConfigField("String", "DATABASE_NAME", "\"bakti_marsada.db\"")
         buildConfigField("Boolean", "SIMULATION_ENABLED", "false")
@@ -26,27 +33,46 @@ android {
 
     buildTypes {
         debug {
-            buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:8787/\"")
+            applicationIdSuffix = ".dev"
+            val debugCloudflareUrl = configuredCloudflareBaseUrl ?: "http://10.0.2.2:8787/"
+            val debugPythonUrl = configuredPythonBaseUrl ?: "http://10.0.2.2:8000/"
+            buildConfigField("String", "API_BASE_URL", "\"$debugCloudflareUrl\"")
+            buildConfigField("String", "API_BASE_URL_CLOUDFLARE", "\"$debugCloudflareUrl\"")
+            buildConfigField("String", "API_BASE_URL_PYTHON", "\"$debugPythonUrl\"")
+            buildConfigField("String", "DATA_SOURCE_PROVIDER", "\"$configuredDataSourceProvider\"")
             buildConfigField("String", "APP_ENVIRONMENT", "\"debug\"")
             buildConfigField("String", "DATABASE_NAME", "\"bakti_marsada_debug.db\"")
             buildConfigField("Boolean", "SIMULATION_ENABLED", "false")
+            resValue("string", "app_name", "Bakti Marsada Dev")
         }
         create("simulate") {
             initWith(getByName("debug"))
             matchingFallbacks += listOf("debug")
             applicationIdSuffix = ".simulate"
             versionNameSuffix = "-simulate"
-            buildConfigField("String", "API_BASE_URL", "\"https://simulate.baktimarsada.local/\"")
+            val simulateCloudflareUrl = configuredCloudflareBaseUrl ?: "https://simulate.baktimarsada.local/"
+            val simulatePythonUrl = configuredPythonBaseUrl ?: "https://simulate-python.baktimarsada.local/"
+            buildConfigField("String", "API_BASE_URL", "\"$simulateCloudflareUrl\"")
+            buildConfigField("String", "API_BASE_URL_CLOUDFLARE", "\"$simulateCloudflareUrl\"")
+            buildConfigField("String", "API_BASE_URL_PYTHON", "\"$simulatePythonUrl\"")
+            buildConfigField("String", "DATA_SOURCE_PROVIDER", "\"$configuredDataSourceProvider\"")
             buildConfigField("String", "APP_ENVIRONMENT", "\"simulate\"")
             buildConfigField("String", "DATABASE_NAME", "\"bakti_marsada_simulate.db\"")
             buildConfigField("Boolean", "SIMULATION_ENABLED", "true")
+            resValue("string", "app_name", "Bakti Marsada Simulate")
         }
         release {
             isMinifyEnabled = false
-            buildConfigField("String", "API_BASE_URL", "\"https://bakti-marsada-be.deomories.workers.dev/\"")
+            val releaseCloudflareUrl = configuredCloudflareBaseUrl ?: "https://bakti-marsada-be.deomories.workers.dev/"
+            val releasePythonUrl = configuredPythonBaseUrl ?: "https://python-bakti-marsada.example.com/"
+            buildConfigField("String", "API_BASE_URL", "\"$releaseCloudflareUrl\"")
+            buildConfigField("String", "API_BASE_URL_CLOUDFLARE", "\"$releaseCloudflareUrl\"")
+            buildConfigField("String", "API_BASE_URL_PYTHON", "\"$releasePythonUrl\"")
+            buildConfigField("String", "DATA_SOURCE_PROVIDER", "\"$configuredDataSourceProvider\"")
             buildConfigField("String", "APP_ENVIRONMENT", "\"production\"")
             buildConfigField("String", "DATABASE_NAME", "\"bakti_marsada.db\"")
             buildConfigField("Boolean", "SIMULATION_ENABLED", "false")
+            resValue("string", "app_name", "Bakti Marsada")
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
@@ -69,6 +95,14 @@ ksp {
 }
 
 dependencies {
+    implementation(project(":core"))
+    implementation(project(":domain"))
+    implementation(project(":data"))
+    implementation(project(":data-source-cloudflare"))
+    implementation(project(":data-source-python"))
+    implementation(project(":data-source-firebase"))
+    implementation(project(":data-source-simulate"))
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.runtime.compose)

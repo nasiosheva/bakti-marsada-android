@@ -51,3 +51,5 @@ abstract class RepositoryModule {
     ): PaymentObligationRepository
 
 }
+
+// created by Mories Deo Hutapea, S.E.,S.Kom

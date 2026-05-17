@@ -2,10 +2,9 @@ package com.lampung.baktimarsada.di
 
 import android.content.Context
 import com.chuckerteam.chucker.api.ChuckerInterceptor
+import com.lampung.baktimarsada.core.constants.AppBuildConfig
 import com.lampung.baktimarsada.core.constants.AppConstants
 import com.lampung.baktimarsada.data.remote.AppRemoteDataSource
-import com.lampung.baktimarsada.data.remote.BackendAppRemoteDataSource
-import com.lampung.baktimarsada.data.remote.SimulateAppRemoteDataSource
 import com.lampung.baktimarsada.network.api.BaktiApiService
 import com.lampung.baktimarsada.security.SecureStorage
 import dagger.Module
@@ -18,6 +17,7 @@ import okhttp3.Interceptor
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
+import javax.inject.Named
 import javax.inject.Singleton
 
 @Module
@@ -72,9 +72,10 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideRetrofit(client: OkHttpClient): Retrofit {
+    @Named(AppConstants.QUALIFIER_CLOUDFLARE_API)
+    fun provideCloudflareRetrofit(client: OkHttpClient): Retrofit {
         return Retrofit.Builder()
-            .baseUrl(AppConstants.NETWORK_BASE_URL)
+            .baseUrl(AppBuildConfig.cloudflareBaseUrl)
             .client(client)
             .addConverterFactory(MoshiConverterFactory.create())
             .build()
@@ -82,20 +83,41 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideBaktiApiService(retrofit: Retrofit): BaktiApiService {
+    @Named(AppConstants.QUALIFIER_PYTHON_API)
+    fun providePythonRetrofit(client: OkHttpClient): Retrofit {
+        return Retrofit.Builder()
+            .baseUrl(AppBuildConfig.pythonBaseUrl)
+            .client(client)
+            .addConverterFactory(MoshiConverterFactory.create())
+            .build()
+    }
+
+    @Provides
+    @Singleton
+    @Named(AppConstants.QUALIFIER_CLOUDFLARE_API)
+    fun provideCloudflareApiService(
+        @Named(AppConstants.QUALIFIER_CLOUDFLARE_API) retrofit: Retrofit
+    ): BaktiApiService {
+        return retrofit.create(BaktiApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    @Named(AppConstants.QUALIFIER_PYTHON_API)
+    fun providePythonApiService(
+        @Named(AppConstants.QUALIFIER_PYTHON_API) retrofit: Retrofit
+    ): BaktiApiService {
         return retrofit.create(BaktiApiService::class.java)
     }
 
     @Provides
     @Singleton
     fun provideAppRemoteDataSource(
-        simulateDataSource: SimulateAppRemoteDataSource,
-        backendDataSource: BackendAppRemoteDataSource
+        selector: AppRemoteDataSourceSelector
     ): AppRemoteDataSource {
-        return if (AppConstants.SIMULATION_ENABLED) {
-            simulateDataSource
-        } else {
-            backendDataSource
-        }
+        return selector.select(
+            simulationEnabled = AppBuildConfig.simulationEnabled,
+            provider = AppBuildConfig.dataSourceProvider
+        )
     }
 }

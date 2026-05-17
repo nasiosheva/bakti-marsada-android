@@ -29,6 +29,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import com.lampung.baktimarsada.R
+import com.lampung.baktimarsada.core.constants.AppBuildConfig
 import com.lampung.baktimarsada.core.constants.AppConstants
 import com.lampung.baktimarsada.core.dispatchers.DispatcherProvider
 import com.lampung.baktimarsada.core.resources.StringProvider
@@ -77,7 +78,7 @@ fun LoginScreen(
     onLoginAsAdminClicked: () -> Unit = {},
     onLoginAsJemaatClicked: () -> Unit = {},
     onResetAndLoginAsAdminClicked: () -> Unit = {},
-    isSimulationEnabled: Boolean = AppConstants.SIMULATION_ENABLED
+    isSimulationEnabled: Boolean = AppBuildConfig.simulationEnabled
 ) {
     Scaffold(
         modifier = Modifier.fillMaxSize()
@@ -348,3 +349,5 @@ class LoginViewModel @Inject constructor(
         }
     }
 }
+
+// created by Mories Deo Hutapea, S.E.,S.Kom

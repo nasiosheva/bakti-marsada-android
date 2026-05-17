@@ -28,3 +28,5 @@ object FirebaseModule {
         firestore: FirebaseFirestore
     ): FirebaseTelemetryService = FirebaseTelemetryServiceImpl(firestore)
 }
+
+// created by Mories Deo Hutapea, S.E.,S.Kom

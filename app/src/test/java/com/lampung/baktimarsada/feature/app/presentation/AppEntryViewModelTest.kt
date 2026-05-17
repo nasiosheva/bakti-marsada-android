@@ -69,3 +69,5 @@ class AppEntryViewModelTest {
         assertNull(viewModel.state.value.session)
     }
 }
+
+// created by Mories Deo Hutapea, S.E.,S.Kom

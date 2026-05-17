@@ -429,3 +429,5 @@ class MemberViewModel @Inject constructor(
         }
     }
 }
+
+// created by Mories Deo Hutapea, S.E.,S.Kom

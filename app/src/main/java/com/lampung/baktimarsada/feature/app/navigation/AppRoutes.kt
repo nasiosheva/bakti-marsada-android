@@ -27,3 +27,5 @@ object AppRoutes {
 
     fun adminEventDetail(eventId: String): String = "admin_event_detail/$eventId"
 }
+
+// created by Mories Deo Hutapea, S.E.,S.Kom

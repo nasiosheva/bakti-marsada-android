@@ -88,6 +88,7 @@
     <string name="profile_sector_label">Sektor/Wijk</string>
     <string name="profile_user_id_label">ID Pengguna</string>
     <string name="profile_environment_label">Environment</string>
+    <string name="profile_data_source_label">Data Source</string>
 
     <string name="form_title">Judul</string>
     <string name="form_description">Deskripsi</string>

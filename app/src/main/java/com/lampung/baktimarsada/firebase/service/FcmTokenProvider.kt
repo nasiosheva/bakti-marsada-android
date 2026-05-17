@@ -15,3 +15,5 @@ class FirebaseFcmTokenProvider @Inject constructor(
 ) : FcmTokenProvider {
     override suspend fun getToken(): String = firebaseMessaging.token.await()
 }
+
+// created by Mories Deo Hutapea, S.E.,S.Kom

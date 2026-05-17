@@ -1,6 +1,7 @@
 package com.lampung.baktimarsada.data.remote
 
 import com.lampung.baktimarsada.core.constants.AppConstants
+import com.lampung.baktimarsada.datasource.simulate.SimulateAppRemoteDataSource
 import com.lampung.baktimarsada.network.dto.LoginRequestDto
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
@@ -50,3 +51,5 @@ class SimulateAppRemoteDataSourceTest {
         assertEquals(initialPayments, dataSource.fetchPaymentObligations(sectorId).size)
     }
 }
+
+// created by Mories Deo Hutapea, S.E.,S.Kom

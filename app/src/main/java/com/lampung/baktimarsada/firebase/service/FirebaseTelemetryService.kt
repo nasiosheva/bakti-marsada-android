@@ -27,3 +27,5 @@ class FirebaseTelemetryServiceImpl @Inject constructor(
             .await()
     }
 }
+
+// created by Mories Deo Hutapea, S.E.,S.Kom

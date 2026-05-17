@@ -20,3 +20,5 @@ fun BaktiText(
         overflow = TextOverflow.Ellipsis
     )
 }
+
+// created by Mories Deo Hutapea, S.E.,S.Kom

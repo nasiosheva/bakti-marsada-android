@@ -36,3 +36,5 @@ class AndroidPermissionManager @Inject constructor(
         return Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
     }
 }
+
+// created by Mories Deo Hutapea, S.E.,S.Kom

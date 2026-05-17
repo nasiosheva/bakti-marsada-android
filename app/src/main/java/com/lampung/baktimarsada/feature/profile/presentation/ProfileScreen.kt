@@ -27,7 +27,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.lampung.baktimarsada.R
-import com.lampung.baktimarsada.core.constants.AppConstants
+import com.lampung.baktimarsada.core.constants.AppBuildConfig
 import com.lampung.baktimarsada.domain.model.SessionState
 import com.lampung.baktimarsada.domain.model.UserRole
 import com.lampung.baktimarsada.ui.component.BaktiValueRow
@@ -68,7 +68,11 @@ fun ProfileScreen(
                 )
                 BaktiValueRow(
                     label = stringResource(id = R.string.profile_environment_label),
-                    value = AppConstants.APP_ENVIRONMENT
+                    value = AppBuildConfig.appEnvironment
+                )
+                BaktiValueRow(
+                    label = stringResource(id = R.string.profile_data_source_label),
+                    value = AppBuildConfig.dataSourceLabel
                 )
             }
         }
@@ -134,10 +138,12 @@ private fun ProfileHeader(session: SessionState) {
                         UserRole.JEMAAT -> stringResource(id = R.string.profile_role_jemaat)
                     }
                 )
-                if (AppConstants.SIMULATION_ENABLED) {
+                if (AppBuildConfig.simulationEnabled) {
                     JemaatPill(text = stringResource(id = R.string.environment_simulate))
                 }
             }
         }
     }
 }
+
+// created by Mories Deo Hutapea, S.E.,S.Kom

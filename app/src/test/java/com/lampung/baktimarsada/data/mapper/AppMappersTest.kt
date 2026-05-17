@@ -70,3 +70,5 @@ class AppMappersTest {
         assertEquals("wijk-1", domain.sectorId)
     }
 }
+
+// created by Mories Deo Hutapea, S.E.,S.Kom

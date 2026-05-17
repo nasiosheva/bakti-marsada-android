@@ -2,7 +2,7 @@ package com.lampung.baktimarsada.data.repository
 
 import com.lampung.baktimarsada.core.constants.AppConstants
 import com.lampung.baktimarsada.core.result.AppResult
-import com.lampung.baktimarsada.data.remote.SimulateAppRemoteDataSource
+import com.lampung.baktimarsada.datasource.simulate.SimulateAppRemoteDataSource
 import com.lampung.baktimarsada.domain.model.UserRole
 import com.lampung.baktimarsada.security.SecureStorage
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -71,3 +71,5 @@ class AuthRepositoryImplTest {
         }
     }
 }
+
+// created by Mories Deo Hutapea, S.E.,S.Kom

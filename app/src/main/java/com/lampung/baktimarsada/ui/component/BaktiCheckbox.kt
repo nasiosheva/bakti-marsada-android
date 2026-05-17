@@ -29,3 +29,5 @@ fun BaktiCheckbox(
         Text(text = label)
     }
 }
+
+// created by Mories Deo Hutapea, S.E.,S.Kom

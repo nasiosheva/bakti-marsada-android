@@ -16,3 +16,5 @@ abstract class PermissionModule {
     @Singleton
     abstract fun bindPermissionManager(impl: AndroidPermissionManager): PermissionManager
 }
+
+// created by Mories Deo Hutapea, S.E.,S.Kom

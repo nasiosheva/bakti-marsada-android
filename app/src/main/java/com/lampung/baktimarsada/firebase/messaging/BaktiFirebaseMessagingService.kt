@@ -57,3 +57,5 @@ class BaktiFirebaseMessagingService : FirebaseMessagingService() {
         super.onDestroy()
     }
 }
+
+// created by Mories Deo Hutapea, S.E.,S.Kom

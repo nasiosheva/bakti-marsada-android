@@ -16,3 +16,5 @@ abstract class FirebaseBindingModule {
     @Singleton
     abstract fun bindFcmTokenProvider(impl: FirebaseFcmTokenProvider): FcmTokenProvider
 }
+
+// created by Mories Deo Hutapea, S.E.,S.Kom

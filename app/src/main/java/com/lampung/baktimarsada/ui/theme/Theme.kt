@@ -56,3 +56,4 @@ fun BaktiMarsadaTheme(
         content = content
     )
 }
+// created by Mories Deo Hutapea, S.E.,S.Kom

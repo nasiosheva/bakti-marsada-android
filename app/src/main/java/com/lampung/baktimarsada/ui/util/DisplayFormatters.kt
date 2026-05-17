@@ -10,3 +10,5 @@ fun formatCurrency(amount: Long): String {
         .build()
     return NumberFormat.getCurrencyInstance(locale).format(amount)
 }
+
+// created by Mories Deo Hutapea, S.E.,S.Kom

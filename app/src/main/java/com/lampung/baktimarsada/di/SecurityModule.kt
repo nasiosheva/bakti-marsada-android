@@ -24,3 +24,5 @@ abstract class SecurityModule {
         impl: DatabaseEncryptionProviderImpl
     ): DatabaseEncryptionProvider
 }
+
+// created by Mories Deo Hutapea, S.E.,S.Kom

@@ -18,3 +18,5 @@ class AndroidStringProvider @Inject constructor(
     override fun get(resId: Int): String = context.getString(resId)
     override fun get(resId: Int, vararg args: Any): String = context.getString(resId, *args)
 }
+
+// created by Mories Deo Hutapea, S.E.,S.Kom

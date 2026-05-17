@@ -33,7 +33,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.lampung.baktimarsada.R
-import com.lampung.baktimarsada.core.constants.AppConstants
+import com.lampung.baktimarsada.core.constants.AppBuildConfig
 import com.lampung.baktimarsada.domain.model.SessionState
 import com.lampung.baktimarsada.feature.app.navigation.AppRoutes
 import com.lampung.baktimarsada.feature.events.presentation.EventRoute
@@ -97,7 +97,7 @@ fun JemaatHomeScreen(
                             text = session.sectorContext.sectorName,
                             style = MaterialTheme.typography.bodySmall
                         )
-                        if (AppConstants.SIMULATION_ENABLED) {
+                        if (AppBuildConfig.simulationEnabled) {
                             Text(
                                 text = stringResource(id = R.string.environment_simulate),
                                 style = MaterialTheme.typography.bodySmall
@@ -177,3 +177,5 @@ private data class JemaatBottomDestination(
     val label: String,
     val icon: ImageVector
 )
+
+// created by Mories Deo Hutapea, S.E.,S.Kom
