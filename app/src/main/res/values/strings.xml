@@ -1,0 +1,96 @@
+<resources>
+    <string name="app_name">Bakti Marsada</string>
+    <string name="splash_message">Menyiapkan sesi aplikasi...</string>
+
+    <string name="login_subtitle">Masuk untuk melihat data sektor atau mengelola pelayanan wijk.</string>
+    <string name="login_identifier_label">Email atau Identifier</string>
+    <string name="login_password_label">Password</string>
+    <string name="login_loading">Memproses...</string>
+    <string name="login_button">Masuk</string>
+    <string name="login_demo_title">Akun Demo</string>
+    <string name="login_demo_admin">Admin: %1$s / %2$s</string>
+    <string name="login_demo_jemaat">Jemaat: %1$s / %2$s</string>
+    <string name="login_error_identifier_required">Identifier wajib diisi</string>
+    <string name="login_error_password_required">Password wajib diisi</string>
+
+    <string name="jemaat_home_title">Portal Jemaat</string>
+    <string name="admin_home_title">Portal Admin</string>
+    <string name="action_logout">Logout</string>
+    <string name="action_refresh">Refresh</string>
+    <string name="action_detail">Detail</string>
+    <string name="action_edit">Ubah</string>
+    <string name="action_delete">Hapus</string>
+    <string name="action_close">Tutup</string>
+    <string name="action_cancel">Batal</string>
+    <string name="action_save">Simpan</string>
+    <string name="action_toggle_visibility">Ubah Visibilitas</string>
+    <string name="action_add_event">Tambah Acara</string>
+    <string name="action_add_member">Tambah Anggota</string>
+    <string name="action_add_finance">Tambah Laporan</string>
+    <string name="action_add_payment">Tambah Tagihan</string>
+
+    <string name="tab_dashboard">Dashboard</string>
+    <string name="tab_events">Acara</string>
+    <string name="tab_members">Anggota</string>
+    <string name="tab_finance">Keuangan</string>
+    <string name="tab_payments">Tagihan</string>
+
+    <string name="event_title_jemaat">Daftar Acara Partangiangan</string>
+    <string name="event_title_admin">Kelola Acara Partangiangan</string>
+    <string name="event_empty">Belum ada acara partangiangan untuk sektor ini.</string>
+    <string name="dialog_add_event">Tambah Acara Partangiangan</string>
+    <string name="dialog_edit_event">Ubah Acara Partangiangan</string>
+
+    <string name="member_title_jemaat">Direktori Anggota Sektor</string>
+    <string name="member_title_admin">Kelola Direktori Anggota</string>
+    <string name="member_empty">Belum ada data anggota pada sektor ini.</string>
+    <string name="dialog_add_member">Tambah Anggota</string>
+    <string name="dialog_edit_member">Ubah Data Anggota</string>
+
+    <string name="finance_title_jemaat">Laporan Keuangan Terbuka</string>
+    <string name="finance_title_admin">Kelola Laporan Keuangan</string>
+    <string name="finance_empty">Belum ada laporan keuangan yang tersedia.</string>
+    <string name="dialog_add_finance">Tambah Laporan Keuangan</string>
+    <string name="dialog_edit_finance">Ubah Laporan Keuangan</string>
+
+    <string name="payment_title_jemaat">Kewajiban Pembayaran Sektor</string>
+    <string name="payment_title_admin">Kelola Kewajiban Pembayaran</string>
+    <string name="payment_empty">Belum ada kewajiban pembayaran pada sektor ini.</string>
+    <string name="dialog_add_payment">Tambah Kewajiban Pembayaran</string>
+    <string name="dialog_edit_payment">Ubah Kewajiban Pembayaran</string>
+
+    <string name="admin_dashboard_title">Ringkasan Admin %1$s</string>
+    <string name="dashboard_events_title">Acara</string>
+    <string name="dashboard_events_desc">Total agenda partangiangan sektor atau wijk.</string>
+    <string name="dashboard_members_title">Anggota</string>
+    <string name="dashboard_members_desc">Direktori anggota aktif pada sektor yang dikelola.</string>
+    <string name="dashboard_finance_title">Laporan Keuangan</string>
+    <string name="dashboard_finance_desc">Termasuk laporan yang visible dan hidden untuk jemaat.</string>
+    <string name="dashboard_payments_title">Kewajiban Pembayaran</string>
+    <string name="dashboard_payments_desc">Daftar tagihan sektor beserta status terkini.</string>
+
+    <string name="form_title">Judul</string>
+    <string name="form_description">Deskripsi</string>
+    <string name="form_schedule">Jadwal</string>
+    <string name="form_location">Lokasi</string>
+    <string name="form_full_name">Nama Lengkap</string>
+    <string name="form_family_group">Keluarga</string>
+    <string name="form_role_sector">Peran di Sektor</string>
+    <string name="form_phone">Nomor Telepon</string>
+    <string name="form_address">Alamat</string>
+    <string name="form_period">Periode</string>
+    <string name="form_amount">Nominal</string>
+    <string name="form_visibility">Visibilitas</string>
+    <string name="form_visible_to_jemaat">Tampilkan kepada jemaat</string>
+    <string name="form_member">Anggota</string>
+    <string name="form_due_date">Jatuh Tempo</string>
+    <string name="form_status">Status</string>
+
+    <string name="visibility_visible">Terlihat oleh jemaat</string>
+    <string name="visibility_hidden">Hanya admin</string>
+
+    <string name="payment_status_unpaid">Belum Dibayar</string>
+    <string name="payment_status_paid">Lunas</string>
+    <string name="payment_status_overdue">Jatuh Tempo Lewat</string>
+
+</resources>

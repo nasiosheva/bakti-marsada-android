@@ -1,0 +1,10 @@
+name = "bakti-marsada-be"
+main = "src/index.ts"
+compatibility_date = "2026-05-03"
+minify = true
+
+[[d1_databases]]
+binding = "DB"
+database_name = "bakti_marsada_db"
+database_id = "290528c9-620d-4b8d-aad1-9122a71c6e47"
+migrations_dir = "migrations"
