@@ -15,6 +15,9 @@ object AppConstants {
     const val KEY_SUB_TENANT_NAME = "key_sub_tenant_name"
     const val KEY_SECTOR_ID = "key_sector_id"
     const val KEY_SECTOR_NAME = "key_sector_name"
+    const val KEY_REMEMBER_LOGIN = "key_remember_login"
+    const val KEY_REMEMBER_IDENTIFIER = "key_remember_identifier"
+    const val KEY_REMEMBER_PASSWORD = "key_remember_password"
 
     const val FIRESTORE_COLLECTION_TRACKING = "device_events"
     const val FIRESTORE_COLLECTION_USERS = "users"

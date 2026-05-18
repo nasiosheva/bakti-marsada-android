@@ -39,19 +39,24 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.lampung.baktimarsada.R
 import com.lampung.baktimarsada.core.constants.AppBuildConfig
+import com.lampung.baktimarsada.domain.model.SectorContext
 import com.lampung.baktimarsada.domain.model.SessionState
+import com.lampung.baktimarsada.domain.model.TenantContext
+import com.lampung.baktimarsada.domain.model.UserRole
 import com.lampung.baktimarsada.feature.app.navigation.AppRoutes
 import com.lampung.baktimarsada.feature.events.presentation.EventRoute
 import com.lampung.baktimarsada.feature.finance.presentation.FinanceRoute
 import com.lampung.baktimarsada.feature.members.presentation.MemberRoute
 import com.lampung.baktimarsada.feature.payments.presentation.PaymentRoute
 import com.lampung.baktimarsada.feature.profile.presentation.ProfileRoute
+import com.lampung.baktimarsada.ui.theme.BaktiMarsadaTheme
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -93,8 +98,7 @@ fun JemaatHomeScreen(
         JemaatBottomDestination(AppRoutes.JEMAAT_EVENTS, stringResource(id = R.string.tab_events), Icons.Filled.Event),
         JemaatBottomDestination(AppRoutes.JEMAAT_MEMBERS, stringResource(id = R.string.tab_members), Icons.Filled.Groups),
         JemaatBottomDestination(AppRoutes.JEMAAT_FINANCE, stringResource(id = R.string.tab_finance), Icons.Filled.AccountBalanceWallet),
-        JemaatBottomDestination(AppRoutes.JEMAAT_PAYMENTS, stringResource(id = R.string.tab_payments), Icons.Filled.Payments),
-        JemaatBottomDestination(AppRoutes.JEMAAT_PROFILE, stringResource(id = R.string.tab_profile), Icons.Filled.Person)
+        JemaatBottomDestination(AppRoutes.JEMAAT_PAYMENTS, stringResource(id = R.string.tab_payments), Icons.Filled.Payments)
     )
 
     val drawerNavItems = @Composable {
@@ -221,6 +225,20 @@ fun JemaatHomeScreen(
                         )
                     }
                 }
+            },
+            actions = {
+                IconButton(
+                    onClick = {
+                        navController.navigate(AppRoutes.JEMAAT_PROFILE) {
+                            launchSingleTop = true
+                        }
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Person,
+                        contentDescription = stringResource(id = R.string.tab_profile)
+                    )
+                }
             }
         )
     }
@@ -262,5 +280,38 @@ private data class JemaatBottomDestination(
     val label: String,
     val icon: ImageVector
 )
+
+@Preview(name = "Jemaat Home", showBackground = true)
+@Composable
+private fun JemaatHomeScreenPreview() {
+    val previewSession = SessionState(
+        authToken = "preview-token",
+        userId = "jemaat-1",
+        displayName = "Jemaat Kedaton",
+        role = UserRole.JEMAAT,
+        tenantContext = TenantContext(
+            tenantId = "hkbp",
+            tenantName = "HKBP",
+            subTenantId = "hkbp-kedaton",
+            subTenantName = "HKBP Kedaton"
+        ),
+        sectorContext = SectorContext(
+            sectorId = "sector-1",
+            sectorName = "Sektor 1 HKBP Kedaton"
+        )
+    )
+
+    BaktiMarsadaTheme {
+        JemaatHomeScreen(
+            session = previewSession,
+            onLogout = {},
+            eventsContent = { Text("Events placeholder") },
+            membersContent = { Text("Members placeholder") },
+            financeContent = { Text("Finance placeholder") },
+            paymentsContent = { Text("Payments placeholder") },
+            profileContent = { Text("Profile placeholder") }
+        )
+    }
+}
 
 // created by Mories Deo Hutapea, S.E.,S.Kom

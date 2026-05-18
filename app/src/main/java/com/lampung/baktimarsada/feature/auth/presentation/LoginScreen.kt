@@ -52,6 +52,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import com.lampung.baktimarsada.R
 import com.lampung.baktimarsada.core.constants.AppBuildConfig
+import com.lampung.baktimarsada.core.constants.AppConstants
 import com.lampung.baktimarsada.core.dispatchers.DispatcherProvider
 import com.lampung.baktimarsada.core.resources.StringProvider
 import com.lampung.baktimarsada.core.result.AppResult
@@ -59,6 +60,8 @@ import com.lampung.baktimarsada.core.tenant.TenantRuntime
 import com.lampung.baktimarsada.data.remote.AppRemoteDataSource
 import com.lampung.baktimarsada.domain.model.UserRole
 import com.lampung.baktimarsada.domain.usecase.LoginUseCase
+import com.lampung.baktimarsada.security.SecureStorage
+import com.lampung.baktimarsada.ui.component.BaktiCheckbox
 import com.lampung.baktimarsada.ui.component.BaktiSectionMessage
 import com.lampung.baktimarsada.ui.component.BaktiTextInput
 import com.lampung.baktimarsada.ui.theme.BaktiMarsadaTheme
@@ -85,6 +88,7 @@ fun LoginRoute(
         state = state,
         onIdentifierChanged = viewModel::onIdentifierChanged,
         onPasswordChanged = viewModel::onPasswordChanged,
+        onRememberMeChanged = viewModel::onRememberMeChanged,
         onLoginClicked = viewModel::submit,
         onLoginAsAdminClicked = viewModel::submitWithDemoAdmin,
         onLoginAsJemaatClicked = viewModel::submitWithDemoJemaat,
@@ -97,6 +101,7 @@ fun LoginScreen(
     state: LoginUiState,
     onIdentifierChanged: (String) -> Unit,
     onPasswordChanged: (String) -> Unit,
+    onRememberMeChanged: (Boolean) -> Unit = {},
     onLoginClicked: () -> Unit,
     onLoginAsAdminClicked: () -> Unit = {},
     onLoginAsJemaatClicked: () -> Unit = {},
@@ -189,6 +194,11 @@ fun LoginScreen(
                                     )
                                 }
                             }
+                        )
+                        BaktiCheckbox(
+                            checked = state.rememberMe,
+                            label = stringResource(id = R.string.login_remember_me),
+                            onCheckedChange = onRememberMeChanged
                         )
                         state.errorMessage?.let {
                             BaktiSectionMessage(message = it)
@@ -376,6 +386,7 @@ private fun String.toLoginInitials(): String {
 data class LoginUiState(
     val identifier: String = "",
     val password: String = "",
+    val rememberMe: Boolean = false,
     val identifierError: String? = null,
     val passwordError: String? = null,
     val errorMessage: String? = null,
@@ -388,13 +399,27 @@ class LoginViewModel @Inject constructor(
     private val loginUseCase: LoginUseCase,
     private val dispatcherProvider: DispatcherProvider,
     private val stringProvider: StringProvider,
-    private val remoteDataSource: AppRemoteDataSource
+    private val remoteDataSource: AppRemoteDataSource,
+    private val secureStorage: SecureStorage
 ) : ViewModel() {
     private val tenant
         get() = TenantRuntime.current
 
     private val _state = MutableStateFlow(LoginUiState())
     val state: StateFlow<LoginUiState> = _state.asStateFlow()
+
+    init {
+        val rememberLogin = secureStorage.getString(AppConstants.KEY_REMEMBER_LOGIN) == "true"
+        val rememberedIdentifier = secureStorage.getString(AppConstants.KEY_REMEMBER_IDENTIFIER).orEmpty()
+        val rememberedPassword = secureStorage.getString(AppConstants.KEY_REMEMBER_PASSWORD).orEmpty()
+        _state.update {
+            it.copy(
+                rememberMe = rememberLogin,
+                identifier = if (rememberLogin) rememberedIdentifier else "",
+                password = if (rememberLogin) rememberedPassword else ""
+            )
+        }
+    }
 
     fun onIdentifierChanged(value: String) {
         _state.update {
@@ -416,6 +441,10 @@ class LoginViewModel @Inject constructor(
                 loggedInRole = null
             )
         }
+    }
+
+    fun onRememberMeChanged(value: Boolean) {
+        _state.update { it.copy(rememberMe = value) }
     }
 
     fun submit() {
@@ -490,6 +519,7 @@ class LoginViewModel @Inject constructor(
         _state.update { it.copy(isLoading = true, errorMessage = null, loggedInRole = null) }
         when (val result = loginUseCase(identifier, password)) {
             is AppResult.Success -> {
+                persistRememberedCredentials(identifier, password, _state.value.rememberMe)
                 _state.update {
                     it.copy(
                         isLoading = false,
@@ -506,6 +536,18 @@ class LoginViewModel @Inject constructor(
                     )
                 }
             }
+        }
+    }
+
+    private fun persistRememberedCredentials(identifier: String, password: String, rememberMe: Boolean) {
+        if (rememberMe) {
+            secureStorage.putString(AppConstants.KEY_REMEMBER_LOGIN, "true")
+            secureStorage.putString(AppConstants.KEY_REMEMBER_IDENTIFIER, identifier)
+            secureStorage.putString(AppConstants.KEY_REMEMBER_PASSWORD, password)
+        } else {
+            secureStorage.putString(AppConstants.KEY_REMEMBER_LOGIN, "false")
+            secureStorage.remove(AppConstants.KEY_REMEMBER_IDENTIFIER)
+            secureStorage.remove(AppConstants.KEY_REMEMBER_PASSWORD)
         }
     }
 }

@@ -19,9 +19,14 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -37,6 +42,7 @@ import com.lampung.baktimarsada.domain.model.SessionState
 import com.lampung.baktimarsada.domain.model.UserRole
 import com.lampung.baktimarsada.ui.component.BaktiToolbar
 import com.lampung.baktimarsada.ui.component.BaktiValueRow
+import com.lampung.baktimarsada.ui.component.BaktiBottomSheet
 import com.lampung.baktimarsada.ui.component.JemaatPill
 
 @Composable
@@ -61,6 +67,8 @@ fun ProfileScreen(
     onTestSendNotification: () -> Unit = {},
     onBack: (() -> Unit)? = null
 ) {
+    var showLogoutSheet by rememberSaveable { mutableStateOf(false) }
+
     Scaffold(
         topBar = {
             onBack?.let {
@@ -121,12 +129,43 @@ fun ProfileScreen(
             }
             Spacer(modifier = Modifier.height(4.dp))
             Button(
-                onClick = onLogout,
+                onClick = { showLogoutSheet = true },
                 modifier = Modifier
                     .fillMaxWidth()
                     .semantics { testTag = "profile_logout_button" }
             ) {
                 Text(text = stringResource(id = R.string.action_logout))
+            }
+        }
+    }
+
+    if (showLogoutSheet) {
+        BaktiBottomSheet(
+            onDismissRequest = { showLogoutSheet = false },
+            title = stringResource(id = R.string.logout_confirm_title)
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    text = stringResource(id = R.string.logout_confirm_message),
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(
+                        onClick = { showLogoutSheet = false },
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Text(text = stringResource(id = R.string.action_cancel))
+                    }
+                    Button(
+                        onClick = {
+                            showLogoutSheet = false
+                            onLogout()
+                        },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(text = stringResource(id = R.string.action_logout))
+                    }
+                }
             }
         }
     }

@@ -5,6 +5,7 @@
     <string name="login_subtitle">Masuk untuk melihat data sektor atau mengelola pelayanan wijk.</string>
     <string name="login_identifier_label">Email atau Identifier</string>
     <string name="login_password_label">Password</string>
+    <string name="login_remember_me">Remember me</string>
     <string name="login_loading">Memproses...</string>
     <string name="login_button">Masuk</string>
     <string name="login_demo_title">Akun Demo</string>
@@ -25,6 +26,8 @@
     <string name="jemaat_home_title">Portal Jemaat</string>
     <string name="admin_home_title">Portal Admin</string>
     <string name="action_logout">Logout</string>
+    <string name="logout_confirm_title">Konfirmasi Logout</string>
+    <string name="logout_confirm_message">Apakah Anda yakin ingin logout dari aplikasi?</string>
     <string name="action_refresh">Refresh</string>
     <string name="action_detail">Detail</string>
     <string name="action_edit">Ubah</string>
