@@ -3,17 +3,23 @@ package com.lampung.baktimarsada.feature.auth.presentation
 import android.app.Activity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -24,6 +30,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -44,11 +51,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -137,23 +146,17 @@ fun LoginScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.42f),
-                            MaterialTheme.colorScheme.surface,
-                            MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.22f)
-                        )
-                    )
-                )
+                .background(LoginBackgroundBrush())
         ) {
+            LoginBackgroundPanels()
             Column(
                 modifier = Modifier
                     .align(Alignment.Center)
-                    .padding(20.dp)
+                    .padding(horizontal = 20.dp, vertical = 24.dp)
                     .widthIn(max = 440.dp)
+                    .heightIn(min = 0.dp)
                     .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(14.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 LoginHeader(
@@ -161,19 +164,12 @@ fun LoginScreen(
                     subtitle = stringResource(id = R.string.login_subtitle),
                     isSimulationEnabled = isSimulationEnabled
                 )
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(8.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f)
-                    ),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
-                ) {
+                LoginFormCard {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(18.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                        verticalArrangement = Arrangement.spacedBy(14.dp)
                     ) {
                         BaktiTextInput(
                             value = state.identifier,
@@ -220,53 +216,19 @@ fun LoginScreen(
                             label = stringResource(id = R.string.login_remember_me),
                             onCheckedChange = onRememberMeChanged
                         )
-                        Button(
-                            onClick = onLoginClicked,
+                        LoginPrimaryButton(
+                            text = if (state.isLoading) {
+                                stringResource(id = R.string.login_loading)
+                            } else {
+                                stringResource(id = R.string.login_button)
+                            },
                             enabled = !state.isLoading && state.password.isNotBlank(),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(48.dp)
-                                .semantics { testTag = "login_button" }
-                        ) {
-                            Text(
-                                text = if (state.isLoading) {
-                                    stringResource(id = R.string.login_loading)
-                                } else {
-                                    stringResource(id = R.string.login_button)
-                                }
-                            )
-                        }
-                        OutlinedButton(
-                            onClick = onGoogleSignInClicked,
-                            enabled = !state.isLoading && isGoogleSignInEnabled,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(48.dp)
-                                .semantics { testTag = "login_google_button" }
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(10.dp)
-                            ) {
-                                Surface(
-                                    shape = CircleShape,
-                                    color = MaterialTheme.colorScheme.primaryContainer,
-                                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                                ) {
-                                    Box(
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(
-                                            text = stringResource(id = R.string.login_google_badge),
-                                            style = MaterialTheme.typography.labelLarge,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                    }
-                                }
-                                Text(text = stringResource(id = R.string.login_google_button))
-                            }
-                        }
+                            onClick = onLoginClicked
+                        )
+                        GoogleSignInButton(
+                            enabled = !state.isLoading,
+                            onClick = onGoogleSignInClicked
+                        )
                     }
                 }
                 if (isSimulationEnabled) {
@@ -287,6 +249,53 @@ fun LoginScreen(
 }
 
 @Composable
+private fun LoginBackgroundBrush(): Brush {
+    return Brush.verticalGradient(
+        colors = listOf(
+            MaterialTheme.colorScheme.primary.copy(alpha = 0.20f),
+            MaterialTheme.colorScheme.surface,
+            MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.36f)
+        )
+    )
+}
+
+@Composable
+private fun BoxScope.LoginBackgroundPanels() {
+    val primary = MaterialTheme.colorScheme.primary
+    val secondary = MaterialTheme.colorScheme.secondary
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(188.dp)
+            .background(
+                Brush.horizontalGradient(
+                    colors = listOf(
+                        primary.copy(alpha = 0.24f),
+                        secondary.copy(alpha = 0.14f),
+                        Color.Transparent
+                    )
+                )
+            )
+            .align(Alignment.TopCenter)
+    )
+    Box(
+        modifier = Modifier
+            .align(Alignment.BottomCenter)
+            .fillMaxWidth()
+            .height(118.dp)
+            .background(
+                Brush.horizontalGradient(
+                    colors = listOf(
+                        MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.30f),
+                        MaterialTheme.colorScheme.surface.copy(alpha = 0.10f),
+                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.24f)
+                    )
+                )
+            )
+    )
+}
+
+@Composable
 private fun LoginHeader(
     title: String,
     subtitle: String,
@@ -294,13 +303,21 @@ private fun LoginHeader(
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Surface(
-            modifier = Modifier.size(80.dp),
+            modifier = Modifier
+                .size(88.dp)
+                .border(
+                    width = 1.dp,
+                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.22f),
+                    shape = CircleShape
+                ),
             shape = CircleShape,
-            color = MaterialTheme.colorScheme.primary,
-            contentColor = MaterialTheme.colorScheme.onPrimary
+            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.96f),
+            contentColor = MaterialTheme.colorScheme.onPrimary,
+            tonalElevation = 6.dp,
+            shadowElevation = 8.dp
         ) {
             Image(
                 painter = painterResource(id = R.drawable.ic_logo_bakti_marsada_new),
@@ -310,23 +327,34 @@ private fun LoginHeader(
                     .fillMaxSize()
             )
         }
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
             Text(
                 text = title,
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.SemiBold
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center
             )
             Text(
                 text = subtitle,
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.widthIn(max = 360.dp)
             )
         }
         if (isSimulationEnabled) {
             Surface(
                 shape = RoundedCornerShape(8.dp),
-                color = MaterialTheme.colorScheme.tertiaryContainer,
-                contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+                color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.86f),
+                contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                border = BorderStroke(
+                    width = 1.dp,
+                    color = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.28f)
+                )
             ) {
                 Text(
                     text = stringResource(id = R.string.login_simulate_badge),
@@ -334,6 +362,114 @@ private fun LoginHeader(
                     style = MaterialTheme.typography.labelLarge
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun LoginFormCard(
+    content: @Composable () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(8.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.98f)
+        ),
+        border = BorderStroke(
+            width = 1.dp,
+            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.70f)
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+    ) {
+        Box(modifier = Modifier.fillMaxWidth()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(5.dp)
+                    .background(
+                        Brush.horizontalGradient(
+                            colors = listOf(
+                                MaterialTheme.colorScheme.primary,
+                                MaterialTheme.colorScheme.tertiary,
+                                MaterialTheme.colorScheme.secondary
+                            )
+                        )
+                    )
+                    .align(Alignment.TopCenter)
+            )
+            Box(modifier = Modifier.padding(top = 5.dp)) {
+                content()
+            }
+        }
+    }
+}
+
+@Composable
+private fun LoginPrimaryButton(
+    text: String,
+    enabled: Boolean,
+    onClick: () -> Unit
+) {
+    Button(
+        onClick = onClick,
+        enabled = enabled,
+        shape = RoundedCornerShape(8.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.onPrimary
+        ),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(50.dp)
+            .semantics { testTag = "login_button" }
+    ) {
+        Text(text = text, fontWeight = FontWeight.SemiBold)
+    }
+}
+
+@Composable
+private fun GoogleSignInButton(
+    enabled: Boolean,
+    onClick: () -> Unit
+) {
+    OutlinedButton(
+        onClick = onClick,
+        enabled = enabled,
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(
+            width = 1.dp,
+            color = MaterialTheme.colorScheme.outline.copy(alpha = if (enabled) 0.58f else 0.24f)
+        ),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(50.dp)
+            .semantics { testTag = "login_google_button" }
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Surface(
+                modifier = Modifier.size(28.dp),
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.72f),
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Text(
+                        text = stringResource(id = R.string.login_google_badge),
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.width(10.dp))
+            Text(
+                text = stringResource(id = R.string.login_google_button),
+                fontWeight = FontWeight.Medium
+            )
         }
     }
 }
@@ -353,8 +489,13 @@ private fun DemoLoginCard(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(8.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.58f)
-        )
+            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.84f)
+        ),
+        border = BorderStroke(
+            width = 1.dp,
+            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.62f)
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
             modifier = Modifier
@@ -394,6 +535,7 @@ private fun DemoLoginCard(
                 OutlinedButton(
                     onClick = onLoginAsAdminClicked,
                     enabled = !isLoading,
+                    shape = RoundedCornerShape(8.dp),
                     modifier = Modifier
                         .weight(1f)
                         .semantics { testTag = "login_demo_admin_button" }
@@ -403,6 +545,7 @@ private fun DemoLoginCard(
                 OutlinedButton(
                     onClick = onLoginAsJemaatClicked,
                     enabled = !isLoading,
+                    shape = RoundedCornerShape(8.dp),
                     modifier = Modifier
                         .weight(1f)
                         .semantics { testTag = "login_demo_jemaat_button" }
@@ -413,6 +556,7 @@ private fun DemoLoginCard(
             OutlinedButton(
                 onClick = onResetAndLoginAsAdminClicked,
                 enabled = !isLoading,
+                shape = RoundedCornerShape(8.dp),
                 modifier = Modifier
                     .fillMaxWidth()
                     .semantics { testTag = "login_demo_reset_admin_button" }

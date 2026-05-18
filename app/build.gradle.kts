@@ -10,7 +10,27 @@ val configuredDataSourceProvider = providers.gradleProperty("dataSourceProvider"
 val configuredCloudflareBaseUrl = providers.gradleProperty("cloudflareApiBaseUrl").orNull
 val configuredPythonBaseUrl = providers.gradleProperty("pythonApiBaseUrl").orNull
 val configuredTenantKey = providers.gradleProperty("tenantKey").orNull ?: "hkbp-kedaton"
-val configuredGoogleWebClientId = providers.gradleProperty("googleWebClientId").orNull ?: ""
+
+fun String.toEnvKey(): String {
+    return replace(Regex("([a-z])([A-Z])"), "$1_$2").uppercase()
+}
+
+fun configuredValue(name: String): String? {
+    return providers.gradleProperty(name).orNull
+        ?: providers.environmentVariable(name.toEnvKey()).orNull
+}
+
+fun stringResourceValue(value: String): String {
+    return "\"${value.replace("\\", "\\\\").replace("\"", "\\\"")}\""
+}
+
+val configuredGoogleWebClientId = configuredValue("googleWebClientId").orEmpty()
+val configuredDebugGoogleWebClientId =
+    configuredValue("debugGoogleWebClientId") ?: configuredGoogleWebClientId
+val configuredSimulateGoogleWebClientId =
+    configuredValue("simulateGoogleWebClientId") ?: configuredGoogleWebClientId
+val configuredReleaseGoogleWebClientId =
+    configuredValue("releaseGoogleWebClientId") ?: configuredGoogleWebClientId
 
 android {
     namespace = "com.lampung.baktimarsada"
@@ -39,7 +59,7 @@ android {
         buildConfigField("String", "APP_ENVIRONMENT", "\"debug\"")
         buildConfigField("String", "DATABASE_NAME", "\"bakti_marsada.db\"")
         buildConfigField("Boolean", "SIMULATION_ENABLED", "false")
-        resValue("string", "bakti_google_web_client_id", "\"$configuredGoogleWebClientId\"")
+        resValue("string", "bakti_google_web_client_id", stringResourceValue(configuredGoogleWebClientId))
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -58,6 +78,11 @@ android {
             buildConfigField("String", "DATABASE_NAME", "\"bakti_marsada_debug.db\"")
             buildConfigField("Boolean", "SIMULATION_ENABLED", "false")
             resValue("string", "app_name", "Bakti Marsada Dev")
+            resValue(
+                "string",
+                "bakti_google_web_client_id",
+                stringResourceValue(configuredDebugGoogleWebClientId)
+            )
         }
         create("simulate") {
             initWith(getByName("debug"))
@@ -75,6 +100,11 @@ android {
             buildConfigField("String", "DATABASE_NAME", "\"bakti_marsada_simulate.db\"")
             buildConfigField("Boolean", "SIMULATION_ENABLED", "true")
             resValue("string", "app_name", "Bakti Marsada Simulate")
+            resValue(
+                "string",
+                "bakti_google_web_client_id",
+                stringResourceValue(configuredSimulateGoogleWebClientId)
+            )
         }
         release {
             isMinifyEnabled = false
@@ -90,6 +120,11 @@ android {
             buildConfigField("String", "DATABASE_NAME", "\"bakti_marsada.db\"")
             buildConfigField("Boolean", "SIMULATION_ENABLED", "false")
             resValue("string", "app_name", "Bakti Marsada")
+            resValue(
+                "string",
+                "bakti_google_web_client_id",
+                stringResourceValue(configuredReleaseGoogleWebClientId)
+            )
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }

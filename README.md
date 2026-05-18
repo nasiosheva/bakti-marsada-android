@@ -67,6 +67,28 @@ Opsional override base URL:
 - `-PcloudflareApiBaseUrl=...`
 - `-PpythonApiBaseUrl=...`
 
+### Google Sign-In Debug
+
+Google Sign-In bisa diaktifkan tanpa `google-services.json` khusus debug dengan mengirim Web Client ID dari command line:
+
+```bash
+./gradlew :app:assembleDebug -PdebugGoogleWebClientId=YOUR_WEB_CLIENT_ID.apps.googleusercontent.com
+```
+
+Alternatif global untuk semua build type:
+
+```bash
+./gradlew :app:assembleDebug -PgoogleWebClientId=YOUR_WEB_CLIENT_ID.apps.googleusercontent.com
+```
+
+Urutan konfigurasi:
+
+- `debugGoogleWebClientId`, `simulateGoogleWebClientId`, atau `releaseGoogleWebClientId`
+- fallback ke `googleWebClientId`
+- fallback ke environment variable `DEBUG_GOOGLE_WEB_CLIENT_ID`, `SIMULATE_GOOGLE_WEB_CLIENT_ID`, `RELEASE_GOOGLE_WEB_CLIENT_ID`, atau `GOOGLE_WEB_CLIENT_ID`
+
+Pastikan OAuth Client di Firebase/Google Cloud sudah memakai package build yang sesuai, misalnya `com.lampung.baktimarsada.dev` untuk debug.
+
 ### Multi-tenant clone
 
 Tenant aktif bisa diganti saat build:
