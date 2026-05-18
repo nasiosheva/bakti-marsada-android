@@ -75,7 +75,10 @@ class LoginViewModel @Inject constructor(
     }
 
     fun onGoogleSignInCancelled() {
-        _state.update { it.copy(isLoading = false) }
+        updateStateError(
+            stringProvider.get(R.string.login_google_failed),
+            isLoading = false
+        )
     }
 
     fun onGoogleSignInResult(data: Intent?) {

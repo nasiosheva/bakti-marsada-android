@@ -5,6 +5,8 @@ import android.content.Intent
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.auth.api.signin.GoogleSignInStatusCodes
+import com.google.android.gms.common.api.ApiException
 import com.lampung.baktimarsada.core.constants.AppConstants
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
@@ -48,6 +50,8 @@ class DefaultGoogleSignInHelper @Inject constructor(
         return runCatching {
             val account = GoogleSignIn.getSignedInAccountFromIntent(data).await()
             account.requireToken()
+        }.recoverCatching { throwable ->
+            throw IllegalStateException(readableSignInError(throwable))
         }
     }
 
@@ -64,6 +68,19 @@ class DefaultGoogleSignInHelper @Inject constructor(
     private fun resolveStringResource(name: String): String {
         val resId = context.resources.getIdentifier(name, "string", context.packageName)
         if (resId == 0) return ""
-        return context.getString(resId).trim()
+        return context.getString(resId)
+            .trim()
+            .trim('"')
+    }
+
+    private fun readableSignInError(throwable: Throwable): String {
+        val apiException = throwable as? ApiException ?: return throwable.message ?: "Google Sign-In gagal"
+        return when (apiException.statusCode) {
+            GoogleSignInStatusCodes.SIGN_IN_CANCELLED -> "Google Sign-In dibatalkan"
+            GoogleSignInStatusCodes.SIGN_IN_CURRENTLY_IN_PROGRESS -> "Google Sign-In sedang diproses, coba lagi"
+            GoogleSignInStatusCodes.SIGN_IN_FAILED -> "Google Sign-In gagal, periksa koneksi dan akun Google"
+            10 -> "Google Sign-In konfigurasi tidak valid (DEVELOPER_ERROR)"
+            else -> "Google Sign-In gagal (code ${apiException.statusCode})"
+        }
     }
 }

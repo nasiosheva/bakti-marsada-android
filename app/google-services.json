@@ -12,7 +12,20 @@
           "package_name": "com.lampung.baktimarsada"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "130391996191-hintgs5kbj6jfb56vpmj2a491m96bfel.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.lampung.baktimarsada",
+            "certificate_hash": "782c5b1f4e415b83cec864ff64fbe5a76718e4b5"
+          }
+        },
+        {
+          "client_id": "130391996191-27irb58e3iha35i3v2squi1u88k6tajj.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyB4U_8WhqRiyC92y5oL394UD0oVDKYRttg"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "130391996191-27irb58e3iha35i3v2squi1u88k6tajj.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

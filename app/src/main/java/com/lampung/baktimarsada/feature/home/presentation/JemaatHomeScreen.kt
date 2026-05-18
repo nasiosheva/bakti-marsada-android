@@ -1,12 +1,22 @@
 package com.lampung.baktimarsada.feature.home.presentation
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Event
@@ -25,7 +35,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -39,7 +51,10 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -145,6 +160,13 @@ fun JemaatHomeScreen(
                     }
                 },
                 modifier = Modifier.semantics { testTag = "jemaat_bottom_nav_${destination.route}" },
+                colors = NavigationBarItemDefaults.colors(
+                    selectedIconColor = MaterialTheme.colorScheme.onPrimary,
+                    selectedTextColor = MaterialTheme.colorScheme.primary,
+                    indicatorColor = MaterialTheme.colorScheme.primary,
+                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+                ),
                 label = { Text(text = destination.label) },
                 icon = {
                     Icon(
@@ -195,49 +217,15 @@ fun JemaatHomeScreen(
     }
 
     val topBar: @Composable () -> Unit = {
-        TopAppBar(
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                actionIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-            ),
-            navigationIcon = {
-                if (isTablet) {
-                    IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                        Icon(
-                            imageVector = Icons.Filled.Menu,
-                            contentDescription = stringResource(id = R.string.app_name)
-                        )
-                    }
-                }
-            },
-            title = {
-                Column {
-                    Text(text = stringResource(id = R.string.jemaat_home_title))
-                    Text(
-                        text = session.sectorContext.sectorName,
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                    if (AppBuildConfig.simulationEnabled) {
-                        Text(
-                            text = stringResource(id = R.string.environment_simulate),
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                    }
-                }
-            },
-            actions = {
-                IconButton(
-                    onClick = {
-                        navController.navigate(AppRoutes.JEMAAT_PROFILE) {
-                            launchSingleTop = true
-                        }
-                    }
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Person,
-                        contentDescription = stringResource(id = R.string.tab_profile)
-                    )
+        JemaatHomeTopBar(
+            session = session,
+            currentSection = destinations.currentLabel(currentRoute)
+                .ifBlank { stringResource(id = R.string.tab_profile) },
+            isTablet = isTablet,
+            onOpenDrawer = { scope.launch { drawerState.open() } },
+            onOpenProfile = {
+                navController.navigate(AppRoutes.JEMAAT_PROFILE) {
+                    launchSingleTop = true
                 }
             }
         )
@@ -265,13 +253,146 @@ fun JemaatHomeScreen(
         Scaffold(
             topBar = topBar,
             bottomBar = {
-                NavigationBar {
-                    bottomNavItems()
-                }
+                JemaatNavigationBar(content = bottomNavItems)
             }
         ) { innerPadding ->
             content(innerPadding)
         }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun JemaatHomeTopBar(
+    session: SessionState,
+    currentSection: String,
+    isTablet: Boolean,
+    onOpenDrawer: () -> Unit,
+    onOpenProfile: () -> Unit
+) {
+    TopAppBar(
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.surface,
+            titleContentColor = MaterialTheme.colorScheme.onSurface,
+            actionIconContentColor = MaterialTheme.colorScheme.onSurface
+        ),
+        navigationIcon = {
+            if (isTablet) {
+                IconButton(onClick = onOpenDrawer) {
+                    Icon(
+                        imageVector = Icons.Filled.Menu,
+                        contentDescription = stringResource(id = R.string.app_name)
+                    )
+                }
+            }
+        },
+        title = {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+            ) {
+                Surface(
+                    modifier = Modifier.size(42.dp),
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                    tonalElevation = 3.dp
+                ) {
+                    Box(contentAlignment = androidx.compose.ui.Alignment.Center) {
+                        Text(
+                            text = session.displayName.initials(),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    Row(
+                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = stringResource(id = R.string.jemaat_home_greeting),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        if (AppBuildConfig.simulationEnabled) {
+                            JemaatInfoPill(text = stringResource(id = R.string.environment_simulate))
+                        }
+                    }
+                    Text(
+                        text = session.displayName,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = stringResource(
+                            id = R.string.jemaat_home_sector_format,
+                            session.sectorContext.sectorName
+                        ),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                JemaatInfoPill(text = currentSection)
+            }
+        },
+        actions = {
+            IconButton(onClick = onOpenProfile) {
+                Icon(
+                    imageVector = Icons.Filled.Person,
+                    contentDescription = stringResource(id = R.string.tab_profile)
+                )
+            }
+        }
+    )
+}
+
+@Composable
+private fun JemaatInfoPill(text: String) {
+    Surface(
+        shape = RoundedCornerShape(8.dp),
+        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.72f),
+        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        border = BorderStroke(
+            width = 1.dp,
+            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
+        )
+    ) {
+        Text(
+            text = text,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+            style = MaterialTheme.typography.labelSmall,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
+}
+
+@Composable
+private fun JemaatNavigationBar(
+    content: @Composable RowScope.() -> Unit
+) {
+    Surface(
+        color = MaterialTheme.colorScheme.surface,
+        tonalElevation = 4.dp,
+        shadowElevation = 8.dp
+    ) {
+        NavigationBar(
+            containerColor = MaterialTheme.colorScheme.surface,
+            tonalElevation = 0.dp,
+            modifier = Modifier.height(74.dp),
+            content = content
+        )
     }
 }
 
@@ -280,6 +401,19 @@ private data class JemaatBottomDestination(
     val label: String,
     val icon: ImageVector
 )
+
+private fun List<JemaatBottomDestination>.currentLabel(route: String): String {
+    return firstOrNull { it.route == route }?.label.orEmpty()
+}
+
+private fun String.initials(): String {
+    return trim()
+        .split(Regex("\\s+"))
+        .filter { it.isNotBlank() }
+        .take(2)
+        .joinToString(separator = "") { it.first().uppercase() }
+        .ifBlank { "J" }
+}
 
 @Preview(name = "Jemaat Home", showBackground = true)
 @Composable

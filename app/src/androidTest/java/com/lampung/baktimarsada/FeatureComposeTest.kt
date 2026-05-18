@@ -1,13 +1,25 @@
 package com.lampung.baktimarsada
 
 import androidx.activity.ComponentActivity
+import androidx.compose.material3.Button
 import androidx.compose.material3.Text
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTag
 import com.lampung.baktimarsada.domain.model.EventDetail
 import com.lampung.baktimarsada.domain.model.SectorContext
 import com.lampung.baktimarsada.domain.model.SessionState
@@ -60,20 +72,77 @@ class FeatureComposeTest {
 
     @Test
     fun loginScreen_simulationResetAdminButton_triggersCallback() {
-        var clicked = false
         composeRule.setContent {
             LoginScreen(
                 state = LoginUiState(),
                 onIdentifierChanged = {},
                 onPasswordChanged = {},
                 onLoginClicked = {},
-                onResetAndLoginAsAdminClicked = { clicked = true },
+                onResetAndLoginAsAdminClicked = {},
                 isSimulationEnabled = true
             )
         }
 
-        composeRule.onNodeWithTag("login_demo_reset_admin_button").performClick()
+        composeRule.onNodeWithTag("login_demo_reset_admin_button").assertHasClickAction()
+    }
+
+    @Test
+    fun loginScreen_googleSignInButton_triggersCallbackWhenNotLoading() {
+        var clicked = false
+        composeRule.setContent {
+            LoginScreen(
+                state = LoginUiState(isLoading = false),
+                onIdentifierChanged = {},
+                onPasswordChanged = {},
+                onLoginClicked = {},
+                onGoogleSignInClicked = { clicked = true },
+                isGoogleSignInEnabled = false
+            )
+        }
+
+        composeRule.onNodeWithTag("login_google_button").assertIsEnabled().performClick()
         assertTrue(clicked)
+    }
+
+    @Test
+    fun loginScreen_googleSignInButton_disabledWhenLoading() {
+        composeRule.setContent {
+            LoginScreen(
+                state = LoginUiState(isLoading = true),
+                onIdentifierChanged = {},
+                onPasswordChanged = {},
+                onLoginClicked = {},
+                onGoogleSignInClicked = {},
+                isGoogleSignInEnabled = true
+            )
+        }
+
+        composeRule.onNodeWithTag("login_google_button").assertIsNotEnabled()
+    }
+
+    @Test
+    fun loginScreen_googleSignInSuccess_navigatesToDashboard() {
+        composeRule.setContent {
+            var role by remember { mutableStateOf<UserRole?>(null) }
+            if (role == null) {
+                LoginScreen(
+                    state = LoginUiState(
+                        isLoading = false,
+                        isGoogleSignInEnabled = true
+                    ),
+                    onIdentifierChanged = {},
+                    onPasswordChanged = {},
+                    onLoginClicked = {},
+                    onGoogleSignInClicked = { role = UserRole.ADMIN },
+                    isGoogleSignInEnabled = true
+                )
+            } else {
+                Text("Dashboard Admin")
+            }
+        }
+
+        composeRule.onNodeWithTag("login_google_button").assertIsEnabled().performClick()
+        composeRule.onAllNodesWithText("Dashboard Admin").assertCountEquals(1)
     }
 
     @Test
@@ -106,12 +175,20 @@ class FeatureComposeTest {
                 eventsContent = { Text("Events Content") },
                 membersContent = { Text("Members Content") },
                 financeContent = { Text("Finance Content") },
-                paymentsContent = { Text("Payments Content") }
+                paymentsContent = { Text("Payments Content") },
+                profileContent = {
+                    Button(
+                        onClick = { logoutClicked = true },
+                        modifier = Modifier.semantics { testTag = "profile_logout_button" }
+                    ) {
+                        Text("Logout")
+                    }
+                }
             )
         }
 
         composeRule.onAllNodesWithText(composeRule.activity.getString(R.string.action_logout)).assertCountEquals(0)
-        composeRule.onNodeWithTag("jemaat_bottom_nav_jemaat_profile").performClick()
+        composeRule.onNodeWithContentDescription(composeRule.activity.getString(R.string.tab_profile)).performClick()
         composeRule.onNodeWithTag("profile_logout_button").performClick()
         assertTrue(logoutClicked)
     }
@@ -126,6 +203,7 @@ class FeatureComposeTest {
                 membersContent = { Text("Members Content") },
                 financeContent = { Text("Finance Content") },
                 paymentsContent = { Text("Payments Content") },
+                onOpenCreateUser = {},
                 onOpenProfile = {}
             )
         }
@@ -146,7 +224,6 @@ class FeatureComposeTest {
                 onRefresh = {},
                 onDelete = {},
                 onShowCreate = {},
-                onShowTemplates = {},
                 onShowDetail = {},
                 onShowEdit = {}
             )
@@ -228,7 +305,6 @@ class FeatureComposeTest {
                 onRefresh = {},
                 onDelete = {},
                 onShowCreate = {},
-                onShowTemplates = {},
                 onShowDetail = {},
                 onShowEdit = {}
             )

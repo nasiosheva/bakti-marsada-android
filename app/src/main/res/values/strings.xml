@@ -31,6 +31,8 @@
     <string name="exit_app_confirmation">Tekan sekali lagi untuk keluar</string>
 
     <string name="jemaat_home_title">Portal Jemaat</string>
+    <string name="jemaat_home_greeting">Horas</string>
+    <string name="jemaat_home_sector_format">Sektor aktif: %1$s</string>
     <string name="admin_home_title">Portal Admin</string>
     <string name="action_logout">Logout</string>
     <string name="logout_confirm_title">Konfirmasi Logout</string>

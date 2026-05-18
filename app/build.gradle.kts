@@ -66,7 +66,6 @@ android {
 
     buildTypes {
         debug {
-            applicationIdSuffix = ".dev"
             val debugCloudflareUrl = configuredCloudflareBaseUrl ?: "http://10.0.2.2:8787/"
             val debugPythonUrl = configuredPythonBaseUrl ?: "http://10.0.2.2:8000/"
             buildConfigField("String", "API_BASE_URL", "\"$debugCloudflareUrl\"")
@@ -218,7 +217,7 @@ val googleServicesConfigCandidates = listOf(
     "src/release/google-services.json",
     "src/simulate/google-services.json"
 )
-val hasDebugGoogleServicesConfig = file("src/debug/google-services.json").exists()
+val hasDebugGoogleServicesConfig = file("google-services.json").exists() || file("src/debug/google-services.json").exists()
 val hasReleaseGoogleServicesConfig = file("google-services.json").exists() || file("src/release/google-services.json").exists()
 val hasSimulateGoogleServicesConfig = file("src/simulate/google-services.json").exists()
 
