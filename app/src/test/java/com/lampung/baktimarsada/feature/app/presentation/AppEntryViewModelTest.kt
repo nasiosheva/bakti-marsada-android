@@ -1,6 +1,5 @@
 package com.lampung.baktimarsada.feature.app.presentation
 
-import com.google.firebase.messaging.RemoteMessage
 import com.lampung.baktimarsada.core.result.AppResult
 import com.lampung.baktimarsada.domain.model.EventDetail
 import com.lampung.baktimarsada.domain.model.FinanceReportDetail
@@ -12,13 +11,13 @@ import com.lampung.baktimarsada.domain.usecase.BootstrapSessionUseCase
 import com.lampung.baktimarsada.domain.usecase.LogoutUseCase
 import com.lampung.baktimarsada.domain.usecase.ObserveSessionUseCase
 import com.lampung.baktimarsada.feature.app.navigation.AppRoutes
-import com.lampung.baktimarsada.firebase.notification.NotificationHelper
 import com.lampung.baktimarsada.repository.EventRepository
 import com.lampung.baktimarsada.repository.FinanceReportRepository
 import com.lampung.baktimarsada.repository.MemberRepository
 import com.lampung.baktimarsada.repository.PaymentObligationRepository
 import com.lampung.baktimarsada.test.MainDispatcherRule
 import com.lampung.baktimarsada.test.fakes.FakeAuthRepository
+import com.lampung.baktimarsada.test.fakes.FakeNotificationHelper
 import com.lampung.baktimarsada.test.fakes.sampleSession
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
@@ -125,11 +124,6 @@ class AppEntryViewModelTest {
         override suspend fun refresh(sectorContext: SectorContext): AppResult<Unit> = AppResult.Success(Unit)
         override suspend fun save(obligation: PaymentObligationDetail, sectorContext: SectorContext): AppResult<Unit> = AppResult.Success(Unit)
         override suspend fun delete(obligationId: String, sectorContext: SectorContext): AppResult<Unit> = AppResult.Success(Unit)
-    }
-
-    private class FakeNotificationHelper : NotificationHelper {
-        override fun showNotification(message: RemoteMessage) = Unit
-        override fun showGoogleWelcomeNotification(accountLabel: String) = Unit
     }
 }
 

@@ -32,14 +32,14 @@ abstract class RestAppRemoteDataSource(
                 password = request.password
             )
         )
-        return response.toSessionResponse("Login failed")
+        return response.toSessionResponse(ERROR_LOGIN)
     }
 
     override suspend fun loginWithGoogle(request: GoogleLoginRequestDto): SessionResponseDto {
         val response = apiService.loginWithGoogle(
             BackendGoogleLoginRequestDto(idToken = request.idToken)
         )
-        return response.toSessionResponse("Google login failed")
+        return response.toSessionResponse(ERROR_LOGIN_GOOGLE)
     }
 
     private fun Response<ApiResponseDto<BackendAuthResponseDto>>.toSessionResponse(
@@ -52,12 +52,7 @@ abstract class RestAppRemoteDataSource(
             error("Login response is missing session token or user id")
         }
 
-        val roleRaw = body.user?.role ?: body.role
-        val role = when (roleRaw?.uppercase()) {
-            "ADMIN" -> "ADMIN"
-            "JEMAAT" -> "JEMAAT"
-            else -> "JEMAAT"
-        }
+        val role = normalizeRole(body.user?.role ?: body.role)
 
         return SessionResponseDto(
             authToken = token,
@@ -170,6 +165,19 @@ abstract class RestAppRemoteDataSource(
             error(body.message?.ifBlank { null } ?: defaultMessage)
         }
         return body.data ?: error(body.message?.ifBlank { null } ?: defaultMessage)
+    }
+
+    private fun normalizeRole(role: String?): String {
+        return when (role?.uppercase()) {
+            "ADMIN" -> "ADMIN"
+            "JEMAAT" -> "JEMAAT"
+            else -> "JEMAAT"
+        }
+    }
+
+    private companion object {
+        const val ERROR_LOGIN = "Login failed"
+        const val ERROR_LOGIN_GOOGLE = "Google login failed"
     }
 }
 

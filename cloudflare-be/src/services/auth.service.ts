@@ -105,19 +105,8 @@ export class AuthService {
   async register(input: RegisterInput): Promise<AuthResult> {
     const email = normalizeEmail(input.email);
     const username = normalizeUsername(input.username || email.split("@")[0] || "");
-    this.assertUsername(username);
-    this.assertEmail(email);
-    this.assertPassword(input.password);
-    this.assertFullName(input.fullName);
-
-    const existingUser = await this.repository.findUserByEmail(email);
-    if (existingUser) {
-      throw new AuthError(409, "EMAIL_ALREADY_EXISTS", "Email already registered");
-    }
-    const existingUsername = await this.repository.findUserByUsername(username);
-    if (existingUsername) {
-      throw new AuthError(409, "USERNAME_ALREADY_EXISTS", "Username already registered");
-    }
+    this.assertRegistrationInput(username, email, input.password, input.fullName);
+    await this.assertUniqueUserCredentials(username, email);
 
     const userId = webCrypto.randomUUID();
     const passwordHash = await this.crypto.hashPassword(input.password);
@@ -148,12 +137,8 @@ export class AuthService {
     this.assertIdentifier(identifier);
     this.assertPassword(input.password);
 
-    const user = identifier.includes("@")
-      ? await this.repository.findUserByEmail(identifier)
-      : await this.repository.findUserByUsername(identifier);
-    if (!user || user.is_active !== 1) {
-      throw new AuthError(401, "INVALID_CREDENTIALS", "Invalid credentials");
-    }
+    const user = await this.findUserByIdentifier(identifier);
+    this.assertActiveUser(user);
 
     const isPasswordValid = await this.crypto.verifyPassword(input.password, user.password_hash);
     if (!isPasswordValid) {
@@ -165,34 +150,15 @@ export class AuthService {
 
   async loginWithGoogle(input: GoogleLoginInput): Promise<AuthResult> {
     const identity = await this.googleTokenVerifier.verifyIdToken(input.idToken);
-    if (!identity.sub || !identity.email || !identity.emailVerified) {
-      throw new AuthError(401, "INVALID_GOOGLE_TOKEN", "Google account is not verified");
-    }
-
-    const existingUser = await this.repository.findUserByEmail(identity.email);
-    if (existingUser && existingUser.is_active !== 1) {
-      throw new AuthError(401, "INVALID_CREDENTIALS", "Invalid credentials");
-    }
-    if (existingUser && normalizeRole(existingUser.role) !== "JEMAAT") {
-      throw new AuthError(403, "GOOGLE_LOGIN_JEMAAT_ONLY", "Google login is only available for jemaat");
-    }
+    this.assertGoogleIdentity(identity);
+    const existingUser = await this.findUserByEmail(identity.email);
+    this.assertJemaatRoleForGoogle(existingUser);
 
     if (existingUser) {
       return this.createSessionForUser(existingUser);
     }
 
-    const username = await this.resolveAvailableUsername(identity.email);
-    const userId = webCrypto.randomUUID();
-    await this.repository.createUser({
-      id: userId,
-      username,
-      email: identity.email,
-      passwordHash: `google:${identity.sub}`,
-      fullName: identity.fullName,
-      role: "JEMAAT"
-    });
-
-    const createdUser = await this.repository.findUserById(userId);
+    const createdUser = await this.createGoogleJemaatUser(identity);
     if (!createdUser) {
       throw new AuthError(500, "INTERNAL_SERVER_ERROR", "Failed to create Google user");
     }
@@ -221,19 +187,8 @@ export class AuthService {
     const fullName = input.fullName.trim();
     const role = normalizeRole(input.role);
 
-    this.assertUsername(username);
-    this.assertEmail(email);
-    this.assertPassword(input.password);
-    this.assertFullName(fullName);
-
-    const existingEmail = await this.repository.findUserByEmail(email);
-    if (existingEmail) {
-      throw new AuthError(409, "EMAIL_ALREADY_EXISTS", "Email already registered");
-    }
-    const existingUsername = await this.repository.findUserByUsername(username);
-    if (existingUsername) {
-      throw new AuthError(409, "USERNAME_ALREADY_EXISTS", "Username already registered");
-    }
+    this.assertRegistrationInput(username, email, input.password, fullName);
+    await this.assertUniqueUserCredentials(username, email);
 
     const passwordHash = await this.crypto.hashPassword(input.password);
     const userId = webCrypto.randomUUID();
@@ -280,6 +235,68 @@ export class AuthService {
       candidate = `${baseUsername}${suffix}`
     }
     return candidate
+  }
+
+  private async createGoogleJemaatUser(identity: GoogleIdentityPayload): Promise<UserRecord | null> {
+    const username = await this.resolveAvailableUsername(identity.email);
+    const userId = webCrypto.randomUUID();
+    await this.repository.createUser({
+      id: userId,
+      username,
+      email: identity.email,
+      passwordHash: `google:${identity.sub}`,
+      fullName: identity.fullName,
+      role: "JEMAAT"
+    });
+    return this.repository.findUserById(userId);
+  }
+
+  private assertGoogleIdentity(identity: GoogleIdentityPayload) {
+    if (!identity.sub || !identity.email || !identity.emailVerified) {
+      throw new AuthError(401, "INVALID_GOOGLE_TOKEN", "Google account is not verified");
+    }
+  }
+
+  private assertJemaatRoleForGoogle(user: UserRecord | null) {
+    if (!user) return;
+    this.assertActiveUser(user);
+    if (normalizeRole(user.role) !== "JEMAAT") {
+      throw new AuthError(403, "GOOGLE_LOGIN_JEMAAT_ONLY", "Google login is only available for jemaat");
+    }
+  }
+
+  private async findUserByIdentifier(identifier: string): Promise<UserRecord | null> {
+    return identifier.includes("@")
+      ? this.repository.findUserByEmail(identifier)
+      : this.repository.findUserByUsername(identifier);
+  }
+
+  private async findUserByEmail(email: string): Promise<UserRecord | null> {
+    return this.repository.findUserByEmail(email);
+  }
+
+  private assertActiveUser(user: UserRecord | null) {
+    if (!user || user.is_active !== 1) {
+      throw new AuthError(401, "INVALID_CREDENTIALS", "Invalid credentials");
+    }
+  }
+
+  private assertRegistrationInput(username: string, email: string, password: string, fullName: string) {
+    this.assertUsername(username);
+    this.assertEmail(email);
+    this.assertPassword(password);
+    this.assertFullName(fullName);
+  }
+
+  private async assertUniqueUserCredentials(username: string, email: string) {
+    const existingEmail = await this.repository.findUserByEmail(email);
+    if (existingEmail) {
+      throw new AuthError(409, "EMAIL_ALREADY_EXISTS", "Email already registered");
+    }
+    const existingUsername = await this.repository.findUserByUsername(username);
+    if (existingUsername) {
+      throw new AuthError(409, "USERNAME_ALREADY_EXISTS", "Username already registered");
+    }
   }
 
   private async createSessionForUser(user: UserRecord): Promise<AuthResult> {
