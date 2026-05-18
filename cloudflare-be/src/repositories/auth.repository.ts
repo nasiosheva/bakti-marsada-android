@@ -47,17 +47,29 @@ export class AuthRepository {
   }
 
   async findUserByUsername(username: string): Promise<UserRecord | null> {
-    return this.db
-      .prepare(
-        `SELECT * FROM users
-         WHERE (
-           lower(username) = ?1
-           OR lower(substr(email, 1, instr(email, '@') - 1)) = ?1
-         )
-         LIMIT 1`
-      )
-      .bind(username.toLowerCase())
-      .first<UserRecord>();
+    try {
+      return await this.db
+        .prepare(
+          `SELECT * FROM users
+           WHERE (
+             lower(username) = ?1
+             OR lower(substr(email, 1, instr(email, '@') - 1)) = ?1
+           )
+           LIMIT 1`
+        )
+        .bind(username.toLowerCase())
+        .first<UserRecord>();
+    } catch (error) {
+      if (!isMissingUsernameColumnError(error)) throw error;
+      return this.db
+        .prepare(
+          `SELECT * FROM users
+           WHERE lower(substr(email, 1, instr(email, '@') - 1)) = ?1
+           LIMIT 1`
+        )
+        .bind(username.toLowerCase())
+        .first<UserRecord>();
+    }
   }
 
   async findUserById(userId: string): Promise<UserRecord | null> {
@@ -87,13 +99,24 @@ export class AuthRepository {
     fullName: string;
     role: string;
   }): Promise<void> {
-    await this.db
-      .prepare(
-        `INSERT INTO users (id, username, email, password_hash, full_name, role, is_active)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, 1)`
-      )
-      .bind(input.id, input.username, input.email, input.passwordHash, input.fullName, input.role)
-      .run();
+    try {
+      await this.db
+        .prepare(
+          `INSERT INTO users (id, username, email, password_hash, full_name, role, is_active)
+           VALUES (?1, ?2, ?3, ?4, ?5, ?6, 1)`
+        )
+        .bind(input.id, input.username, input.email, input.passwordHash, input.fullName, input.role)
+        .run();
+    } catch (error) {
+      if (!isMissingUsernameColumnError(error)) throw error;
+      await this.db
+        .prepare(
+          `INSERT INTO users (id, email, password_hash, full_name, role, is_active)
+           VALUES (?1, ?2, ?3, ?4, ?5, 1)`
+        )
+        .bind(input.id, input.email, input.passwordHash, input.fullName, input.role)
+        .run();
+    }
   }
 
   async createSession(input: {
@@ -137,4 +160,10 @@ export class AuthRepository {
       updatedAt: user.updated_at
     };
   }
+}
+
+function isMissingUsernameColumnError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  const message = error.message.toLowerCase();
+  return message.includes("no such column: username") || message.includes("has no column named username");
 }
