@@ -2,7 +2,6 @@ package com.lampung.baktimarsada.feature.home.presentation
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -21,8 +20,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -39,6 +36,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -55,6 +54,8 @@ import com.lampung.baktimarsada.feature.events.presentation.EventRoute
 import com.lampung.baktimarsada.feature.finance.presentation.FinanceRoute
 import com.lampung.baktimarsada.feature.members.presentation.MemberRoute
 import com.lampung.baktimarsada.feature.payments.presentation.PaymentRoute
+import com.lampung.baktimarsada.ui.component.BaktiBottomNavItem
+import com.lampung.baktimarsada.ui.component.BaktiBottomNavigationBar
 import com.lampung.baktimarsada.ui.theme.BaktiMarsadaTheme
 import kotlinx.coroutines.launch
 
@@ -71,13 +72,14 @@ fun AdminHomeRoute(
     AdminHomeScreen(
         session = session,
         dashboardContent = { AdminDashboardRoute(session = session) },
-        eventsContent = {
+        eventsContent = { bottomContentPadding ->
             EventRoute(
                 isAdmin = true,
                 session = session,
                 onOpenDetail = onOpenEventDetail,
                 onOpenCreate = onOpenAddEvent,
-                onOpenEdit = onOpenEditEvent
+                onOpenEdit = onOpenEditEvent,
+                bottomContentPadding = bottomContentPadding
             )
         },
         membersContent = { MemberRoute(isAdmin = true, session = session) },
@@ -93,7 +95,7 @@ fun AdminHomeRoute(
 fun AdminHomeScreen(
     session: SessionState,
     dashboardContent: @Composable () -> Unit,
-    eventsContent: @Composable () -> Unit,
+    eventsContent: @Composable (bottomContentPadding: Dp) -> Unit,
     membersContent: @Composable () -> Unit,
     financeContent: @Composable () -> Unit,
     paymentsContent: @Composable () -> Unit,
@@ -156,7 +158,7 @@ fun AdminHomeScreen(
                 dashboardContent()
             }
             composable(AppRoutes.ADMIN_EVENTS) {
-                eventsContent()
+                eventsContent(innerPadding.calculateBottomPadding())
             }
             composable(AppRoutes.ADMIN_MEMBERS) {
                 membersContent()
@@ -170,29 +172,13 @@ fun AdminHomeScreen(
         }
     }
 
-    val bottomNavItems: @Composable RowScope.() -> Unit = {
-        destinations.forEach { destination ->
-            NavigationBarItem(
-                selected = currentRoute == destination.route,
-                onClick = {
-                    navController.navigate(destination.route) {
-                        launchSingleTop = true
-                        restoreState = true
-                        popUpTo(AppRoutes.ADMIN_DASHBOARD) {
-                            saveState = true
-                        }
-                    }
-                },
-                modifier = Modifier.semantics { testTag = "admin_bottom_nav_${destination.route}" },
-                label = { Text(text = destination.label) },
-                icon = {
-                    Icon(
-                        imageVector = destination.icon,
-                        contentDescription = destination.label
-                    )
-                }
-            )
-        }
+    val bottomNavItems = destinations.map { destination ->
+        BaktiBottomNavItem(
+            route = destination.route,
+            label = destination.label,
+            icon = destination.icon,
+            testTag = "admin_bottom_nav_${destination.route}"
+        )
     }
 
     val topBar: @Composable () -> Unit = {
@@ -268,9 +254,19 @@ fun AdminHomeScreen(
         Scaffold(
             topBar = topBar,
             bottomBar = {
-                NavigationBar {
-                    bottomNavItems()
-                }
+                BaktiBottomNavigationBar(
+                    items = bottomNavItems,
+                    currentRoute = currentRoute,
+                    onRouteSelected = { route ->
+                        navController.navigate(route) {
+                            launchSingleTop = true
+                            restoreState = true
+                            popUpTo(AppRoutes.ADMIN_DASHBOARD) {
+                                saveState = true
+                            }
+                        }
+                    }
+                )
             }
         ) { innerPadding ->
             screenContent(innerPadding)
@@ -305,7 +301,7 @@ private fun AdminHomeScreenPreview() {
         AdminHomeScreen(
             session = previewSession,
             dashboardContent = { Text("Dashboard placeholder") },
-            eventsContent = { Text("Events placeholder") },
+            eventsContent = { _ -> Text("Events placeholder") },
             membersContent = { Text("Members placeholder") },
             financeContent = { Text("Finance placeholder") },
             paymentsContent = { Text("Payments placeholder") },
@@ -322,7 +318,7 @@ private fun AdminHomeTabletPreview() {
         AdminHomeScreen(
             session = previewSession,
             dashboardContent = { Text("Dashboard placeholder") },
-            eventsContent = { Text("Events placeholder") },
+            eventsContent = { _ -> Text("Events placeholder") },
             membersContent = { Text("Members placeholder") },
             financeContent = { Text("Finance placeholder") },
             paymentsContent = { Text("Payments placeholder") },

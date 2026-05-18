@@ -6,7 +6,7 @@ describe("AuthService", () => {
   it("registers a user and returns a session", async () => {
     const repo = createFakeRepository();
     const crypto = createFakeCrypto();
-    const service = new AuthService(repo, crypto, () => new Date("2026-05-17T00:00:00.000Z"));
+    const service = new AuthService(repo, crypto, undefined, () => new Date("2026-05-17T00:00:00.000Z"));
 
     const result = await service.register({
       email: "User@Example.com",
@@ -59,7 +59,7 @@ describe("AuthService", () => {
       }
     });
     const crypto = createFakeCrypto();
-    const service = new AuthService(repo, crypto, () => new Date("2026-05-17T00:00:00.000Z"));
+    const service = new AuthService(repo, crypto, undefined, () => new Date("2026-05-17T00:00:00.000Z"));
 
     await service.logout("session-token");
 

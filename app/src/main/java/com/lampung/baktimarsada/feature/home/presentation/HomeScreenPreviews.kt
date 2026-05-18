@@ -32,11 +32,11 @@ private fun JemaatHomeScreenPreview() {
         JemaatHomeScreen(
             session = previewSessionJemaat,
             onLogout = {},
-            eventsContent = { Text("Events placeholder") },
+            eventsContent = { _ -> Text("Events placeholder") },
             membersContent = { Text("Members placeholder") },
             financeContent = { Text("Finance placeholder") },
             paymentsContent = { Text("Payments placeholder") },
-            profileContent = { Text("Profile placeholder") }
+            onOpenProfile = {}
         )
     }
 }

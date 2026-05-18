@@ -151,10 +151,11 @@ class FeatureComposeTest {
             JemaatHomeScreen(
                 session = sampleSession(),
                 onLogout = {},
-                eventsContent = { Text("Events Content") },
+                eventsContent = { _ -> Text("Events Content") },
                 membersContent = { Text("Members Content") },
                 financeContent = { Text("Finance Content") },
-                paymentsContent = { Text("Payments Content") }
+                paymentsContent = { Text("Payments Content") },
+                onOpenProfile = {}
             )
         }
 
@@ -166,31 +167,22 @@ class FeatureComposeTest {
     }
 
     @Test
-    fun jemaatHome_showsLogoutOnlyFromProfile() {
-        var logoutClicked = false
+    fun jemaatHome_profileIconTriggersCallback() {
+        var profileOpened = false
         composeRule.setContent {
             JemaatHomeScreen(
                 session = sampleSession(),
-                onLogout = { logoutClicked = true },
-                eventsContent = { Text("Events Content") },
+                onLogout = {},
+                eventsContent = { _ -> Text("Events Content") },
                 membersContent = { Text("Members Content") },
                 financeContent = { Text("Finance Content") },
                 paymentsContent = { Text("Payments Content") },
-                profileContent = {
-                    Button(
-                        onClick = { logoutClicked = true },
-                        modifier = Modifier.semantics { testTag = "profile_logout_button" }
-                    ) {
-                        Text("Logout")
-                    }
-                }
+                onOpenProfile = { profileOpened = true }
             )
         }
 
-        composeRule.onAllNodesWithText(composeRule.activity.getString(R.string.action_logout)).assertCountEquals(0)
         composeRule.onNodeWithContentDescription(composeRule.activity.getString(R.string.tab_profile)).performClick()
-        composeRule.onNodeWithTag("profile_logout_button").performClick()
-        assertTrue(logoutClicked)
+        assertTrue(profileOpened)
     }
 
     @Test
@@ -199,7 +191,7 @@ class FeatureComposeTest {
             AdminHomeScreen(
                 session = sampleSession(),
                 dashboardContent = { Text("Dashboard Content") },
-                eventsContent = { Text("Events Content") },
+                eventsContent = { _ -> Text("Events Content") },
                 membersContent = { Text("Members Content") },
                 financeContent = { Text("Finance Content") },
                 paymentsContent = { Text("Payments Content") },

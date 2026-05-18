@@ -108,7 +108,22 @@ fun BaktiMarsadaApp(
                     onLogout = { viewModel.logout() },
                     onOpenEventDetail = { eventId ->
                         navController.navigate(AppRoutes.jemaatEventDetail(eventId))
+                    },
+                    onOpenProfile = {
+                        navController.navigate(AppRoutes.JEMAAT_PROFILE) {
+                            launchSingleTop = true
+                        }
                     }
+                )
+            }
+        }
+        composable(AppRoutes.JEMAAT_PROFILE) {
+            state.session?.let { session ->
+                ProfileRoute(
+                    session = session,
+                    onBack = { navController.navigateUp() },
+                    onTestSendNotification = { viewModel.sendTestNotification() },
+                    onLogout = { viewModel.logout() }
                 )
             }
         }

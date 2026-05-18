@@ -56,7 +56,7 @@ export interface GoogleTokenVerifier {
 
 export class GoogleTokenInfoVerifier implements GoogleTokenVerifier {
   constructor(
-    private readonly fetchImpl: typeof fetch = fetch,
+    private readonly fetchImpl: typeof fetch = globalThis.fetch.bind(globalThis),
     private readonly allowedAudiences: string[] = []
   ) {}
 
@@ -137,15 +137,15 @@ export class AuthService {
     this.assertIdentifier(identifier);
     this.assertPassword(input.password);
 
-    const user = await this.findUserByIdentifier(identifier);
-    this.assertActiveUser(user);
+    const activeUser = await this.findUserByIdentifier(identifier);
+    this.assertActiveUser(activeUser);
 
-    const isPasswordValid = await this.crypto.verifyPassword(input.password, user.password_hash);
+    const isPasswordValid = await this.crypto.verifyPassword(input.password, activeUser.password_hash);
     if (!isPasswordValid) {
       throw new AuthError(401, "INVALID_CREDENTIALS", "Invalid credentials");
     }
 
-    return this.createSessionForUser(user);
+    return this.createSessionForUser(activeUser);
   }
 
   async loginWithGoogle(input: GoogleLoginInput): Promise<AuthResult> {
@@ -275,7 +275,7 @@ export class AuthService {
     return this.repository.findUserByEmail(email);
   }
 
-  private assertActiveUser(user: UserRecord | null) {
+  private assertActiveUser(user: UserRecord | null): asserts user is UserRecord {
     if (!user || user.is_active !== 1) {
       throw new AuthError(401, "INVALID_CREDENTIALS", "Invalid credentials");
     }
@@ -394,7 +394,7 @@ export function createAuthService(
     new AuthRepository(db),
     new WebAuthCrypto(),
     new GoogleTokenInfoVerifier(
-      options.fetchImpl ?? fetch,
+      options.fetchImpl ?? globalThis.fetch.bind(globalThis),
       options.googleAllowedAudiences ?? []
     )
   );

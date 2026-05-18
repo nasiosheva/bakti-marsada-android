@@ -8,10 +8,9 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -33,8 +32,6 @@ import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -54,6 +51,7 @@ import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -70,7 +68,8 @@ import com.lampung.baktimarsada.feature.events.presentation.EventRoute
 import com.lampung.baktimarsada.feature.finance.presentation.FinanceRoute
 import com.lampung.baktimarsada.feature.members.presentation.MemberRoute
 import com.lampung.baktimarsada.feature.payments.presentation.PaymentRoute
-import com.lampung.baktimarsada.feature.profile.presentation.ProfileRoute
+import com.lampung.baktimarsada.ui.component.BaktiBottomNavItem
+import com.lampung.baktimarsada.ui.component.BaktiBottomNavigationBar
 import com.lampung.baktimarsada.ui.theme.BaktiMarsadaTheme
 import kotlinx.coroutines.launch
 
@@ -79,16 +78,24 @@ import kotlinx.coroutines.launch
 fun JemaatHomeRoute(
     session: SessionState,
     onLogout: () -> Unit,
-    onOpenEventDetail: (String) -> Unit
+    onOpenEventDetail: (String) -> Unit,
+    onOpenProfile: () -> Unit
 ) {
     JemaatHomeScreen(
         session = session,
         onLogout = onLogout,
-        eventsContent = { EventRoute(isAdmin = false, session = session, onOpenDetail = onOpenEventDetail) },
+        eventsContent = { bottomContentPadding ->
+            EventRoute(
+                isAdmin = false,
+                session = session,
+                onOpenDetail = onOpenEventDetail,
+                bottomContentPadding = bottomContentPadding
+            )
+        },
         membersContent = { MemberRoute(isAdmin = false, session = session) },
         financeContent = { FinanceRoute(isAdmin = false, session = session) },
         paymentsContent = { PaymentRoute(isAdmin = false, session = session) },
-        profileContent = { ProfileRoute(session = session, onLogout = onLogout) }
+        onOpenProfile = onOpenProfile
     )
 }
 
@@ -97,11 +104,11 @@ fun JemaatHomeRoute(
 fun JemaatHomeScreen(
     session: SessionState,
     onLogout: () -> Unit,
-    eventsContent: @Composable () -> Unit,
+    eventsContent: @Composable (bottomContentPadding: Dp) -> Unit,
     membersContent: @Composable () -> Unit,
     financeContent: @Composable () -> Unit,
     paymentsContent: @Composable () -> Unit,
-    profileContent: @Composable () -> Unit = { ProfileRoute(session = session, onLogout = onLogout) }
+    onOpenProfile: () -> Unit
 ) {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
@@ -146,36 +153,13 @@ fun JemaatHomeScreen(
         }
     }
 
-    val bottomNavItems: @Composable RowScope.() -> Unit = {
-        destinations.forEach { destination ->
-            NavigationBarItem(
-                selected = currentRoute == destination.route,
-                onClick = {
-                    navController.navigate(destination.route) {
-                        launchSingleTop = true
-                        restoreState = true
-                        popUpTo(AppRoutes.JEMAAT_EVENTS) {
-                            saveState = true
-                        }
-                    }
-                },
-                modifier = Modifier.semantics { testTag = "jemaat_bottom_nav_${destination.route}" },
-                colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = MaterialTheme.colorScheme.onPrimary,
-                    selectedTextColor = MaterialTheme.colorScheme.primary,
-                    indicatorColor = MaterialTheme.colorScheme.primary,
-                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
-                ),
-                label = { Text(text = destination.label) },
-                icon = {
-                    Icon(
-                        imageVector = destination.icon,
-                        contentDescription = destination.label
-                    )
-                }
-            )
-        }
+    val bottomNavItems = destinations.map { destination ->
+        BaktiBottomNavItem(
+            route = destination.route,
+            label = destination.label,
+            icon = destination.icon,
+            testTag = "jemaat_bottom_nav_${destination.route}"
+        )
     }
 
     val content: @Composable (PaddingValues) -> Unit = { innerPadding ->
@@ -198,7 +182,7 @@ fun JemaatHomeScreen(
                 modifier = Modifier.fillMaxSize()
             ) {
                 composable(AppRoutes.JEMAAT_EVENTS) {
-                    eventsContent()
+                    eventsContent(innerPadding.calculateBottomPadding())
                 }
                 composable(AppRoutes.JEMAAT_MEMBERS) {
                     membersContent()
@@ -208,9 +192,6 @@ fun JemaatHomeScreen(
                 }
                 composable(AppRoutes.JEMAAT_PAYMENTS) {
                     paymentsContent()
-                }
-                composable(AppRoutes.JEMAAT_PROFILE) {
-                    profileContent()
                 }
             }
         }
@@ -223,11 +204,7 @@ fun JemaatHomeScreen(
                 .ifBlank { stringResource(id = R.string.tab_profile) },
             isTablet = isTablet,
             onOpenDrawer = { scope.launch { drawerState.open() } },
-            onOpenProfile = {
-                navController.navigate(AppRoutes.JEMAAT_PROFILE) {
-                    launchSingleTop = true
-                }
-            }
+            onOpenProfile = onOpenProfile
         )
     }
 
@@ -253,7 +230,29 @@ fun JemaatHomeScreen(
         Scaffold(
             topBar = topBar,
             bottomBar = {
-                JemaatNavigationBar(content = bottomNavItems)
+                BaktiBottomNavigationBar(
+                    items = bottomNavItems,
+                    currentRoute = currentRoute,
+                    onRouteSelected = { route ->
+                        navController.navigate(route) {
+                            launchSingleTop = true
+                            restoreState = true
+                            popUpTo(AppRoutes.JEMAAT_EVENTS) {
+                                saveState = true
+                            }
+                        }
+                    },
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    tonalElevation = 4.dp,
+                    modifier = Modifier.navigationBarsPadding(),
+                    itemColors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = MaterialTheme.colorScheme.onPrimary,
+                        selectedTextColor = MaterialTheme.colorScheme.primary,
+                        indicatorColor = MaterialTheme.colorScheme.primary,
+                        unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                )
             }
         ) { innerPadding ->
             content(innerPadding)
@@ -378,24 +377,6 @@ private fun JemaatInfoPill(text: String) {
     }
 }
 
-@Composable
-private fun JemaatNavigationBar(
-    content: @Composable RowScope.() -> Unit
-) {
-    Surface(
-        color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 4.dp,
-        shadowElevation = 8.dp
-    ) {
-        NavigationBar(
-            containerColor = MaterialTheme.colorScheme.surface,
-            tonalElevation = 0.dp,
-            modifier = Modifier.height(74.dp),
-            content = content
-        )
-    }
-}
-
 private data class JemaatBottomDestination(
     val route: String,
     val label: String,
@@ -439,11 +420,11 @@ private fun JemaatHomeScreenPreview() {
         JemaatHomeScreen(
             session = previewSession,
             onLogout = {},
-            eventsContent = { Text("Events placeholder") },
+            eventsContent = { _ -> Text("Events placeholder") },
             membersContent = { Text("Members placeholder") },
             financeContent = { Text("Finance placeholder") },
             paymentsContent = { Text("Payments placeholder") },
-            profileContent = { Text("Profile placeholder") }
+            onOpenProfile = {}
         )
     }
 }

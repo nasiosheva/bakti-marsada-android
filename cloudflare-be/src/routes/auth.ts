@@ -26,10 +26,16 @@ export function createAuthRoute(deps: AuthRouteDependencies = {}) {
   const route = new Hono<{ Bindings: AppBindings }>();
   const createService = deps.createService ?? createAuthService;
   const createServiceForContext = (c: { env: AppBindings }) => {
-    const googleAllowedAudiences = c.env.GOOGLE_OAUTH_CLIENT_IDS
-      ?.split(",")
+    const googleAllowedAudienceConfig = [
+      c.env.GOOGLE_OAUTH_CLIENT_IDS,
+      c.env.GOOGLE_WEB_CLIENT_ID
+    ]
+      .filter(Boolean)
+      .join(",");
+    const googleAllowedAudiences = googleAllowedAudienceConfig
+      .split(",")
       .map((value) => value.trim())
-      .filter(Boolean) ?? [];
+      .filter(Boolean);
     return createService(c.env.DB, { googleAllowedAudiences });
   };
 
