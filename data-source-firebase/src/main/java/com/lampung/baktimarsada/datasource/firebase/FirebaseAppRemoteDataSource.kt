@@ -30,8 +30,11 @@ import javax.inject.Singleton
 
 @Singleton
 class FirebaseAppRemoteDataSource @Inject constructor(
-    private val firestore: FirebaseFirestore
+    private val firebaseFirestore: FirebaseFirestore?
 ) : AppRemoteDataSource {
+
+    private val firestore: FirebaseFirestore
+        get() = firebaseFirestore ?: error("Firebase Firestore is unavailable")
 
     override suspend fun login(request: LoginRequestDto): SessionResponseDto {
         val normalizedIdentifier = request.identifier.trim().lowercase()

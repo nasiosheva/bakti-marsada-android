@@ -1,4 +1,4 @@
-package com.lampung.baktimarsada.firebase.service
+package com.lampung.baktimarsada.firebase.core.service
 
 import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.tasks.await
@@ -11,9 +11,9 @@ interface FcmTokenProvider {
 
 @Singleton
 class FirebaseFcmTokenProvider @Inject constructor(
-    private val firebaseMessaging: FirebaseMessaging
+    private val firebaseMessaging: FirebaseMessaging?
 ) : FcmTokenProvider {
-    override suspend fun getToken(): String = firebaseMessaging.token.await()
+    override suspend fun getToken(): String {
+        return firebaseMessaging?.token?.await().orEmpty()
+    }
 }
-
-// created by Mories Deo Hutapea, S.E.,S.Kom

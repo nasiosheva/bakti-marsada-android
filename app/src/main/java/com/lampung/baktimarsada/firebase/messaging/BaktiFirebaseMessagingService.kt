@@ -4,8 +4,8 @@ import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.lampung.baktimarsada.core.constants.AppConstants
 import com.lampung.baktimarsada.firebase.notification.FcmNotificationHelper
+import com.lampung.baktimarsada.firebase.core.service.FirebaseTelemetryService
 import com.lampung.baktimarsada.domain.usecase.SyncFcmTokenUseCase
-import com.lampung.baktimarsada.firebase.service.FirebaseTelemetryService
 import com.lampung.baktimarsada.security.SecureStorage
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope

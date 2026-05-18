@@ -114,6 +114,7 @@ dependencies {
     implementation(project(":domain"))
     implementation(project(":data"))
     implementation(project(":ui"))
+    implementation(project(":firebase-core"))
     implementation(project(":data-source-cloudflare"))
     implementation(project(":data-source-python"))
     implementation(project(":data-source-firebase"))
@@ -153,7 +154,7 @@ dependencies {
 
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.messaging)
-    implementation(libs.firebase.firestore)
+    implementation(libs.firebase.analytics)
 
     implementation(libs.androidx.security.crypto)
     implementation(libs.sqlcipher.android)
@@ -172,4 +173,28 @@ dependencies {
     debugImplementation(libs.chucker)
     add("simulateImplementation", libs.chucker)
     releaseImplementation(libs.chucker)
+}
+
+val googleServicesConfigCandidates = listOf(
+    "google-services.json",
+    "src/debug/google-services.json",
+    "src/release/google-services.json",
+    "src/simulate/google-services.json"
+)
+val hasDebugGoogleServicesConfig = file("src/debug/google-services.json").exists()
+val hasReleaseGoogleServicesConfig = file("google-services.json").exists() || file("src/release/google-services.json").exists()
+val hasSimulateGoogleServicesConfig = file("src/simulate/google-services.json").exists()
+
+if (googleServicesConfigCandidates.any { file(it).exists() }) {
+    apply(plugin = "com.google.gms.google-services")
+
+    tasks.matching { it.name == "processDebugGoogleServices" }.configureEach {
+        enabled = hasDebugGoogleServicesConfig
+    }
+    tasks.matching { it.name == "processReleaseGoogleServices" }.configureEach {
+        enabled = hasReleaseGoogleServicesConfig
+    }
+    tasks.matching { it.name == "processSimulateGoogleServices" }.configureEach {
+        enabled = hasSimulateGoogleServicesConfig
+    }
 }

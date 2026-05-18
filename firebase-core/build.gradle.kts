@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.lampung.baktimarsada.datasource.firebase"
+    namespace = "com.lampung.baktimarsada.firebase.core"
     compileSdk = 36
 
     defaultConfig {
@@ -24,12 +24,18 @@ android {
 
 dependencies {
     implementation(project(":core"))
-    implementation(project(":data"))
-    implementation(project(":firebase-core"))
 
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
+
+    implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlinx.coroutines.play.services)
+
     implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.config)
     implementation(libs.firebase.firestore)
+    implementation(libs.firebase.messaging)
+
+    testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
 }

@@ -4,11 +4,14 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
@@ -16,6 +19,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.res.stringResource
@@ -46,7 +50,6 @@ import com.lampung.baktimarsada.ui.component.BaktiLoadingState
 import com.lampung.baktimarsada.ui.component.BaktiPullToRefreshBox
 import com.lampung.baktimarsada.ui.component.BaktiScrollableStateView
 import com.lampung.baktimarsada.ui.component.BaktiToolbar
-import com.lampung.baktimarsada.ui.component.BaktiValueRow
 import com.lampung.baktimarsada.ui.component.JemaatPill
 import com.lampung.baktimarsada.ui.theme.BaktiMarsadaTheme
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -120,6 +123,7 @@ fun EventDetailContent(
     session: SessionState
 ) {
     val event = item ?: return
+    val programItems = event.programItems.sortedBy { it.orderIndex }
 
     LazyColumn(
         modifier = Modifier
@@ -131,140 +135,176 @@ fun EventDetailContent(
                         MaterialTheme.colorScheme.background
                     )
                 )
-            )
-            .padding(16.dp),
+            ),
+        contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         item {
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(
-                    text = event.title,
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Text(
-                    text = session.sectorContext.sectorName,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-        item {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                JemaatPill(text = event.scheduledAt)
-                JemaatPill(text = event.location)
-            }
-        }
-        item {
-            Card(
-                shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    BaktiValueRow(
-                        label = stringResource(id = R.string.form_schedule),
-                        value = event.scheduledAt
-                    )
-                    BaktiValueRow(
-                        label = stringResource(id = R.string.form_location),
-                        value = event.location
-                    )
-                    if (isAdmin) {
-                        BaktiValueRow(
-                            label = stringResource(id = R.string.form_role_sector),
-                            value = event.sectorName
-                        )
-                    }
-                    BaktiValueRow(
-                        label = stringResource(id = R.string.form_description),
-                        value = event.description
-                    )
-                }
-            }
-        }
-        item {
-            Text(
-                text = stringResource(id = R.string.program_section_title),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
+            EventDetailHero(
+                event = event,
+                sectorName = session.sectorContext.sectorName,
+                isAdmin = isAdmin
             )
         }
-        if (event.programItems.isEmpty()) {
+        item {
+            EventDetailInfoCard(event = event, isAdmin = isAdmin)
+        }
+        item {
+            EventProgramHeader(
+                count = programItems.size
+            )
+        }
+        if (programItems.isEmpty()) {
             item {
-                Card(
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-                ) {
-                    Text(
-                        text = event.description,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
+                EventLegacyDescriptionCard(description = event.description)
             }
         } else {
-            items(event.programItems.sortedBy { it.orderIndex }.size) { index ->
-                val programItem = event.programItems.sortedBy { it.orderIndex }[index]
-                Card(
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            JemaatPill(text = "${index + 1}")
-                            JemaatPill(text = programItem.type.name)
-                        }
-                        if (programItem.title.isNotBlank()) {
-                            Text(
-                                text = programItem.title,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        }
-                        if (programItem.leader.isNotBlank()) {
-                            Text(
-                                text = programItem.leader,
-                                style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                        ProgramItemBody(programItem = programItem)
-                    }
-                }
+            itemsIndexed(programItems, key = { _, programItem -> programItem.id.ifBlank { programItem.orderIndex } }) { index, programItem ->
+                EventProgramItemCard(
+                    index = index,
+                    programItem = programItem
+                )
             }
         }
     }
 }
 
 @Composable
-private fun ProgramItemBody(programItem: EventProgramItem) {
-    val bodyText = when (programItem.type) {
-        ProgramItemType.SCRIPTURE -> listOf(
-            programItem.scriptureReference,
-            programItem.scriptureText.ifBlank { programItem.content }
-        ).filter { it.isNotBlank() }.joinToString(separator = "\n")
-        ProgramItemType.OFFERING -> programItem.note.ifBlank { programItem.content }
-        else -> programItem.content
+private fun EventDetailHero(
+    event: EventDetail,
+    sectorName: String,
+    isAdmin: Boolean
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(8.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                JemaatPill(
+                    text = if (isAdmin) {
+                        stringResource(id = R.string.profile_role_admin)
+                    } else {
+                        stringResource(id = R.string.profile_role_jemaat)
+                    },
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    contentColor = MaterialTheme.colorScheme.primary
+                )
+                JemaatPill(
+                    text = sectorName,
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    contentColor = MaterialTheme.colorScheme.primary
+                )
+            }
+            Text(
+                text = event.title,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+            Text(
+                text = event.description,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.78f)
+            )
+        }
     }
-    if (bodyText.isNotBlank()) {
+}
+
+@Composable
+private fun EventDetailInfoCard(
+    event: EventDetail,
+    isAdmin: Boolean
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            EventDetailInfoRow(
+                label = stringResource(id = R.string.form_schedule),
+                value = event.scheduledAt
+            )
+            EventDetailInfoRow(
+                label = stringResource(id = R.string.form_location),
+                value = event.location
+            )
+            if (isAdmin) {
+                EventDetailInfoRow(
+                    label = stringResource(id = R.string.form_role_sector),
+                    value = event.sectorName
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun EventDetailInfoRow(
+    label: String,
+    value: String
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
         Text(
-            text = bodyText,
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.Medium
+        )
+    }
+}
+
+@Composable
+private fun EventProgramHeader(count: Int) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            Text(
+                text = stringResource(id = R.string.program_section_title),
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.SemiBold
+            )
+            Text(
+                text = stringResource(id = R.string.pagination_summary, count, count),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun EventLegacyDescriptionCard(description: String) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Text(
+            text = description,
+            modifier = Modifier.padding(16.dp),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )

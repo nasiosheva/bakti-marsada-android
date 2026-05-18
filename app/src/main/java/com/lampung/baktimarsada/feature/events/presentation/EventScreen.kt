@@ -1,20 +1,28 @@
 package com.lampung.baktimarsada.feature.events.presentation
 
 import android.app.DatePickerDialog
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -36,12 +44,20 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
@@ -71,8 +87,8 @@ import com.lampung.baktimarsada.ui.component.BaktiSectionMessage
 import com.lampung.baktimarsada.ui.component.BaktiTextInput
 import com.lampung.baktimarsada.ui.component.BaktiValueRow
 import com.lampung.baktimarsada.ui.component.BaktiToolbar
-import com.lampung.baktimarsada.ui.component.JemaatInfoCard
 import com.lampung.baktimarsada.ui.component.JemaatPill
+import com.lampung.baktimarsada.ui.theme.BaktiMarsadaTheme
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -498,174 +514,328 @@ fun EventContent(
     val filteredItems = state.items.filter { it.matchesEventQuery(searchQuery) }
     val displayItems = filteredItems.take(visibleCount)
     val canLoadMore = displayItems.size < filteredItems.size
+    val title = stringResource(
+        id = if (isAdmin) R.string.event_title_admin else R.string.event_title_jemaat
+    )
+    val countLabel = if (isAdmin) {
+        stringResource(id = R.string.pagination_summary, displayItems.size, filteredItems.size)
+    } else {
+        stringResource(id = R.string.jemaat_count_events, filteredItems.size)
+    }
 
     BaktiPullToRefreshBox(
         isRefreshing = state.isLoading,
         onRefresh = onRefresh,
         modifier = Modifier.fillMaxSize()
     ) {
-        Box(modifier = Modifier.fillMaxSize()) {
-        when {
-            state.isLoading && state.items.isEmpty() -> {
-                BaktiScrollableStateView { BaktiLoadingState() }
-            }
-            state.errorMessage != null && state.items.isEmpty() -> {
-                BaktiScrollableStateView {
-                    BaktiErrorState(message = state.errorMessage, onRetry = onRefresh)
-                }
-            }
-            filteredItems.isEmpty() -> {
-                BaktiScrollableStateView {
-                    BaktiEmptyState(message = stringResource(id = R.string.event_empty))
-                }
-            }
-            else -> {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    item {
-                        BaktiTextInput(
-                            value = searchQuery,
-                            label = stringResource(id = R.string.search_events),
-                            onValueChange = {
-                                searchQuery = it
-                                visibleCount = AppConstants.DEFAULT_LIST_PAGE_SIZE
-                            },
-                            modifier = Modifier.semantics { testTag = "event_search_input" }
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.20f),
+                            MaterialTheme.colorScheme.background
                         )
+                    )
+                )
+        ) {
+            when {
+                state.isLoading && state.items.isEmpty() -> {
+                    BaktiScrollableStateView { BaktiLoadingState() }
+                }
+                state.errorMessage != null && state.items.isEmpty() -> {
+                    BaktiScrollableStateView {
+                        BaktiErrorState(message = state.errorMessage, onRetry = onRefresh)
                     }
-                    item {
-                        if (isAdmin) {
-                            Text(
-                                text = stringResource(id = R.string.event_title_admin),
-                                style = MaterialTheme.typography.titleLarge,
+                }
+                filteredItems.isEmpty() -> {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(14.dp)
+                    ) {
+                        item {
+                            EventListHeader(
+                                title = title,
+                                countLabel = countLabel,
+                                isAdmin = isAdmin,
                                 modifier = Modifier.semantics { testTag = "event_title" }
                             )
-                        } else {
-                            Column(
-                                verticalArrangement = Arrangement.spacedBy(4.dp),
-                                modifier = Modifier.semantics { testTag = "event_title" }
-                            ) {
-                                Text(
-                                    text = stringResource(id = R.string.event_title_jemaat),
-                                    style = MaterialTheme.typography.titleLarge
-                                )
-                                Text(
-                                    text = stringResource(id = R.string.jemaat_count_events, filteredItems.size),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
                         }
-                    }
-                    state.errorMessage?.let { message ->
-                        item { BaktiSectionMessage(message = message) }
-                    }
-                    item {
-                        Text(
-                            text = stringResource(id = R.string.pagination_summary, displayItems.size, filteredItems.size),
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                    }
-                    items(displayItems, key = { it.id }) { item ->
-                        if (isAdmin) {
-                            Card(
+                        item {
+                            EventSearchPanel(
+                                searchQuery = searchQuery,
+                                onSearchChange = {
+                                    searchQuery = it
+                                    visibleCount = AppConstants.DEFAULT_LIST_PAGE_SIZE
+                                }
+                            )
+                        }
+                        state.errorMessage?.let { message ->
+                            item { BaktiSectionMessage(message = message) }
+                        }
+                        item {
+                            Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .semantics { testTag = "event_item_${item.id}" }
+                                    .height(240.dp)
                             ) {
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(16.dp),
-                                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                                ) {
-                                    Text(text = item.title, style = MaterialTheme.typography.titleMedium)
-                                    BaktiValueRow(
-                                        label = stringResource(id = R.string.form_schedule),
-                                        value = item.scheduledAt
-                                    )
-                                    BaktiValueRow(
-                                        label = stringResource(id = R.string.form_location),
-                                        value = item.location
-                                    )
-                                    Text(text = item.description, style = MaterialTheme.typography.bodyMedium)
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                    ) {
-                                        OutlinedButton(
-                                            onClick = { onShowDetail(item) },
-                                            modifier = Modifier.semantics { testTag = "event_detail_${item.id}" }
-                                        ) {
-                                            Text(text = stringResource(id = R.string.action_detail))
-                                        }
-                                        OutlinedButton(
-                                            onClick = { onShowEdit(item) },
-                                            modifier = Modifier.semantics { testTag = "event_edit_${item.id}" }
-                                        ) {
-                                            Text(text = stringResource(id = R.string.action_edit))
-                                        }
-                                        Button(
-                                            onClick = { onDelete(item.id) },
-                                            modifier = Modifier.semantics { testTag = "event_delete_${item.id}" }
-                                        ) {
-                                            Text(text = stringResource(id = R.string.action_delete))
-                                        }
-                                    }
-                                }
+                                BaktiEmptyState(message = stringResource(id = R.string.event_empty))
                             }
-                        } else {
-                            JemaatInfoCard(
-                                title = item.title,
-                                subtitle = item.description,
-                                modifier = Modifier.semantics { testTag = "event_item_${item.id}" },
-                                content = {
-                                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        JemaatPill(text = item.scheduledAt)
-                                        JemaatPill(text = item.location)
-                                    }
-                                },
-                                footer = {
-                                    OutlinedButton(
-                                        onClick = { onShowDetail(item) },
-                                        modifier = Modifier.semantics { testTag = "event_detail_${item.id}" }
-                                    ) {
-                                        Text(text = stringResource(id = R.string.action_detail))
-                                    }
+                        }
+                    }
+                }
+                else -> {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(14.dp)
+                    ) {
+                        item {
+                            EventListHeader(
+                                title = title,
+                                countLabel = countLabel,
+                                isAdmin = isAdmin,
+                                modifier = Modifier.semantics { testTag = "event_title" }
+                            )
+                        }
+                        item {
+                            EventSearchPanel(
+                                searchQuery = searchQuery,
+                                onSearchChange = {
+                                    searchQuery = it
+                                    visibleCount = AppConstants.DEFAULT_LIST_PAGE_SIZE
                                 }
                             )
                         }
-                    }
-                    if (canLoadMore) {
-                        item {
-                            OutlinedButton(
-                                onClick = { visibleCount += AppConstants.DEFAULT_LIST_PAGE_SIZE },
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Text(text = stringResource(id = R.string.action_load_more))
+                        state.errorMessage?.let { message ->
+                            item { BaktiSectionMessage(message = message) }
+                        }
+                        items(displayItems, key = { it.id }) { item ->
+                            EventListCard(
+                                item = item,
+                                isAdmin = isAdmin,
+                                onShowDetail = onShowDetail,
+                                onShowEdit = onShowEdit,
+                                onDelete = onDelete,
+                                modifier = Modifier.semantics { testTag = "event_item_${item.id}" }
+                            )
+                        }
+                        if (canLoadMore) {
+                            item {
+                                OutlinedButton(
+                                    onClick = { visibleCount += AppConstants.DEFAULT_LIST_PAGE_SIZE },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text(text = stringResource(id = R.string.action_load_more))
+                                }
                             }
                         }
                     }
                 }
             }
-        }
 
-        if (isAdmin) {
-            ExtendedFloatingActionButton(
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(16.dp)
-                    .semantics { testTag = "event_add_fab" },
-                onClick = onShowCreate
-            ) {
-                Text(text = stringResource(id = R.string.action_add_event))
+            if (isAdmin) {
+                ExtendedFloatingActionButton(
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(16.dp)
+                        .semantics { testTag = "event_add_fab" },
+                    icon = {
+                        Icon(
+                            imageVector = Icons.Filled.Add,
+                            contentDescription = stringResource(id = R.string.action_add_event)
+                        )
+                    },
+                    text = { Text(text = stringResource(id = R.string.action_add_event)) },
+                    onClick = onShowCreate
+                )
             }
         }
     }
+}
+
+@Composable
+private fun EventListHeader(
+    title: String,
+    countLabel: String,
+    isAdmin: Boolean,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(8.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            JemaatPill(
+                text = if (isAdmin) {
+                    stringResource(id = R.string.profile_role_admin)
+                } else {
+                    stringResource(id = R.string.profile_role_jemaat)
+                },
+                containerColor = MaterialTheme.colorScheme.surface,
+                contentColor = MaterialTheme.colorScheme.primary
+            )
+            Text(
+                text = title,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+            Text(
+                text = countLabel,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.76f)
+            )
+        }
+    }
+}
+
+@Composable
+private fun EventSearchPanel(
+    searchQuery: String,
+    onSearchChange: (String) -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        BaktiTextInput(
+            value = searchQuery,
+            label = stringResource(id = R.string.search_events),
+            onValueChange = onSearchChange,
+            modifier = Modifier
+                .padding(12.dp)
+                .semantics { testTag = "event_search_input" }
+        )
+    }
+}
+
+@Composable
+private fun EventListCard(
+    item: EventDetail,
+    isAdmin: Boolean,
+    onShowDetail: (EventDetail) -> Unit,
+    onShowEdit: (EventDetail) -> Unit,
+    onDelete: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.Top
+            ) {
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = item.title,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = item.description,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                if (isAdmin) {
+                    JemaatPill(
+                        text = item.sectorName,
+                        containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+                    )
+                }
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                JemaatPill(text = item.scheduledAt, modifier = Modifier.weight(1f))
+                JemaatPill(text = item.location, modifier = Modifier.weight(1f))
+            }
+            if (isAdmin) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedButton(
+                            onClick = { onShowDetail(item) },
+                            modifier = Modifier
+                                .weight(1f)
+                                .semantics { testTag = "event_detail_${item.id}" }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Info,
+                                contentDescription = stringResource(id = R.string.action_detail)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(text = stringResource(id = R.string.action_detail))
+                        }
+                        OutlinedButton(
+                            onClick = { onShowEdit(item) },
+                            modifier = Modifier
+                                .weight(1f)
+                                .semantics { testTag = "event_edit_${item.id}" }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Edit,
+                                contentDescription = stringResource(id = R.string.action_edit)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(text = stringResource(id = R.string.action_edit))
+                        }
+                    }
+                    Button(
+                        onClick = { onDelete(item.id) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .semantics { testTag = "event_delete_${item.id}" }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Delete,
+                            contentDescription = stringResource(id = R.string.action_delete)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(text = stringResource(id = R.string.action_delete))
+                    }
+                }
+            } else {
+                OutlinedButton(
+                    onClick = { onShowDetail(item) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .semantics { testTag = "event_detail_${item.id}" }
+                ) {
+                    Text(text = stringResource(id = R.string.action_detail))
+                }
+            }
+        }
     }
 }
 
@@ -1267,6 +1437,73 @@ private fun EventProgramItem.isBlankProgramItem(): Boolean {
         scriptureReference.isBlank() &&
         scriptureText.isBlank() &&
         note.isBlank()
+}
+
+@Preview(name = "Event Content - Jemaat", showBackground = true)
+@Composable
+private fun EventContentJemaatPreview() {
+    BaktiMarsadaTheme {
+        EventContent(
+            isAdmin = false,
+            state = EventUiState(
+                items = listOf(
+                    EventDetail(
+                        id = "event-1",
+                        title = "Partangiangan Sektor",
+                        description = "Ibadah rutin sektor HKBP Kedaton.",
+                        scheduledAt = "2026-05-20",
+                        location = "Rumah Keluarga Hutapea",
+                        sectorId = "sector-1",
+                        sectorName = "Sektor 1"
+                    ),
+                    EventDetail(
+                        id = "event-2",
+                        title = "Partangiangan Wijk",
+                        description = "Persekutuan warga wijk.",
+                        scheduledAt = "2026-05-24",
+                        location = "Aula Wijk",
+                        sectorId = "sector-1",
+                        sectorName = "Sektor 1"
+                    )
+                ),
+                isLoading = false
+            ),
+            onRefresh = {},
+            onDelete = {},
+            onShowCreate = {},
+            onShowDetail = {},
+            onShowEdit = {}
+        )
+    }
+}
+
+@Preview(name = "Event Content - Admin", showBackground = true)
+@Composable
+private fun EventContentAdminPreview() {
+    BaktiMarsadaTheme {
+        EventContent(
+            isAdmin = true,
+            state = EventUiState(
+                items = listOf(
+                    EventDetail(
+                        id = "event-1",
+                        title = "Partangiangan Sektor",
+                        description = "Ibadah rutin sektor HKBP Kedaton.",
+                        scheduledAt = "2026-05-20",
+                        location = "Rumah Keluarga Hutapea",
+                        sectorId = "sector-1",
+                        sectorName = "Sektor 1"
+                    )
+                ),
+                isLoading = false
+            ),
+            onRefresh = {},
+            onDelete = {},
+            onShowCreate = {},
+            onShowDetail = {},
+            onShowEdit = {}
+        )
+    }
 }
 
 // created by Mories Deo Hutapea, S.E.,S.Kom

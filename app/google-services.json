@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "130391996191",
+    "project_id": "bakti-marsada",
+    "storage_bucket": "bakti-marsada.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:130391996191:android:e4fb8a82a0ee4fc9a3a22a",
+        "android_client_info": {
+          "package_name": "com.lampung.baktimarsada"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB4U_8WhqRiyC92y5oL394UD0oVDKYRttg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

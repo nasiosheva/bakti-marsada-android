@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<defaultsMap>
+    <entry>
+        <key>app.home_banner_enabled</key>
+        <value>false</value>
+    </entry>
+    <entry>
+        <key>app.home_banner_title</key>
+        <value>Bakti Marsada</value>
+    </entry>
+    <entry>
+        <key>tenant.hkbp-kedaton.app.home_banner_title</key>
+        <value>HKBP Kedaton</value>
+    </entry>
+    <entry>
+        <key>app.minimum_supported_version_code</key>
+        <value>1</value>
+    </entry>
+    <entry>
+        <key>app.event_highlight_enabled</key>
+        <value>false</value>
+    </entry>
+</defaultsMap>

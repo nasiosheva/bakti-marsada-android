@@ -1,4 +1,4 @@
-package com.lampung.baktimarsada.firebase.service
+package com.lampung.baktimarsada.firebase.core.service
 
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
@@ -13,19 +13,18 @@ interface FirebaseTelemetryService {
 
 @Singleton
 class FirebaseTelemetryServiceImpl @Inject constructor(
-    private val firestore: FirebaseFirestore
+    private val firestore: FirebaseFirestore?
 ) : FirebaseTelemetryService {
     override suspend fun logEvent(type: String, payload: Map<String, Any?>) {
+        val firestoreInstance = firestore ?: return
         val eventPayload = buildMap<String, Any?> {
             put(AppConstants.FIRESTORE_FIELD_EVENT_TYPE, type)
             put(AppConstants.FIRESTORE_FIELD_TIMESTAMP, FieldValue.serverTimestamp())
             putAll(payload)
         }
-        firestore
+        firestoreInstance
             .collection(AppConstants.FIRESTORE_COLLECTION_TRACKING)
             .add(eventPayload)
             .await()
     }
 }
-
-// created by Mories Deo Hutapea, S.E.,S.Kom
