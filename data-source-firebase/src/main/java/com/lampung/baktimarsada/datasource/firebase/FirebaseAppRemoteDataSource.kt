@@ -10,6 +10,8 @@ import com.lampung.baktimarsada.data.remote.AppRemoteDataSource
 import com.lampung.baktimarsada.network.dto.EventDto
 import com.lampung.baktimarsada.network.dto.EventProgramItemDto
 import com.lampung.baktimarsada.network.dto.FinanceReportDto
+import com.lampung.baktimarsada.network.dto.CreateUserAccountRequestDto
+import com.lampung.baktimarsada.network.dto.CreateUserAccountResponseDto
 import com.lampung.baktimarsada.network.dto.LoginRequestDto
 import com.lampung.baktimarsada.network.dto.MemberDto
 import com.lampung.baktimarsada.network.dto.PaymentObligationDto
@@ -259,6 +261,92 @@ class FirebaseAppRemoteDataSource @Inject constructor(
             .document(obligationId)
             .delete()
             .await()
+    }
+
+    override suspend fun createUserAccount(request: CreateUserAccountRequestDto): CreateUserAccountResponseDto {
+        val username = request.username.trim().lowercase()
+        val email = request.email.trim().lowercase()
+        val role = request.role.trim().uppercase().ifBlank { "JEMAAT" }
+        val fullName = request.fullName.trim()
+
+        if (username.length < 3) {
+            throw IllegalArgumentException("Username must be at least 3 characters")
+        }
+        if (!email.contains("@")) {
+            throw IllegalArgumentException("Invalid email")
+        }
+        if (request.password.length < 8) {
+            throw IllegalArgumentException("Password must be at least 8 characters")
+        }
+        if (fullName.isBlank()) {
+            throw IllegalArgumentException("Full name is required")
+        }
+
+        val existingByIdentifier = firestore.collection(AppConstants.FIRESTORE_COLLECTION_USERS)
+            .whereEqualTo(AppConstants.FIRESTORE_FIELD_IDENTIFIER_NORMALIZED, username)
+            .limit(1)
+            .get()
+            .await()
+            .documents
+            .firstOrNull()
+        if (existingByIdentifier != null) {
+            throw IllegalArgumentException("Username already exists")
+        }
+
+        val existingByEmail = firestore.collection(AppConstants.FIRESTORE_COLLECTION_USERS)
+            .whereEqualTo(AppConstants.FIRESTORE_FIELD_IDENTIFIER_NORMALIZED, email)
+            .limit(1)
+            .get()
+            .await()
+            .documents
+            .firstOrNull()
+        if (existingByEmail != null) {
+            throw IllegalArgumentException("Email already exists")
+        }
+
+        val userId = "firebase-${UUID.randomUUID()}"
+        firestore.collection(AppConstants.FIRESTORE_COLLECTION_USERS)
+            .document(userId)
+            .set(
+                mapOf(
+                    AppConstants.FIRESTORE_FIELD_IDENTIFIER to email,
+                    AppConstants.FIRESTORE_FIELD_IDENTIFIER_NORMALIZED to email,
+                    AppConstants.FIRESTORE_FIELD_PASSWORD to request.password,
+                    AppConstants.FIRESTORE_FIELD_DISPLAY_NAME to fullName,
+                    AppConstants.FIRESTORE_FIELD_ROLE to role,
+                    AppConstants.FIRESTORE_FIELD_SECTOR_ID to TenantRuntime.current.defaultSectorId,
+                    AppConstants.FIRESTORE_FIELD_SECTOR_NAME to TenantRuntime.current.defaultSectorName
+                )
+            )
+            .await()
+
+        return CreateUserAccountResponseDto(
+            id = userId,
+            username = username,
+            email = email,
+            role = role,
+            fullName = fullName
+        )
+    }
+
+    override suspend fun fetchUsersByRole(role: String): List<CreateUserAccountResponseDto> {
+        val normalizedRole = role.trim().uppercase()
+        return firestore.collection(AppConstants.FIRESTORE_COLLECTION_USERS)
+            .whereEqualTo(AppConstants.FIRESTORE_FIELD_ROLE, normalizedRole)
+            .get()
+            .await()
+            .documents
+            .mapNotNull { doc ->
+                val email = doc.stringField(AppConstants.FIRESTORE_FIELD_IDENTIFIER_NORMALIZED) ?: return@mapNotNull null
+                val fullName = doc.stringField(AppConstants.FIRESTORE_FIELD_DISPLAY_NAME) ?: ""
+                CreateUserAccountResponseDto(
+                    id = doc.id,
+                    username = email.substringBefore("@"),
+                    email = email,
+                    role = normalizedRole,
+                    fullName = fullName
+                )
+            }
     }
 
     override suspend fun resetSimulationData(): Unit = Unit

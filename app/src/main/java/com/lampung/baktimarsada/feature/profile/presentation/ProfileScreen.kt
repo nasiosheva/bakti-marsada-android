@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -41,11 +43,13 @@ import com.lampung.baktimarsada.ui.component.JemaatPill
 fun ProfileRoute(
     session: SessionState,
     onLogout: () -> Unit,
+    onTestSendNotification: () -> Unit = {},
     onBack: (() -> Unit)? = null
 ) {
     ProfileScreen(
         session = session,
         onLogout = onLogout,
+        onTestSendNotification = onTestSendNotification,
         onBack = onBack
     )
 }
@@ -54,6 +58,7 @@ fun ProfileRoute(
 fun ProfileScreen(
     session: SessionState,
     onLogout: () -> Unit,
+    onTestSendNotification: () -> Unit = {},
     onBack: (() -> Unit)? = null
 ) {
     Scaffold(
@@ -106,6 +111,15 @@ fun ProfileScreen(
                     )
                 }
             }
+            Button(
+                onClick = onTestSendNotification,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .semantics { testTag = "profile_test_send_notification_button" }
+            ) {
+                Text(text = stringResource(id = R.string.action_test_send_notification))
+            }
+            Spacer(modifier = Modifier.height(4.dp))
             Button(
                 onClick = onLogout,
                 modifier = Modifier

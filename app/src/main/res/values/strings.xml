@@ -20,6 +20,7 @@
     <string name="login_password_show">Tampilkan password</string>
     <string name="login_password_hide">Sembunyikan password</string>
     <string name="environment_simulate">Mode simulasi</string>
+    <string name="exit_app_confirmation">Tekan sekali lagi untuk keluar</string>
 
     <string name="jemaat_home_title">Portal Jemaat</string>
     <string name="admin_home_title">Portal Admin</string>
@@ -32,10 +33,15 @@
     <string name="action_cancel">Batal</string>
     <string name="action_save">Simpan</string>
     <string name="action_toggle_visibility">Ubah Visibilitas</string>
+    <string name="action_select_date">Pilih tanggal</string>
     <string name="action_load_more">Muat lebih banyak</string>
+    <string name="action_add_user">Tambah Akun</string>
+    <string name="action_test_send_notification">Kirim Notifikasi Uji</string>
     <string name="action_add_event">Tambah Acara</string>
     <string name="action_manage_templates">Template</string>
     <string name="action_copy_previous_event">Salin dari acara sebelumnya</string>
+    <string name="admin_dashboard_menu_title">Menu admin</string>
+    <string name="admin_action_create_user">Tambah akun</string>
     <string name="copy_previous_event_title">Pilih Acara Sebelumnya</string>
     <string name="copy_previous_event_empty">Belum ada acara sebelumnya untuk disalin.</string>
     <string name="search_copy_previous_event">Cari acara sebelumnya</string>
@@ -103,6 +109,10 @@
     <string name="dashboard_payments_title">Kewajiban Pembayaran</string>
     <string name="dashboard_payments_desc">Daftar tagihan sektor beserta status terkini.</string>
     <string name="dashboard_simulation_reset_action">Reset Data Simulasi</string>
+    <string name="admin_create_user_title">Buat Akun</string>
+    <string name="admin_create_user_success">Akun berhasil dibuat</string>
+    <string name="admin_create_user_error_default">Gagal membuat akun</string>
+    <string name="user_list_empty">Belum ada akun pada role ini.</string>
 
     <string name="profile_title">Akun Bakti Marsada</string>
     <string name="profile_role_admin">Admin</string>
@@ -113,11 +123,17 @@
     <string name="profile_user_id_label">ID Pengguna</string>
     <string name="profile_environment_label">Environment</string>
     <string name="profile_data_source_label">Data Source</string>
+    <string name="notification_channel_name">Notifikasi Bakti Marsada</string>
+    <string name="notification_channel_description">Pemberitahuan penting dari aplikasi</string>
 
     <string name="form_title">Judul</string>
     <string name="form_description">Deskripsi</string>
     <string name="form_schedule">Jadwal</string>
+    <string name="form_event_date">Tanggal</string>
     <string name="form_location">Lokasi</string>
+    <string name="form_username">Username</string>
+    <string name="form_email">Email</string>
+    <string name="form_role">Role</string>
     <string name="form_full_name">Nama Lengkap</string>
     <string name="form_family_group">Keluarga</string>
     <string name="form_role_sector">Peran di Sektor</string>

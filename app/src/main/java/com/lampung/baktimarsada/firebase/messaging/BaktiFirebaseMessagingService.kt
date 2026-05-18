@@ -3,6 +3,7 @@ package com.lampung.baktimarsada.firebase.messaging
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.lampung.baktimarsada.core.constants.AppConstants
+import com.lampung.baktimarsada.firebase.notification.FcmNotificationHelper
 import com.lampung.baktimarsada.domain.usecase.SyncFcmTokenUseCase
 import com.lampung.baktimarsada.firebase.service.FirebaseTelemetryService
 import com.lampung.baktimarsada.security.SecureStorage
@@ -25,6 +26,8 @@ class BaktiFirebaseMessagingService : FirebaseMessagingService() {
 
     @Inject
     lateinit var telemetryService: FirebaseTelemetryService
+    @Inject
+    lateinit var notificationHelper: FcmNotificationHelper
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -41,6 +44,7 @@ class BaktiFirebaseMessagingService : FirebaseMessagingService() {
 
     override fun onMessageReceived(message: RemoteMessage) {
         serviceScope.launch {
+            notificationHelper.showNotification(message)
             telemetryService.logEvent(
                 type = AppConstants.TRACKING_EVENT_MESSAGE_RECEIVED,
                 payload = mapOf(

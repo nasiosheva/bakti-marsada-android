@@ -1,4 +1,4 @@
-package com.lampung.baktimarsada.domain.repository
+package com.lampung.baktimarsada.repository
 
 import com.lampung.baktimarsada.core.result.AppResult
 import com.lampung.baktimarsada.domain.model.MemberDetail

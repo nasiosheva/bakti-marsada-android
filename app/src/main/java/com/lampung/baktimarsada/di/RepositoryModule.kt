@@ -6,11 +6,11 @@ import com.lampung.baktimarsada.data.repository.FinanceReportRepositoryImpl
 import com.lampung.baktimarsada.data.repository.MemberRepositoryImpl
 import com.lampung.baktimarsada.data.repository.PaymentObligationRepositoryImpl
 import com.lampung.baktimarsada.data.repository.WorshipTemplateRepositoryImpl
-import com.lampung.baktimarsada.domain.repository.AuthRepository
-import com.lampung.baktimarsada.domain.repository.EventRepository
-import com.lampung.baktimarsada.domain.repository.FinanceReportRepository
-import com.lampung.baktimarsada.domain.repository.MemberRepository
-import com.lampung.baktimarsada.domain.repository.PaymentObligationRepository
+import com.lampung.baktimarsada.repository.AuthRepository
+import com.lampung.baktimarsada.repository.EventRepository
+import com.lampung.baktimarsada.repository.FinanceReportRepository
+import com.lampung.baktimarsada.repository.MemberRepository
+import com.lampung.baktimarsada.repository.PaymentObligationRepository
 import com.lampung.baktimarsada.domain.repository.WorshipTemplateRepository
 import dagger.Binds
 import dagger.Module

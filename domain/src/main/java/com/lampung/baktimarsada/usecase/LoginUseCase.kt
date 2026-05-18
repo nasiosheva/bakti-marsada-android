@@ -2,7 +2,7 @@ package com.lampung.baktimarsada.domain.usecase
 
 import com.lampung.baktimarsada.core.result.AppResult
 import com.lampung.baktimarsada.domain.model.SessionState
-import com.lampung.baktimarsada.domain.repository.AuthRepository
+import com.lampung.baktimarsada.repository.AuthRepository
 import javax.inject.Inject
 
 class LoginUseCase @Inject constructor(

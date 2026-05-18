@@ -10,7 +10,7 @@ import com.lampung.baktimarsada.db.AppDatabase
 import com.lampung.baktimarsada.db.dao.MemberDao
 import com.lampung.baktimarsada.domain.model.MemberDetail
 import com.lampung.baktimarsada.domain.model.SectorContext
-import com.lampung.baktimarsada.domain.repository.MemberRepository
+import com.lampung.baktimarsada.repository.MemberRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject

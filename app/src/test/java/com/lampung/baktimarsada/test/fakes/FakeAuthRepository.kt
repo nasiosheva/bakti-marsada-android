@@ -2,7 +2,7 @@ package com.lampung.baktimarsada.test.fakes
 
 import com.lampung.baktimarsada.core.result.AppResult
 import com.lampung.baktimarsada.domain.model.SessionState
-import com.lampung.baktimarsada.domain.repository.AuthRepository
+import com.lampung.baktimarsada.repository.AuthRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 

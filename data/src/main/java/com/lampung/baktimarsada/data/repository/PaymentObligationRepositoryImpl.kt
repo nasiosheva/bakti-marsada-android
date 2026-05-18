@@ -10,7 +10,7 @@ import com.lampung.baktimarsada.db.AppDatabase
 import com.lampung.baktimarsada.db.dao.PaymentObligationDao
 import com.lampung.baktimarsada.domain.model.PaymentObligationDetail
 import com.lampung.baktimarsada.domain.model.SectorContext
-import com.lampung.baktimarsada.domain.repository.PaymentObligationRepository
+import com.lampung.baktimarsada.repository.PaymentObligationRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject

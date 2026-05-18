@@ -10,7 +10,7 @@ import com.lampung.baktimarsada.db.AppDatabase
 import com.lampung.baktimarsada.db.dao.FinanceReportDao
 import com.lampung.baktimarsada.domain.model.FinanceReportDetail
 import com.lampung.baktimarsada.domain.model.SectorContext
-import com.lampung.baktimarsada.domain.repository.FinanceReportRepository
+import com.lampung.baktimarsada.repository.FinanceReportRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject

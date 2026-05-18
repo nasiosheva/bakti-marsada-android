@@ -24,6 +24,7 @@ export function createAuthRoute(deps: AuthRouteDependencies = {}) {
   route.post("/register", async (c) => {
     try {
       const body = await c.req.json<{
+        username?: string;
         email?: string;
         password?: string;
         fullName?: string;
@@ -31,6 +32,7 @@ export function createAuthRoute(deps: AuthRouteDependencies = {}) {
 
       const service = createService(c.env.DB);
       const result = await service.register({
+        username: body.username ?? body.email?.split("@")[0] ?? "",
         email: body.email ?? "",
         password: body.password ?? "",
         fullName: body.fullName ?? ""
@@ -126,6 +128,7 @@ function toAuthResponse(result: AuthResult) {
     ...DEFAULT_TENANT,
     user: {
       id: result.user.id,
+      username: result.user.username,
       fullName: result.user.fullName,
       role
     },

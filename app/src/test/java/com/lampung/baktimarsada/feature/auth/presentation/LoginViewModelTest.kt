@@ -16,7 +16,7 @@ import com.lampung.baktimarsada.domain.model.SectorContext
 import com.lampung.baktimarsada.domain.model.SessionState
 import com.lampung.baktimarsada.domain.model.TenantContext
 import com.lampung.baktimarsada.domain.model.UserRole
-import com.lampung.baktimarsada.domain.repository.AuthRepository
+import com.lampung.baktimarsada.repository.AuthRepository
 import com.lampung.baktimarsada.domain.usecase.LoginUseCase
 import com.lampung.baktimarsada.test.MainDispatcherRule
 import com.lampung.baktimarsada.test.fakes.TestDispatcherProvider

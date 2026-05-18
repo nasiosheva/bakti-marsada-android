@@ -40,8 +40,8 @@ import com.lampung.baktimarsada.core.dispatchers.DispatcherProvider
 import com.lampung.baktimarsada.core.result.AppResult
 import com.lampung.baktimarsada.domain.model.MemberDetail
 import com.lampung.baktimarsada.domain.model.SessionState
-import com.lampung.baktimarsada.domain.repository.AuthRepository
-import com.lampung.baktimarsada.domain.repository.MemberRepository
+import com.lampung.baktimarsada.repository.AuthRepository
+import com.lampung.baktimarsada.repository.MemberRepository
 import com.lampung.baktimarsada.ui.component.BaktiEmptyState
 import com.lampung.baktimarsada.ui.component.BaktiErrorState
 import com.lampung.baktimarsada.ui.component.BaktiLoadingState

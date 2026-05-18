@@ -4,7 +4,7 @@ import com.lampung.baktimarsada.core.result.AppResult
 import com.lampung.baktimarsada.domain.model.EventDetail
 import com.lampung.baktimarsada.domain.model.SectorContext
 import com.lampung.baktimarsada.domain.model.WorshipTemplate
-import com.lampung.baktimarsada.domain.repository.EventRepository
+import com.lampung.baktimarsada.repository.EventRepository
 import com.lampung.baktimarsada.domain.repository.WorshipTemplateRepository
 import com.lampung.baktimarsada.test.MainDispatcherRule
 import com.lampung.baktimarsada.test.fakes.FakeAuthRepository

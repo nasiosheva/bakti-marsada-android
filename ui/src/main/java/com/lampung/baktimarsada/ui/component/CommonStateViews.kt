@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -19,6 +20,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -35,6 +37,14 @@ fun BaktiPullToRefreshBox(
     modifier: Modifier = Modifier,
     content: @Composable BoxScope.() -> Unit
 ) {
+    if (LocalInspectionMode.current) {
+        Box(
+            modifier = modifier,
+            content = content
+        )
+        return
+    }
+
     PullToRefreshBox(
         isRefreshing = isRefreshing,
         onRefresh = onRefresh,
@@ -118,6 +128,34 @@ fun BaktiSectionMessage(
         color = MaterialTheme.colorScheme.error,
         style = MaterialTheme.typography.bodyMedium
     )
+}
+
+@Composable
+fun <T> BaktiItemListOrEmpty(
+    items: List<T>,
+    emptyMessage: String,
+    modifier: Modifier = Modifier,
+    itemKey: (T) -> Any,
+    itemContent: @Composable (T) -> Unit
+) {
+    if (items.isEmpty()) {
+        Text(
+            text = emptyMessage,
+            modifier = modifier.padding(top = 12.dp)
+        )
+    } else {
+        LazyColumn(
+            modifier = modifier.fillMaxWidth().padding(top = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items(
+                count = items.size,
+                key = { index -> itemKey(items[index]) }
+            ) { index ->
+                itemContent(items[index])
+            }
+        }
+    }
 }
 
 @Composable

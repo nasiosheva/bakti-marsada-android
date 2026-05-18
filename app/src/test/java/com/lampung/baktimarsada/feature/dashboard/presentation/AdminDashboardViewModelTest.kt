@@ -8,10 +8,10 @@ import com.lampung.baktimarsada.domain.model.MemberDetail
 import com.lampung.baktimarsada.domain.model.PaymentObligationDetail
 import com.lampung.baktimarsada.domain.model.PaymentStatus
 import com.lampung.baktimarsada.domain.model.SectorContext
-import com.lampung.baktimarsada.domain.repository.EventRepository
-import com.lampung.baktimarsada.domain.repository.FinanceReportRepository
-import com.lampung.baktimarsada.domain.repository.MemberRepository
-import com.lampung.baktimarsada.domain.repository.PaymentObligationRepository
+import com.lampung.baktimarsada.repository.EventRepository
+import com.lampung.baktimarsada.repository.FinanceReportRepository
+import com.lampung.baktimarsada.repository.MemberRepository
+import com.lampung.baktimarsada.repository.PaymentObligationRepository
 import com.lampung.baktimarsada.network.dto.EventDto
 import com.lampung.baktimarsada.network.dto.FinanceReportDto
 import com.lampung.baktimarsada.network.dto.LoginRequestDto

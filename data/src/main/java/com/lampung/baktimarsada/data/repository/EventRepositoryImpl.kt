@@ -11,10 +11,9 @@ import com.lampung.baktimarsada.db.dao.EventDao
 import com.lampung.baktimarsada.db.dao.EventProgramItemDao
 import com.lampung.baktimarsada.domain.model.EventDetail
 import com.lampung.baktimarsada.domain.model.SectorContext
-import com.lampung.baktimarsada.domain.repository.EventRepository
+import com.lampung.baktimarsada.repository.EventRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
 

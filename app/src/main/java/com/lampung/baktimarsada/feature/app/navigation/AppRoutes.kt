@@ -3,6 +3,7 @@ package com.lampung.baktimarsada.feature.app.navigation
 object AppRoutes {
     const val EVENT_ID_ARG = "eventId"
     const val SOURCE_EVENT_ID_ARG = "sourceEventId"
+    const val TEMPLATE_ID_ARG = "templateId"
 
     const val SPLASH = "splash"
     const val LOGIN = "login"
@@ -23,10 +24,14 @@ object AppRoutes {
     const val ADMIN_EVENT_CREATE_FROM = "admin_event_create/{$SOURCE_EVENT_ID_ARG}"
     const val ADMIN_EVENT_COPY_SOURCE = "admin_event_copy_source"
     const val ADMIN_EVENT_EDIT = "admin_event_edit/{$EVENT_ID_ARG}"
+    const val ADMIN_EVENT_TEMPLATES = "admin_event_templates"
+    const val ADMIN_EVENT_TEMPLATE_CREATE = "admin_event_template_create"
+    const val ADMIN_EVENT_TEMPLATE_EDIT = "admin_event_template_edit/{$TEMPLATE_ID_ARG}"
     const val ADMIN_MEMBERS = "admin_members"
     const val ADMIN_FINANCE = "admin_finance"
     const val ADMIN_PAYMENTS = "admin_payments"
     const val ADMIN_PROFILE = "admin_profile"
+    const val ADMIN_USER_CREATE = "admin_user_create"
 
     fun jemaatEventDetail(eventId: String): String = "jemaat_event_detail/$eventId"
 
@@ -35,6 +40,8 @@ object AppRoutes {
     fun adminEventEdit(eventId: String): String = "admin_event_edit/$eventId"
 
     fun adminEventCreateFrom(sourceEventId: String): String = "admin_event_create/$sourceEventId"
+
+    fun adminEventTemplateEdit(templateId: String): String = "admin_event_template_edit/$templateId"
 }
 
 // created by Mories Deo Hutapea, S.E.,S.Kom

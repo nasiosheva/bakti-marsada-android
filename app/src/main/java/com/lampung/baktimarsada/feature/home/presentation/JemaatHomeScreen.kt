@@ -3,15 +3,24 @@ package com.lampung.baktimarsada.feature.home.presentation
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.Groups
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.NavigationDrawerItem
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.NavigationBar
@@ -22,9 +31,11 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
@@ -41,6 +52,7 @@ import com.lampung.baktimarsada.feature.finance.presentation.FinanceRoute
 import com.lampung.baktimarsada.feature.members.presentation.MemberRoute
 import com.lampung.baktimarsada.feature.payments.presentation.PaymentRoute
 import com.lampung.baktimarsada.feature.profile.presentation.ProfileRoute
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -74,6 +86,9 @@ fun JemaatHomeScreen(
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route ?: AppRoutes.JEMAAT_EVENTS
+    val isTablet = LocalConfiguration.current.screenWidthDp >= 600
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
     val destinations = listOf(
         JemaatBottomDestination(AppRoutes.JEMAAT_EVENTS, stringResource(id = R.string.tab_events), Icons.Filled.Event),
         JemaatBottomDestination(AppRoutes.JEMAAT_MEMBERS, stringResource(id = R.string.tab_members), Icons.Filled.Groups),
@@ -82,58 +97,62 @@ fun JemaatHomeScreen(
         JemaatBottomDestination(AppRoutes.JEMAAT_PROFILE, stringResource(id = R.string.tab_profile), Icons.Filled.Person)
     )
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                    actionIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                ),
-                title = {
-                    Column {
-                        Text(text = stringResource(id = R.string.jemaat_home_title))
-                        Text(
-                            text = session.sectorContext.sectorName,
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                        if (AppBuildConfig.simulationEnabled) {
-                            Text(
-                                text = stringResource(id = R.string.environment_simulate),
-                                style = MaterialTheme.typography.bodySmall
-                            )
+    val drawerNavItems = @Composable {
+        destinations.forEach { destination ->
+            NavigationDrawerItem(
+                selected = currentRoute == destination.route,
+                onClick = {
+                    scope.launch {
+                        navController.navigate(destination.route) {
+                            launchSingleTop = true
+                            restoreState = true
+                            popUpTo(AppRoutes.JEMAAT_EVENTS) {
+                                saveState = true
+                            }
+                        }
+                        if (isTablet) {
+                            drawerState.close()
                         }
                     }
-                }
-            )
-        },
-        bottomBar = {
-            NavigationBar {
-                destinations.forEach { destination ->
-                    NavigationBarItem(
-                        selected = currentRoute == destination.route,
-                        onClick = {
-                            navController.navigate(destination.route) {
-                                launchSingleTop = true
-                                restoreState = true
-                                popUpTo(AppRoutes.JEMAAT_EVENTS) {
-                                    saveState = true
-                                }
-                            }
-                        },
-                        modifier = Modifier.semantics { testTag = "jemaat_bottom_nav_${destination.route}" },
-                        label = { Text(text = destination.label) },
-                        icon = {
-                            Icon(
-                                imageVector = destination.icon,
-                                contentDescription = destination.label
-                            )
-                        }
+                },
+                modifier = Modifier.semantics { testTag = "jemaat_drawer_nav_${destination.route}" },
+                label = { Text(text = destination.label) },
+                icon = {
+                    Icon(
+                        imageVector = destination.icon,
+                        contentDescription = destination.label
                     )
                 }
-            }
+            )
         }
-    ) { innerPadding ->
+    }
+
+    val bottomNavItems: @Composable RowScope.() -> Unit = {
+        destinations.forEach { destination ->
+            NavigationBarItem(
+                selected = currentRoute == destination.route,
+                onClick = {
+                    navController.navigate(destination.route) {
+                        launchSingleTop = true
+                        restoreState = true
+                        popUpTo(AppRoutes.JEMAAT_EVENTS) {
+                            saveState = true
+                        }
+                    }
+                },
+                modifier = Modifier.semantics { testTag = "jemaat_bottom_nav_${destination.route}" },
+                label = { Text(text = destination.label) },
+                icon = {
+                    Icon(
+                        imageVector = destination.icon,
+                        contentDescription = destination.label
+                    )
+                }
+            )
+        }
+    }
+
+    val content: @Composable (PaddingValues) -> Unit = { innerPadding ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -168,6 +187,72 @@ fun JemaatHomeScreen(
                     profileContent()
                 }
             }
+        }
+    }
+
+    val topBar: @Composable () -> Unit = {
+        TopAppBar(
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                actionIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+            ),
+            navigationIcon = {
+                if (isTablet) {
+                    IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                        Icon(
+                            imageVector = Icons.Filled.Menu,
+                            contentDescription = stringResource(id = R.string.app_name)
+                        )
+                    }
+                }
+            },
+            title = {
+                Column {
+                    Text(text = stringResource(id = R.string.jemaat_home_title))
+                    Text(
+                        text = session.sectorContext.sectorName,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    if (AppBuildConfig.simulationEnabled) {
+                        Text(
+                            text = stringResource(id = R.string.environment_simulate),
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                }
+            }
+        )
+    }
+
+    if (isTablet) {
+        ModalNavigationDrawer(
+            drawerState = drawerState,
+            drawerContent = {
+                ModalDrawerSheet {
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        drawerNavItems()
+                    }
+                }
+            }
+        ) {
+            Scaffold(
+                topBar = topBar,
+                bottomBar = { }
+            ) { innerPadding ->
+                content(innerPadding)
+            }
+        }
+    } else {
+        Scaffold(
+            topBar = topBar,
+            bottomBar = {
+                NavigationBar {
+                    bottomNavItems()
+                }
+            }
+        ) { innerPadding ->
+            content(innerPadding)
         }
     }
 }

@@ -1,6 +1,6 @@
 package com.lampung.baktimarsada.domain.usecase
 
-import com.lampung.baktimarsada.domain.repository.AuthRepository
+import com.lampung.baktimarsada.repository.AuthRepository
 import javax.inject.Inject
 
 class LogoutUseCase @Inject constructor(

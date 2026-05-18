@@ -1,7 +1,7 @@
 package com.lampung.baktimarsada.domain.usecase
 
 import com.lampung.baktimarsada.domain.model.SessionState
-import com.lampung.baktimarsada.domain.repository.AuthRepository
+import com.lampung.baktimarsada.repository.AuthRepository
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 

@@ -72,6 +72,16 @@ object AppConstants {
 
     const val TRACKING_EVENT_TOKEN_REFRESHED = "fcm_token_refreshed"
     const val TRACKING_EVENT_MESSAGE_RECEIVED = "fcm_message_received"
+    const val FCM_NOTIFICATION_CHANNEL_ID = "fcm_notification_channel"
+    const val FCM_NOTIFICATION_ID_BASE = "notification_id"
+    const val FCM_NOTIFICATION_TITLE = "title"
+    const val FCM_NOTIFICATION_MESSAGE = "message"
+    const val FCM_NOTIFICATION_BODY = "body"
+    const val FCM_NOTIFICATION_ROUTE = "route"
+    const val FCM_NOTIFICATION_DEEP_LINK = "deep_link"
+    const val FCM_NOTIFICATION_EVENT_ID = "event_id"
+    const val FCM_NOTIFICATION_ROUTE_EXTRA = "extra_route"
+    const val FCM_NOTIFICATION_EVENT_ID_EXTRA = "extra_event_id"
     const val QUALIFIER_CLOUDFLARE_API = "cloudflare_api"
     const val QUALIFIER_PYTHON_API = "python_api"
     const val QUALIFIER_SIMULATE_SOURCE = "simulate_source"
@@ -83,6 +93,8 @@ object AppConstants {
     const val ROUTE_MEMBERS = "v1/members"
     const val ROUTE_FINANCE_REPORTS = "v1/finance-reports"
     const val ROUTE_PAYMENT_OBLIGATIONS = "v1/payment-obligations"
+    const val ROUTE_USERS = "v1/users"
     const val DEFAULT_LIST_PAGE_SIZE = 10
+    const val DATE_FORMAT_ISO_LOCAL_DATE = "yyyy-MM-dd"
 
 }

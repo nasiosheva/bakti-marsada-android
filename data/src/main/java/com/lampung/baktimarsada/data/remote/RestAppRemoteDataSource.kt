@@ -4,6 +4,8 @@ import com.lampung.baktimarsada.core.tenant.TenantRuntime
 import com.lampung.baktimarsada.network.api.BaktiApiService
 import com.lampung.baktimarsada.network.dto.ApiResponseDto
 import com.lampung.baktimarsada.network.dto.BackendLoginRequestDto
+import com.lampung.baktimarsada.network.dto.CreateUserAccountRequestDto
+import com.lampung.baktimarsada.network.dto.CreateUserAccountResponseDto
 import com.lampung.baktimarsada.network.dto.EventDto
 import com.lampung.baktimarsada.network.dto.FcmTokenRequestDto
 import com.lampung.baktimarsada.network.dto.FinanceReportDto
@@ -120,6 +122,14 @@ abstract class RestAppRemoteDataSource(
 
     override suspend fun deletePaymentObligation(obligationId: String) {
         apiService.deletePaymentObligation(obligationId).requireSuccess("Failed to delete payment obligation")
+    }
+
+    override suspend fun createUserAccount(request: CreateUserAccountRequestDto): CreateUserAccountResponseDto {
+        return apiService.createUser(request).requireDataBody("Failed to create user")
+    }
+
+    override suspend fun fetchUsersByRole(role: String): List<CreateUserAccountResponseDto> {
+        return apiService.fetchUsers(role.trim().uppercase()).requireDataBody("Failed to load users")
     }
 
     override suspend fun resetSimulationData(): Unit = Unit

@@ -1,5 +1,6 @@
 export interface UserRecord {
   id: string;
+  username: string | null;
   email: string;
   password_hash: string;
   full_name: string;
@@ -20,6 +21,7 @@ export interface SessionRecord {
 
 export interface AuthUserSummary {
   id: string;
+  username: string | null;
   email: string;
   fullName: string;
   role: string;
@@ -48,10 +50,20 @@ export class AuthRepository {
     return this.db
       .prepare(
         `SELECT * FROM users
-         WHERE lower(substr(email, 1, instr(email, '@') - 1)) = ?1
+         WHERE (
+           lower(username) = ?1
+           OR lower(substr(email, 1, instr(email, '@') - 1)) = ?1
+         )
            AND upper(role) = 'ADMIN'
          LIMIT 1`
       )
+      .bind(username.toLowerCase())
+      .first<UserRecord>();
+  }
+
+  async findUserByUsername(username: string): Promise<UserRecord | null> {
+    return this.db
+      .prepare("SELECT * FROM users WHERE lower(username) = ?1 LIMIT 1")
       .bind(username.toLowerCase())
       .first<UserRecord>();
   }
@@ -63,8 +75,21 @@ export class AuthRepository {
       .first<UserRecord>();
   }
 
+  async listUsersByRole(role: "ADMIN" | "JEMAAT"): Promise<UserRecord[]> {
+    const { results } = await this.db
+      .prepare(
+        `SELECT * FROM users
+         WHERE upper(role) = ?1
+         ORDER BY datetime(created_at) DESC`
+      )
+      .bind(role)
+      .all<UserRecord>();
+    return results ?? [];
+  }
+
   async createUser(input: {
     id: string;
+    username: string;
     email: string;
     passwordHash: string;
     fullName: string;
@@ -72,10 +97,10 @@ export class AuthRepository {
   }): Promise<void> {
     await this.db
       .prepare(
-        `INSERT INTO users (id, email, password_hash, full_name, role, is_active)
-         VALUES (?1, ?2, ?3, ?4, ?5, 1)`
+        `INSERT INTO users (id, username, email, password_hash, full_name, role, is_active)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, 1)`
       )
-      .bind(input.id, input.email, input.passwordHash, input.fullName, input.role)
+      .bind(input.id, input.username, input.email, input.passwordHash, input.fullName, input.role)
       .run();
   }
 
@@ -111,6 +136,7 @@ export class AuthRepository {
   toSummary(user: UserRecord): AuthUserSummary {
     return {
       id: user.id,
+      username: user.username,
       email: user.email,
       fullName: user.full_name,
       role: user.role,

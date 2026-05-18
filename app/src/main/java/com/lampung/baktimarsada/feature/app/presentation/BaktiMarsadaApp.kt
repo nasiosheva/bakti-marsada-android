@@ -1,5 +1,8 @@
 package com.lampung.baktimarsada.feature.app.presentation
 
+import android.app.Activity
+import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -9,8 +12,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -21,26 +27,34 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.compose.currentBackStackEntryAsState
 import com.lampung.baktimarsada.R
 import com.lampung.baktimarsada.domain.model.SessionState
 import com.lampung.baktimarsada.domain.model.UserRole
-import com.lampung.baktimarsada.domain.repository.EventRepository
-import com.lampung.baktimarsada.domain.repository.FinanceReportRepository
-import com.lampung.baktimarsada.domain.repository.MemberRepository
-import com.lampung.baktimarsada.domain.repository.PaymentObligationRepository
+import com.lampung.baktimarsada.repository.EventRepository
+import com.lampung.baktimarsada.repository.FinanceReportRepository
+import com.lampung.baktimarsada.repository.MemberRepository
+import com.lampung.baktimarsada.repository.PaymentObligationRepository
 import com.lampung.baktimarsada.domain.usecase.BootstrapSessionUseCase
 import com.lampung.baktimarsada.domain.usecase.LogoutUseCase
 import com.lampung.baktimarsada.domain.usecase.ObserveSessionUseCase
+import com.lampung.baktimarsada.core.constants.AppConstants
 import com.lampung.baktimarsada.feature.app.navigation.AppRoutes
 import com.lampung.baktimarsada.feature.auth.presentation.LoginRoute
 import com.lampung.baktimarsada.feature.events.presentation.EventCreateRoute
 import com.lampung.baktimarsada.feature.events.presentation.EventCopySourceRoute
 import com.lampung.baktimarsada.feature.events.presentation.EventEditRoute
 import com.lampung.baktimarsada.feature.events.presentation.EventDetailRoute
+import com.lampung.baktimarsada.feature.events.presentation.EventTemplateCreateRoute
+import com.lampung.baktimarsada.feature.events.presentation.EventTemplateEditRoute
+import com.lampung.baktimarsada.feature.events.presentation.EventTemplateRoute
 import com.lampung.baktimarsada.feature.home.presentation.AdminHomeRoute
 import com.lampung.baktimarsada.feature.home.presentation.JemaatHomeRoute
 import com.lampung.baktimarsada.feature.profile.presentation.ProfileRoute
+import com.lampung.baktimarsada.feature.dashboard.presentation.AdminUserCreateRoute
+import com.lampung.baktimarsada.firebase.notification.FcmNotificationHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
+import com.google.firebase.messaging.RemoteMessage
 import javax.inject.Inject
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -57,6 +71,14 @@ fun BaktiMarsadaApp(
 ) {
     val navController = rememberNavController()
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val activity = remember(context) { context as? Activity }
+    val currentBackStackEntry by navController.currentBackStackEntryAsState()
+    val lastBackPressedAt = remember { mutableLongStateOf(0L) }
+    val isAtRootHome = currentBackStackEntry?.destination?.route in setOf(
+        AppRoutes.JEMAAT_HOME,
+        AppRoutes.ADMIN_HOME
+    )
 
     LaunchedEffect(state.pendingRoute) {
         state.pendingRoute?.let { route ->
@@ -94,6 +116,9 @@ fun BaktiMarsadaApp(
             state.session?.let { session ->
                 AdminHomeRoute(
                     session = session,
+                    onOpenCreateUser = {
+                        navController.navigate(AppRoutes.ADMIN_USER_CREATE)
+                    },
                     onOpenEventDetail = { eventId ->
                         navController.navigate(AppRoutes.adminEventDetail(eventId))
                     },
@@ -116,9 +141,15 @@ fun BaktiMarsadaApp(
                 ProfileRoute(
                     session = session,
                     onBack = { navController.navigateUp() },
+                    onTestSendNotification = { viewModel.sendTestNotification() },
                     onLogout = { viewModel.logout() }
                 )
             }
+        }
+        composable(AppRoutes.ADMIN_USER_CREATE) {
+            AdminUserCreateRoute(
+                onBack = { navController.navigateUp() }
+            )
         }
         composable(AppRoutes.JEMAAT_EVENT_DETAIL) { backStackEntry ->
             val eventId = backStackEntry.arguments?.getString(AppRoutes.EVENT_ID_ARG).orEmpty()
@@ -147,6 +178,7 @@ fun BaktiMarsadaApp(
                 EventCreateRoute(
                     session = session,
                     copyFromEventId = null,
+                    onOpenTemplates = { navController.navigate(AppRoutes.ADMIN_EVENT_TEMPLATES) },
                     onOpenCopyFromPrevious = {
                         navController.navigate(AppRoutes.ADMIN_EVENT_COPY_SOURCE)
                     },
@@ -160,6 +192,7 @@ fun BaktiMarsadaApp(
                 EventCreateRoute(
                     session = session,
                     copyFromEventId = sourceEventId,
+                    onOpenTemplates = { navController.navigate(AppRoutes.ADMIN_EVENT_TEMPLATES) },
                     onOpenCopyFromPrevious = {
                         navController.navigate(AppRoutes.ADMIN_EVENT_COPY_SOURCE)
                     },
@@ -190,6 +223,47 @@ fun BaktiMarsadaApp(
                 )
             }
         }
+        composable(AppRoutes.ADMIN_EVENT_TEMPLATES) {
+            state.session?.let { session ->
+                EventTemplateRoute(
+                    session = session,
+                    onBack = { navController.navigateUp() },
+                    onOpenCreate = { navController.navigate(AppRoutes.ADMIN_EVENT_TEMPLATE_CREATE) },
+                    onOpenEdit = { templateId ->
+                        navController.navigate(AppRoutes.adminEventTemplateEdit(templateId))
+                    }
+                )
+            }
+        }
+        composable(AppRoutes.ADMIN_EVENT_TEMPLATE_CREATE) {
+            state.session?.let { session ->
+                EventTemplateCreateRoute(
+                    session = session,
+                    onBack = { navController.navigateUp() }
+                )
+            }
+        }
+        composable(AppRoutes.ADMIN_EVENT_TEMPLATE_EDIT) { backStackEntry ->
+            val templateId = backStackEntry.arguments?.getString(AppRoutes.TEMPLATE_ID_ARG).orEmpty()
+            state.session?.let { session ->
+                EventTemplateEditRoute(
+                    templateId = templateId,
+                    session = session,
+                    onBack = { navController.navigateUp() }
+                )
+            }
+        }
+    }
+
+    BackHandler(enabled = isAtRootHome) {
+        val now = System.currentTimeMillis()
+        val lastPress = lastBackPressedAt.longValue
+        if (now - lastPress < 1500) {
+            activity?.finish()
+            return@BackHandler
+        }
+        lastBackPressedAt.longValue = now
+        Toast.makeText(context, R.string.exit_app_confirmation, Toast.LENGTH_SHORT).show()
     }
 }
 
@@ -237,7 +311,8 @@ class AppEntryViewModel @Inject constructor(
     private val eventRepository: EventRepository,
     private val memberRepository: MemberRepository,
     private val financeReportRepository: FinanceReportRepository,
-    private val paymentObligationRepository: PaymentObligationRepository
+    private val paymentObligationRepository: PaymentObligationRepository,
+    private val notificationHelper: FcmNotificationHelper
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(AppEntryUiState())
@@ -258,6 +333,17 @@ class AppEntryViewModel @Inject constructor(
             logoutUseCase()
             _state.update { it.copy(pendingRoute = AppRoutes.LOGIN) }
         }
+    }
+
+    fun sendTestNotification() {
+        val remoteMessage = RemoteMessage.Builder("test")
+            .addData(AppConstants.FCM_NOTIFICATION_TITLE, "Test Notification")
+            .addData(AppConstants.FCM_NOTIFICATION_MESSAGE, "Notifikasi test dari halaman profile")
+            .addData(AppConstants.FCM_NOTIFICATION_BODY, "Klik untuk cek jalur notifikasi")
+            .addData(AppConstants.FCM_NOTIFICATION_ROUTE, AppRoutes.ADMIN_PROFILE)
+            .addData(AppConstants.FCM_NOTIFICATION_EVENT_ID, "event-test")
+            .build()
+        notificationHelper.showNotification(remoteMessage)
     }
 
     private fun observeSession() {

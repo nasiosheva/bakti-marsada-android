@@ -40,8 +40,8 @@ import com.lampung.baktimarsada.core.dispatchers.DispatcherProvider
 import com.lampung.baktimarsada.core.result.AppResult
 import com.lampung.baktimarsada.domain.model.FinanceReportDetail
 import com.lampung.baktimarsada.domain.model.SessionState
-import com.lampung.baktimarsada.domain.repository.AuthRepository
-import com.lampung.baktimarsada.domain.repository.FinanceReportRepository
+import com.lampung.baktimarsada.repository.AuthRepository
+import com.lampung.baktimarsada.repository.FinanceReportRepository
 import com.lampung.baktimarsada.ui.component.BaktiAmountInput
 import com.lampung.baktimarsada.ui.component.BaktiCheckbox
 import com.lampung.baktimarsada.ui.component.BaktiEmptyState

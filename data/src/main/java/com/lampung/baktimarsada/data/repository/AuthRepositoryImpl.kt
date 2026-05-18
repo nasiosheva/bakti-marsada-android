@@ -8,7 +8,7 @@ import com.lampung.baktimarsada.domain.model.SectorContext
 import com.lampung.baktimarsada.domain.model.SessionState
 import com.lampung.baktimarsada.domain.model.TenantContext
 import com.lampung.baktimarsada.domain.model.UserRole
-import com.lampung.baktimarsada.domain.repository.AuthRepository
+import com.lampung.baktimarsada.repository.AuthRepository
 import com.lampung.baktimarsada.network.dto.LoginRequestDto
 import com.lampung.baktimarsada.security.SecureStorage
 import kotlinx.coroutines.flow.Flow

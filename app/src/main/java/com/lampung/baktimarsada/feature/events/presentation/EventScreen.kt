@@ -1,5 +1,6 @@
 package com.lampung.baktimarsada.feature.events.presentation
 
+import android.app.DatePickerDialog
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,7 +13,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
@@ -36,7 +36,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
@@ -55,10 +57,9 @@ import com.lampung.baktimarsada.domain.model.ProgramItemType
 import com.lampung.baktimarsada.domain.model.SessionState
 import com.lampung.baktimarsada.domain.model.WorshipTemplate
 import com.lampung.baktimarsada.domain.model.WorshipTemplateItem
-import com.lampung.baktimarsada.domain.repository.AuthRepository
-import com.lampung.baktimarsada.domain.repository.EventRepository
+import com.lampung.baktimarsada.repository.AuthRepository
+import com.lampung.baktimarsada.repository.EventRepository
 import com.lampung.baktimarsada.domain.repository.WorshipTemplateRepository
-import com.lampung.baktimarsada.feature.app.navigation.AppRoutes
 import com.lampung.baktimarsada.ui.component.BaktiDropdown
 import com.lampung.baktimarsada.ui.component.BaktiEmptyState
 import com.lampung.baktimarsada.ui.component.BaktiErrorState
@@ -78,6 +79,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
 import javax.inject.Inject
 
 @Composable
@@ -106,6 +110,7 @@ fun EventRoute(
 fun EventCreateRoute(
     session: SessionState,
     copyFromEventId: String?,
+    onOpenTemplates: () -> Unit,
     onOpenCopyFromPrevious: () -> Unit,
     onBack: () -> Unit,
     viewModel: EventViewModel = hiltViewModel()
@@ -122,11 +127,10 @@ fun EventCreateRoute(
         previousEvents = state.items,
         isLoading = state.isLoading,
         errorMessage = state.errorMessage,
+        onOpenTemplates = onOpenTemplates,
         onOpenCopyFromPrevious = onOpenCopyFromPrevious,
         onBack = onBack,
-        onSave = viewModel::save,
-        onSaveTemplate = viewModel::saveTemplate,
-        onDeleteTemplate = viewModel::deleteTemplate
+        onSave = viewModel::save
     )
 }
 
@@ -247,11 +251,10 @@ fun EventEditRoute(
         previousEvents = emptyList(),
         isLoading = state.isLoading,
         errorMessage = state.errorMessage,
+        onOpenTemplates = {},
         onOpenCopyFromPrevious = {},
         onBack = onBack,
-        onSave = viewModel::save,
-        onSaveTemplate = viewModel::saveTemplate,
-        onDeleteTemplate = viewModel::deleteTemplate
+        onSave = viewModel::save
     )
 }
 
@@ -265,11 +268,10 @@ private fun EventFormScreen(
     previousEvents: List<EventDetail>,
     isLoading: Boolean,
     errorMessage: String?,
+    onOpenTemplates: () -> Unit,
     onOpenCopyFromPrevious: () -> Unit,
     onBack: () -> Unit,
-    onSave: (EventDetail) -> Unit,
-    onSaveTemplate: (WorshipTemplate) -> Unit,
-    onDeleteTemplate: (String) -> Unit
+    onSave: (EventDetail) -> Unit
 ) {
     var eventTitle by rememberSaveable(initial?.id) { mutableStateOf(initial?.title.orEmpty()) }
     var schedule by rememberSaveable(initial?.id) { mutableStateOf(initial?.scheduledAt.orEmpty()) }
@@ -280,7 +282,6 @@ private fun EventFormScreen(
     }
     val isCreateMode = initial == null
     var showTemplateMenu by rememberSaveable { mutableStateOf(false) }
-    var showTemplateManager by rememberSaveable { mutableStateOf(false) }
     var lastCopiedEventId by rememberSaveable { mutableStateOf("") }
 
     LaunchedEffect(initial?.id) {
@@ -353,7 +354,7 @@ private fun EventFormScreen(
                                 text = { Text(text = stringResource(id = R.string.action_manage_templates)) },
                                 onClick = {
                                     showTemplateMenu = false
-                                    showTemplateManager = true
+                                    onOpenTemplates()
                                 }
                             )
                         }
@@ -378,10 +379,10 @@ private fun EventFormScreen(
                 label = stringResource(id = R.string.form_title),
                 onValueChange = { eventTitle = it }
             )
-            BaktiTextInput(
+            EventDatePickerField(
                 value = schedule,
-                label = stringResource(id = R.string.form_schedule),
-                onValueChange = { schedule = it }
+                label = stringResource(id = R.string.form_event_date),
+                onDateSelected = { schedule = it }
             )
             BaktiTextInput(
                 value = location,
@@ -431,14 +432,54 @@ private fun EventFormScreen(
         }
     }
 
-    if (isCreateMode && showTemplateManager) {
-        TemplateManagerDialog(
-            state = EventUiState(templates = templates),
-            session = session,
-            onDismiss = { showTemplateManager = false },
-            onSave = onSaveTemplate,
-            onDelete = onDeleteTemplate
-        )
+}
+
+@Composable
+private fun EventDatePickerField(
+    value: String,
+    label: String,
+    onDateSelected: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val placeholder = stringResource(id = R.string.action_select_date)
+
+    OutlinedButton(
+        onClick = {
+            val selectedDate = value.toEventDateCalendar()
+            DatePickerDialog(
+                context,
+                { _, year, month, dayOfMonth ->
+                    onDateSelected(formatEventDate(year, month, dayOfMonth))
+                },
+                selectedDate.get(Calendar.YEAR),
+                selectedDate.get(Calendar.MONTH),
+                selectedDate.get(Calendar.DAY_OF_MONTH)
+            ).show()
+        },
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Filled.DateRange,
+                contentDescription = placeholder
+            )
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = value.ifBlank { placeholder },
+                    style = MaterialTheme.typography.bodyLarge
+                )
+            }
+        }
     }
 }
 
@@ -843,102 +884,130 @@ private fun ProgramItemCard(
 }
 
 @Composable
-private fun TemplateManagerDialog(
-    state: EventUiState,
+fun EventTemplateRoute(
     session: SessionState,
-    onDismiss: () -> Unit,
-    onSave: (WorshipTemplate) -> Unit,
-    onDelete: (String) -> Unit
+    onBack: () -> Unit,
+    onOpenCreate: () -> Unit,
+    onOpenEdit: (String) -> Unit,
+    viewModel: EventViewModel = hiltViewModel()
 ) {
-    var editTarget by remember { mutableStateOf<WorshipTemplate?>(null) }
-    var showForm by rememberSaveable { mutableStateOf(false) }
+    val state by viewModel.state.collectAsStateWithLifecycle()
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(text = stringResource(id = R.string.template_manager_title)) },
-        text = {
-            Column(
-                modifier = Modifier.verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                state.templateErrorMessage?.let { BaktiSectionMessage(message = it) }
-                if (state.templates.isEmpty()) {
-                    Text(
-                        text = stringResource(id = R.string.template_empty),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                state.templates.forEach { template ->
-                    Card(modifier = Modifier.fillMaxWidth()) {
-                        Column(
-                            modifier = Modifier.padding(12.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Text(text = template.title, style = MaterialTheme.typography.titleMedium)
-                            Text(text = template.description, style = MaterialTheme.typography.bodyMedium)
-                            Text(
-                                text = stringResource(id = R.string.template_item_count, template.items.size),
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                OutlinedButton(
-                                    onClick = {
-                                        editTarget = template
-                                        showForm = true
+    Scaffold(
+        topBar = {
+            BaktiToolbar(
+                title = stringResource(id = R.string.template_manager_title),
+                onBack = onBack
+            )
+        },
+        floatingActionButton = {
+            ExtendedFloatingActionButton(onClick = onOpenCreate) {
+                Text(text = stringResource(id = R.string.action_add_template))
+            }
+        }
+    ) { innerPadding ->
+        when {
+            state.isLoading && state.templates.isEmpty() -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                ) { BaktiLoadingState() }
+            }
+            state.templates.isEmpty() -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                ) { BaktiEmptyState(message = stringResource(id = R.string.template_empty)) }
+            }
+            else -> {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    state.templateErrorMessage?.let { message ->
+                        item { BaktiSectionMessage(message = message) }
+                    }
+                    items(state.templates, key = { it.id }) { template ->
+                        Card(modifier = Modifier.fillMaxWidth()) {
+                            Column(
+                                modifier = Modifier.padding(12.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(text = template.title, style = MaterialTheme.typography.titleMedium)
+                                Text(text = template.description, style = MaterialTheme.typography.bodyMedium)
+                                Text(
+                                    text = stringResource(id = R.string.template_item_count, template.items.size),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    OutlinedButton(onClick = { onOpenEdit(template.id) }) {
+                                        Text(text = stringResource(id = R.string.action_edit))
                                     }
-                                ) {
-                                    Text(text = stringResource(id = R.string.action_edit))
-                                }
-                                TextButton(onClick = { onDelete(template.id) }) {
-                                    Text(text = stringResource(id = R.string.action_delete))
+                                    TextButton(onClick = { viewModel.deleteTemplate(template.id) }) {
+                                        Text(text = stringResource(id = R.string.action_delete))
+                                    }
                                 }
                             }
                         }
                     }
                 }
             }
-        },
-        dismissButton = {
-            OutlinedButton(onClick = onDismiss) {
-                Text(text = stringResource(id = R.string.action_close))
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    editTarget = null
-                    showForm = true
-                }
-            ) {
-                Text(text = stringResource(id = R.string.action_add_template))
-            }
         }
-    )
-
-    if (showForm) {
-        TemplateFormDialog(
-            initial = editTarget,
-            session = session,
-            onDismiss = {
-                showForm = false
-                editTarget = null
-            },
-            onSave = {
-                onSave(it)
-                showForm = false
-                editTarget = null
-            }
-        )
     }
 }
 
 @Composable
-private fun TemplateFormDialog(
+fun EventTemplateCreateRoute(
+    session: SessionState,
+    onBack: () -> Unit,
+    viewModel: EventViewModel = hiltViewModel()
+) {
+    EventTemplateFormScreen(
+        screenTitle = stringResource(id = R.string.dialog_add_template),
+        initial = null,
+        session = session,
+        onBack = onBack,
+        onSave = {
+            viewModel.saveTemplate(it)
+            onBack()
+        }
+    )
+}
+
+@Composable
+fun EventTemplateEditRoute(
+    templateId: String,
+    session: SessionState,
+    onBack: () -> Unit,
+    viewModel: EventViewModel = hiltViewModel()
+) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    val initial = state.templates.firstOrNull { it.id == templateId }
+
+    EventTemplateFormScreen(
+        screenTitle = stringResource(id = R.string.dialog_edit_template),
+        initial = initial,
+        session = session,
+        onBack = onBack,
+        onSave = {
+            viewModel.saveTemplate(it)
+            onBack()
+        }
+    )
+}
+
+@Composable
+private fun EventTemplateFormScreen(
+    screenTitle: String,
     initial: WorshipTemplate?,
     session: SessionState,
-    onDismiss: () -> Unit,
+    onBack: () -> Unit,
     onSave: (WorshipTemplate) -> Unit
 ) {
     var title by rememberSaveable(initial?.id) { mutableStateOf(initial?.title.orEmpty()) }
@@ -947,63 +1016,66 @@ private fun TemplateFormDialog(
         mutableStateOf(initial?.items?.map { it.toEventProgramItem(eventId = "", orderIndex = it.orderIndex) }.orEmpty())
     }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text(
-                text = stringResource(
-                    id = if (initial == null) R.string.dialog_add_template else R.string.dialog_edit_template
-                )
+    Scaffold(
+        topBar = {
+            BaktiToolbar(
+                title = screenTitle,
+                onBack = onBack
             )
-        },
-        text = {
-            Column(
-                modifier = Modifier.verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                BaktiTextInput(
-                    value = title,
-                    label = stringResource(id = R.string.form_title),
-                    onValueChange = { title = it }
-                )
-                BaktiMultilineInput(
-                    value = description,
-                    label = stringResource(id = R.string.form_description),
-                    onValueChange = { description = it }
-                )
-                ProgramItemEditor(
-                    items = programItems,
-                    onItemsChanged = { programItems = it },
-                    emptyLabel = stringResource(id = R.string.template_program_empty)
-                )
-            }
-        },
-        dismissButton = {
-            OutlinedButton(onClick = onDismiss) {
-                Text(text = stringResource(id = R.string.action_cancel))
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    val templateId = initial?.id.orEmpty()
-                    onSave(
-                        WorshipTemplate(
-                            id = templateId,
-                            tenantId = session.tenantContext.tenantId,
-                            sectorId = session.sectorContext.sectorId,
-                            title = title.trim(),
-                            description = description.trim(),
-                            items = programItems.normalizedForTemplate(templateId)
+        }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            BaktiTextInput(
+                value = title,
+                label = stringResource(id = R.string.form_title),
+                onValueChange = { title = it }
+            )
+            BaktiMultilineInput(
+                value = description,
+                label = stringResource(id = R.string.form_description),
+                onValueChange = { description = it }
+            )
+            ProgramItemEditor(
+                items = programItems,
+                onItemsChanged = { programItems = it },
+                emptyLabel = stringResource(id = R.string.template_program_empty)
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(
+                    onClick = onBack,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(text = stringResource(id = R.string.action_cancel))
+                }
+                Button(
+                    onClick = {
+                        val templateId = initial?.id.orEmpty()
+                        onSave(
+                            WorshipTemplate(
+                                id = templateId,
+                                tenantId = session.tenantContext.tenantId,
+                                sectorId = session.sectorContext.sectorId,
+                                title = title.trim(),
+                                description = description.trim(),
+                                items = programItems.normalizedForTemplate(templateId)
+                            )
                         )
-                    )
-                },
-                enabled = title.isNotBlank()
-            ) {
-                Text(text = stringResource(id = R.string.action_save))
+                    },
+                    enabled = title.isNotBlank(),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(text = stringResource(id = R.string.action_save))
+                }
             }
         }
-    )
+    }
 }
 
 data class EventUiState(
@@ -1112,6 +1184,27 @@ private fun WorshipTemplateItem.toEventProgramItem(eventId: String, orderIndex: 
         scriptureText = scriptureText,
         note = note
     )
+}
+
+private fun String.toEventDateCalendar(): Calendar {
+    val calendar = Calendar.getInstance()
+    val dateValue = trim().take(AppConstants.DATE_FORMAT_ISO_LOCAL_DATE.length)
+    val parsedDate = runCatching {
+        SimpleDateFormat(AppConstants.DATE_FORMAT_ISO_LOCAL_DATE, Locale.US).parse(dateValue)
+    }.getOrNull()
+    if (parsedDate != null) {
+        calendar.time = parsedDate
+    }
+    return calendar
+}
+
+private fun formatEventDate(year: Int, month: Int, dayOfMonth: Int): String {
+    val calendar = Calendar.getInstance().apply {
+        set(Calendar.YEAR, year)
+        set(Calendar.MONTH, month)
+        set(Calendar.DAY_OF_MONTH, dayOfMonth)
+    }
+    return SimpleDateFormat(AppConstants.DATE_FORMAT_ISO_LOCAL_DATE, Locale.US).format(calendar.time)
 }
 
 private fun List<EventProgramItem>.replaceAt(index: Int, item: EventProgramItem): List<EventProgramItem> {

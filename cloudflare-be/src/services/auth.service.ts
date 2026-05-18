@@ -1,11 +1,12 @@
 import { AuthError } from "../lib/auth-errors";
 import type { AuthCrypto } from "../lib/auth-crypto";
 import { WebAuthCrypto } from "../lib/auth-crypto";
-import { AuthRepository, type AuthSession, type AuthUserSummary } from "../repositories/auth.repository";
+import { AuthRepository, type AuthSession, type AuthUserSummary, type UserRecord } from "../repositories/auth.repository";
 
 const webCrypto = (globalThis as unknown as { crypto: { randomUUID(): string } }).crypto;
 
 export interface RegisterInput {
+  username?: string;
   email: string;
   password: string;
   fullName: string;
@@ -22,6 +23,22 @@ export interface AuthResult {
   session: AuthSession;
 }
 
+export interface CreateUserByAdminInput {
+  username: string;
+  email: string;
+  password: string;
+  fullName: string;
+  role: string;
+}
+
+export interface UserListItem {
+  id: string;
+  username: string | null;
+  email: string;
+  fullName: string;
+  role: string;
+}
+
 export class AuthService {
   constructor(
     private readonly repository: AuthRepository,
@@ -31,6 +48,8 @@ export class AuthService {
 
   async register(input: RegisterInput): Promise<AuthResult> {
     const email = normalizeEmail(input.email);
+    const username = normalizeUsername(input.username || email.split("@")[0] || "");
+    this.assertUsername(username);
     this.assertEmail(email);
     this.assertPassword(input.password);
     this.assertFullName(input.fullName);
@@ -39,11 +58,16 @@ export class AuthService {
     if (existingUser) {
       throw new AuthError(409, "EMAIL_ALREADY_EXISTS", "Email already registered");
     }
+    const existingUsername = await this.repository.findUserByUsername(username);
+    if (existingUsername) {
+      throw new AuthError(409, "USERNAME_ALREADY_EXISTS", "Username already registered");
+    }
 
     const userId = webCrypto.randomUUID();
     const passwordHash = await this.crypto.hashPassword(input.password);
     await this.repository.createUser({
       id: userId,
+      username,
       email,
       passwordHash,
       fullName: input.fullName.trim(),
@@ -52,6 +76,7 @@ export class AuthService {
 
     return this.createSessionForUser({
       id: userId,
+      username,
       email,
       full_name: input.fullName.trim(),
       role: "JEMAAT",
@@ -92,16 +117,67 @@ export class AuthService {
     await this.repository.revokeSession(session.id);
   }
 
-  private async createSessionForUser(user: {
-    id: string;
-    email: string;
-    password_hash: string;
-    full_name: string;
-    role: string;
-    is_active: number;
-    created_at: string;
-    updated_at: string;
-  }): Promise<AuthResult> {
+  async createUserByAdmin(sessionToken: string, input: CreateUserByAdminInput): Promise<AuthUserSummary> {
+    const actor = await this.requireAuthenticatedUser(sessionToken);
+    if (actor.role.trim().toUpperCase() !== "ADMIN") {
+      throw new AuthError(403, "FORBIDDEN", "Only admin can create account");
+    }
+
+    const username = normalizeUsername(input.username);
+    const email = normalizeEmail(input.email);
+    const fullName = input.fullName.trim();
+    const role = normalizeRole(input.role);
+
+    this.assertUsername(username);
+    this.assertEmail(email);
+    this.assertPassword(input.password);
+    this.assertFullName(fullName);
+
+    const existingEmail = await this.repository.findUserByEmail(email);
+    if (existingEmail) {
+      throw new AuthError(409, "EMAIL_ALREADY_EXISTS", "Email already registered");
+    }
+    const existingUsername = await this.repository.findUserByUsername(username);
+    if (existingUsername) {
+      throw new AuthError(409, "USERNAME_ALREADY_EXISTS", "Username already registered");
+    }
+
+    const passwordHash = await this.crypto.hashPassword(input.password);
+    const userId = webCrypto.randomUUID();
+    await this.repository.createUser({
+      id: userId,
+      username,
+      email,
+      passwordHash,
+      fullName,
+      role
+    });
+
+    const created = await this.repository.findUserById(userId);
+    if (!created) {
+      throw new AuthError(500, "INTERNAL_SERVER_ERROR", "Failed to create user");
+    }
+
+    return this.repository.toSummary(created);
+  }
+
+  async listUsersByAdmin(sessionToken: string, role: string): Promise<UserListItem[]> {
+    const actor = await this.requireAuthenticatedUser(sessionToken);
+    if (actor.role.trim().toUpperCase() !== "ADMIN") {
+      throw new AuthError(403, "FORBIDDEN", "Only admin can access user list");
+    }
+    const normalizedRole = normalizeRole(role);
+    const users = await this.repository.listUsersByRole(normalizedRole);
+    return users.map((user) => ({
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      fullName: user.full_name,
+      role: user.role
+    }));
+  }
+
+  private async createSessionForUser(user: UserRecord): Promise<AuthResult> {
     const sessionToken = this.crypto.createSessionToken();
     const sessionId = webCrypto.randomUUID();
     const refreshTokenHash = await this.crypto.hashSessionToken(sessionToken);
@@ -160,6 +236,12 @@ export class AuthService {
     }
   }
 
+  private assertUsername(username: string) {
+    if (username.length < 3) {
+      throw new AuthError(400, "INVALID_USERNAME", "Username must be at least 3 characters");
+    }
+  }
+
   private assertEmail(email: string) {
     if (!email || !email.includes("@")) {
       throw new AuthError(400, "INVALID_EMAIL", "Invalid email");
@@ -189,4 +271,12 @@ function normalizeEmail(email: string): string {
 
 function normalizeIdentifier(identifier: string): string {
   return identifier.trim().toLowerCase();
+}
+
+function normalizeUsername(username: string): string {
+  return username.trim().toLowerCase();
+}
+
+function normalizeRole(role: string): "ADMIN" | "JEMAAT" {
+  return role.trim().toUpperCase() === "ADMIN" ? "ADMIN" : "JEMAAT";
 }

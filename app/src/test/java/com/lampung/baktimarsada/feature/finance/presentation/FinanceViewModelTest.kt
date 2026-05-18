@@ -3,7 +3,7 @@ package com.lampung.baktimarsada.feature.finance.presentation
 import com.lampung.baktimarsada.core.result.AppResult
 import com.lampung.baktimarsada.domain.model.FinanceReportDetail
 import com.lampung.baktimarsada.domain.model.SectorContext
-import com.lampung.baktimarsada.domain.repository.FinanceReportRepository
+import com.lampung.baktimarsada.repository.FinanceReportRepository
 import com.lampung.baktimarsada.test.MainDispatcherRule
 import com.lampung.baktimarsada.test.fakes.FakeAuthRepository
 import com.lampung.baktimarsada.test.fakes.TestDispatcherProvider

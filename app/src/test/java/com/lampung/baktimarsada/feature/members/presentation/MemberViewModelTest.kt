@@ -3,7 +3,7 @@ package com.lampung.baktimarsada.feature.members.presentation
 import com.lampung.baktimarsada.core.result.AppResult
 import com.lampung.baktimarsada.domain.model.MemberDetail
 import com.lampung.baktimarsada.domain.model.SectorContext
-import com.lampung.baktimarsada.domain.repository.MemberRepository
+import com.lampung.baktimarsada.repository.MemberRepository
 import com.lampung.baktimarsada.test.MainDispatcherRule
 import com.lampung.baktimarsada.test.fakes.FakeAuthRepository
 import com.lampung.baktimarsada.test.fakes.TestDispatcherProvider

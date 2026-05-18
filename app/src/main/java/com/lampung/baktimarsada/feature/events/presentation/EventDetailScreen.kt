@@ -37,8 +37,8 @@ import com.lampung.baktimarsada.domain.model.TenantContext
 import com.lampung.baktimarsada.domain.model.SessionState
 import com.lampung.baktimarsada.domain.model.SectorContext
 import com.lampung.baktimarsada.domain.model.UserRole
-import com.lampung.baktimarsada.domain.repository.AuthRepository
-import com.lampung.baktimarsada.domain.repository.EventRepository
+import com.lampung.baktimarsada.repository.AuthRepository
+import com.lampung.baktimarsada.repository.EventRepository
 import com.lampung.baktimarsada.feature.app.navigation.AppRoutes
 import com.lampung.baktimarsada.ui.component.BaktiEmptyState
 import com.lampung.baktimarsada.ui.component.BaktiErrorState

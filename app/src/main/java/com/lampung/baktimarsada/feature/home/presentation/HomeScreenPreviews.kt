@@ -25,22 +25,6 @@ private val previewSession = SessionState(
 
 private val previewSessionJemaat = previewSession.copy(role = UserRole.JEMAAT)
 
-@Preview(name = "Home Admin")
-@Composable
-private fun AdminHomeScreenPreview() {
-    BaktiMarsadaTheme {
-        AdminHomeScreen(
-            session = previewSession,
-            dashboardContent = { Text("Dashboard placeholder") },
-            eventsContent = { Text("Events placeholder") },
-            membersContent = { Text("Members placeholder") },
-            financeContent = { Text("Finance placeholder") },
-            paymentsContent = { Text("Payments placeholder") },
-            onOpenProfile = {}
-        )
-    }
-}
-
 @Preview(name = "Home Jemaat")
 @Composable
 private fun JemaatHomeScreenPreview() {

@@ -1,7 +1,7 @@
 package com.lampung.baktimarsada.domain.usecase
 
 import com.lampung.baktimarsada.core.result.AppResult
-import com.lampung.baktimarsada.domain.repository.AuthRepository
+import com.lampung.baktimarsada.repository.AuthRepository
 import javax.inject.Inject
 
 class SyncFcmTokenUseCase @Inject constructor(

@@ -6,6 +6,7 @@ import { createFinanceReportRoute } from "./routes/finance-reports";
 import { healthRoute } from "./routes/health";
 import { createMemberRoute } from "./routes/members";
 import { createPaymentObligationRoute } from "./routes/payment-obligations";
+import { createUserRoute } from "./routes/users";
 import { createWorshipTemplateRoute } from "./routes/worship-templates";
 import type { AppBindings } from "./types/env";
 
@@ -18,6 +19,7 @@ app.route("/v1/worship-templates", createWorshipTemplateRoute());
 app.route("/v1/members", createMemberRoute());
 app.route("/v1/finance-reports", createFinanceReportRoute());
 app.route("/v1/payment-obligations", createPaymentObligationRoute());
+app.route("/v1/users", createUserRoute());
 app.post("/v1/device/fcm-token", async (c) => {
   return successResponse(null, { message: "FCM token synced" });
 });

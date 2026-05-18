@@ -40,6 +40,7 @@ describe("AuthService", () => {
     const repo = createFakeRepository({
       user: {
         id: "user-1",
+        username: "user1",
         email: "user@example.com",
         password_hash: "hash",
         full_name: "Test User",
@@ -101,6 +102,9 @@ function createFakeRepository(overrides: Partial<{
     async findUserByEmail(email: string) {
       return state.user && state.user.email === email ? state.user : null;
     },
+    async findUserByUsername(username: string) {
+      return state.user && state.user.username === username ? state.user : null;
+    },
     async findUserById(userId: string) {
       return state.user && state.user.id === userId ? state.user : null;
     },
@@ -108,6 +112,7 @@ function createFakeRepository(overrides: Partial<{
       state.createdUsers.push(input);
       state.user = {
         id: input.id,
+        username: input.username,
         email: input.email,
         password_hash: input.passwordHash,
         full_name: input.fullName,
@@ -140,6 +145,7 @@ function createFakeRepository(overrides: Partial<{
     toSummary(user: any) {
       return {
         id: user.id,
+        username: user.username ?? null,
         email: user.email,
         fullName: user.full_name,
         role: user.role,

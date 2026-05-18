@@ -4,6 +4,8 @@ import com.lampung.baktimarsada.core.constants.AppConstants
 import com.lampung.baktimarsada.network.dto.ApiResponseDto
 import com.lampung.baktimarsada.network.dto.BackendAuthResponseDto
 import com.lampung.baktimarsada.network.dto.BackendLoginRequestDto
+import com.lampung.baktimarsada.network.dto.CreateUserAccountRequestDto
+import com.lampung.baktimarsada.network.dto.CreateUserAccountResponseDto
 import com.lampung.baktimarsada.network.dto.EventDto
 import com.lampung.baktimarsada.network.dto.FcmTokenRequestDto
 import com.lampung.baktimarsada.network.dto.FinanceReportDto
@@ -73,6 +75,12 @@ interface BaktiApiService {
 
     @DELETE("${AppConstants.ROUTE_PAYMENT_OBLIGATIONS}/{id}")
     suspend fun deletePaymentObligation(@Path("id") obligationId: String): Response<ApiResponseDto<Unit?>>
+
+    @POST(AppConstants.ROUTE_USERS)
+    suspend fun createUser(@Body request: CreateUserAccountRequestDto): Response<ApiResponseDto<CreateUserAccountResponseDto>>
+
+    @GET(AppConstants.ROUTE_USERS)
+    suspend fun fetchUsers(@Query("role") role: String): Response<ApiResponseDto<List<CreateUserAccountResponseDto>>>
 }
 
 // created by Mories Deo Hutapea, S.E.,S.Kom

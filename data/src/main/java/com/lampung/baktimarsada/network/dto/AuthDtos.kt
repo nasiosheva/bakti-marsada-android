@@ -11,6 +11,22 @@ data class BackendLoginRequestDto(
     val password: String
 )
 
+data class CreateUserAccountRequestDto(
+    val username: String,
+    val email: String,
+    val role: String,
+    val password: String,
+    val fullName: String
+)
+
+data class CreateUserAccountResponseDto(
+    val id: String,
+    val username: String? = null,
+    val email: String,
+    val role: String,
+    val fullName: String
+)
+
 data class SessionResponseDto(
     val authToken: String,
     val userId: String,
@@ -40,6 +56,7 @@ data class BackendAuthResponseDto(
 )
 data class BackendUserDto(
     val id: String? = null,
+    val username: String? = null,
     val fullName: String? = null,
     val role: String? = null
 )

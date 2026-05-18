@@ -5,8 +5,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -17,33 +19,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewModelScope
 import com.lampung.baktimarsada.R
 import com.lampung.baktimarsada.core.constants.AppBuildConfig
-import com.lampung.baktimarsada.core.dispatchers.DispatcherProvider
-import com.lampung.baktimarsada.core.result.AppResult
-import com.lampung.baktimarsada.data.remote.AppRemoteDataSource
 import com.lampung.baktimarsada.domain.model.SessionState
-import com.lampung.baktimarsada.domain.repository.AuthRepository
-import com.lampung.baktimarsada.domain.repository.EventRepository
-import com.lampung.baktimarsada.domain.repository.FinanceReportRepository
-import com.lampung.baktimarsada.domain.repository.MemberRepository
-import com.lampung.baktimarsada.domain.repository.PaymentObligationRepository
 import com.lampung.baktimarsada.ui.component.BaktiLoadingState
 import com.lampung.baktimarsada.ui.component.BaktiPullToRefreshBox
-import com.lampung.baktimarsada.ui.component.BaktiSectionMessage
 import com.lampung.baktimarsada.ui.component.BaktiScrollableStateView
-import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
+import com.lampung.baktimarsada.ui.component.BaktiSectionMessage
+import com.lampung.baktimarsada.ui.theme.BaktiMarsadaTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -97,20 +83,25 @@ fun AdminDashboardContent(
         if (state.isLoading && state.cards == DashboardCounts()) {
             BaktiScrollableStateView { BaktiLoadingState() }
         } else {
-            LazyColumn(
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 state.errorMessage?.let { message ->
-                    item { BaktiSectionMessage(message = message) }
+                    item(span = { GridItemSpan(maxLineSpan) }) {
+                        BaktiSectionMessage(message = message)
+                    }
                 }
                 if (AppBuildConfig.simulationEnabled) {
-                    item {
+                    item(span = { GridItemSpan(maxLineSpan) }) {
                         OutlinedButton(
                             onClick = onResetSimulation,
-                            enabled = !state.isLoading
+                            enabled = !state.isLoading,
+                            modifier = Modifier.fillMaxWidth()
                         ) {
                             Text(text = stringResource(id = R.string.dashboard_simulation_reset_action))
                         }
@@ -135,87 +126,58 @@ fun AdminDashboardContent(
     }
 }
 
-@HiltViewModel
-class AdminDashboardViewModel @Inject constructor(
-    private val authRepository: AuthRepository,
-    private val eventRepository: EventRepository,
-    private val memberRepository: MemberRepository,
-    private val financeReportRepository: FinanceReportRepository,
-    private val paymentObligationRepository: PaymentObligationRepository,
-    private val remoteDataSource: AppRemoteDataSource,
-    private val dispatcherProvider: DispatcherProvider
-) : ViewModel() {
+@Preview(name = "Dashboard - filled")
+@Composable
+private fun AdminDashboardContentPreview() {
+    val sampleState = AdminDashboardUiState(
+        cards = DashboardCounts(
+            eventCount = 12,
+            memberCount = 84,
+            financeCount = 5,
+            paymentCount = 3
+        ),
+        isLoading = false
+    )
 
-    private val _state = MutableStateFlow(AdminDashboardUiState())
-    val state: StateFlow<AdminDashboardUiState> = _state.asStateFlow()
-
-    init {
-        observeCounts()
-        refreshAll()
+    BaktiMarsadaTheme {
+        AdminDashboardContent(
+            state = sampleState,
+            onRefresh = {},
+            onResetSimulation = {}
+        )
     }
+}
 
-    private fun observeCounts() {
-        viewModelScope.launch(dispatcherProvider.io) {
-            combine(
-                eventRepository.observeEvents(),
-                memberRepository.observeMembers(),
-                financeReportRepository.observeReports(),
-                paymentObligationRepository.observeObligations()
-            ) { events, members, reports, obligations ->
-                DashboardCounts(
-                    eventCount = events.size,
-                    memberCount = members.size,
-                    financeCount = reports.size,
-                    paymentCount = obligations.size
-                )
-            }.collect { counts ->
-                _state.update {
-                    it.copy(
-                        cards = counts,
-                        isLoading = false,
-                        errorMessage = null
-                    )
-                }
-            }
-        }
+@Preview(name = "Dashboard - loading")
+@Composable
+private fun AdminDashboardContentLoadingPreview() {
+    BaktiMarsadaTheme {
+        AdminDashboardContent(
+            state = AdminDashboardUiState(isLoading = true),
+            onRefresh = {},
+            onResetSimulation = {}
+        )
     }
+}
 
-    fun refreshAll() {
-        viewModelScope.launch(dispatcherProvider.io) {
-            val session = authRepository.getCurrentSession() ?: return@launch
-            _state.update { it.copy(isLoading = true, errorMessage = null) }
-            val results = listOf(
-                eventRepository.refresh(session.sectorContext),
-                memberRepository.refresh(session.sectorContext),
-                financeReportRepository.refresh(session.sectorContext),
-                paymentObligationRepository.refresh(session.sectorContext)
-            )
-            val firstError = results.filterIsInstance<AppResult.Error>().firstOrNull()
-            _state.update {
-                it.copy(
-                    isLoading = false,
-                    errorMessage = firstError?.message
-                )
-            }
-        }
-    }
-
-    fun resetSimulationData() {
-        viewModelScope.launch(dispatcherProvider.io) {
-            _state.update { it.copy(isLoading = true, errorMessage = null) }
-            runCatching {
-                remoteDataSource.resetSimulationData()
-            }.onFailure { throwable ->
-                _state.update {
-                    it.copy(
-                        isLoading = false,
-                        errorMessage = throwable.message ?: "Failed to reset simulation data"
-                    )
-                }
-                return@launch
-            }
-            refreshAll()
-        }
+@Preview(name = "Dashboard - error")
+@Composable
+private fun AdminDashboardContentErrorPreview() {
+    BaktiMarsadaTheme {
+        AdminDashboardContent(
+            state = AdminDashboardUiState(
+                cards = DashboardCounts(
+                    eventCount = 2,
+                    memberCount = 5,
+                    financeCount = 1,
+                    paymentCount = 4
+                ),
+                isLoading = false,
+                errorMessage = "Gagal memuat data ringkasan"
+            ),
+            onRefresh = {},
+            onResetSimulation = {}
+        )
     }
 }
 

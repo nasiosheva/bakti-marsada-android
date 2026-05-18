@@ -6,6 +6,8 @@ import com.lampung.baktimarsada.data.remote.AppRemoteDataSource
 import com.lampung.baktimarsada.network.dto.EventDto
 import com.lampung.baktimarsada.network.dto.EventProgramItemDto
 import com.lampung.baktimarsada.network.dto.FinanceReportDto
+import com.lampung.baktimarsada.network.dto.CreateUserAccountRequestDto
+import com.lampung.baktimarsada.network.dto.CreateUserAccountResponseDto
 import com.lampung.baktimarsada.network.dto.LoginRequestDto
 import com.lampung.baktimarsada.network.dto.MemberDto
 import com.lampung.baktimarsada.network.dto.PaymentObligationDto
@@ -24,7 +26,7 @@ import javax.inject.Singleton
 @Singleton
 class SimulateAppRemoteDataSource @Inject constructor() : AppRemoteDataSource {
 
-    private val accounts = listOf(
+    private val accounts = mutableListOf(
         SampleAccount(
             identifier = TenantRuntime.current.sampleAdminIdentifier,
             password = TenantRuntime.current.sampleAdminPassword,
@@ -439,11 +441,97 @@ class SimulateAppRemoteDataSource @Inject constructor() : AppRemoteDataSource {
         paymentObligations.removeAll { it.id == obligationId }
     }
 
+    override suspend fun createUserAccount(request: CreateUserAccountRequestDto): CreateUserAccountResponseDto {
+        val username = request.username.trim().lowercase()
+        val email = request.email.trim().lowercase()
+        val role = request.role.trim().uppercase().ifBlank { "JEMAAT" }
+        val fullName = request.fullName.trim()
+        val password = request.password
+
+        if (username.length < 3) {
+            throw IllegalArgumentException("Username must be at least 3 characters")
+        }
+        if (!email.contains("@")) {
+            throw IllegalArgumentException("Invalid email")
+        }
+        if (password.length < 8) {
+            throw IllegalArgumentException("Password must be at least 8 characters")
+        }
+        if (fullName.isBlank()) {
+            throw IllegalArgumentException("Full name is required")
+        }
+        if (accounts.any { it.identifier.equals(email, ignoreCase = true) }) {
+            throw IllegalArgumentException("Email already exists")
+        }
+        if (accounts.any { it.identifier.substringBefore("@").equals(username, ignoreCase = true) }) {
+            throw IllegalArgumentException("Username already exists")
+        }
+
+        val userId = "user-${UUID.randomUUID()}"
+        accounts.add(
+            SampleAccount(
+                identifier = email,
+                password = password,
+                userId = userId,
+                displayName = fullName,
+                role = if (role == "ADMIN") "ADMIN" else "JEMAAT",
+                sectorId = TenantRuntime.current.defaultSectorId,
+                sectorName = TenantRuntime.current.defaultSectorName
+            )
+        )
+
+        return CreateUserAccountResponseDto(
+            id = userId,
+            username = username,
+            email = email,
+            role = role,
+            fullName = fullName
+        )
+    }
+
+    override suspend fun fetchUsersByRole(role: String): List<CreateUserAccountResponseDto> {
+        val normalizedRole = role.trim().uppercase()
+        return accounts
+            .filter { it.role.uppercase() == normalizedRole }
+            .map {
+                CreateUserAccountResponseDto(
+                    id = it.userId,
+                    username = it.identifier.substringBefore("@"),
+                    email = it.identifier,
+                    role = it.role,
+                    fullName = it.displayName
+                )
+            }
+    }
+
     override suspend fun resetSimulationData() {
         resetDataInternal()
     }
 
     private fun resetDataInternal() {
+        accounts.clear()
+        accounts.addAll(
+            listOf(
+                SampleAccount(
+                    identifier = TenantRuntime.current.sampleAdminIdentifier,
+                    password = TenantRuntime.current.sampleAdminPassword,
+                    userId = "admin-1",
+                    displayName = "Admin Sektor 1",
+                    role = "ADMIN",
+                    sectorId = TenantRuntime.current.defaultSectorId,
+                    sectorName = TenantRuntime.current.defaultSectorName
+                ),
+                SampleAccount(
+                    identifier = TenantRuntime.current.sampleJemaatIdentifier,
+                    password = TenantRuntime.current.sampleJemaatPassword,
+                    userId = "jemaat-1",
+                    displayName = "Jemaat Sektor 1",
+                    role = "JEMAAT",
+                    sectorId = TenantRuntime.current.defaultSectorId,
+                    sectorName = TenantRuntime.current.defaultSectorName
+                )
+            )
+        )
         events.clear()
         events.addAll(seedEvents())
         worshipTemplates.clear()
