@@ -24,6 +24,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.json.JSONObject
 
 @HiltViewModel
 class LoginViewModel @Inject constructor(
@@ -56,6 +57,10 @@ class LoginViewModel @Inject constructor(
 
     fun onRememberMeChanged(value: Boolean) {
         _state.update { it.copy(rememberMe = value) }
+    }
+
+    fun clearErrorMessage() {
+        _state.update { it.copy(errorMessage = null) }
     }
 
     fun submit() {
@@ -228,10 +233,18 @@ class LoginViewModel @Inject constructor(
         _state.update {
             it.copy(
                 isLoading = isLoading,
-                errorMessage = message,
+                errorMessage = extractErrorMessage(message),
                 loggedInRole = null
             )
         }
+    }
+
+    private fun extractErrorMessage(rawMessage: String): String {
+        val trimmed = rawMessage.trim()
+        if (!trimmed.startsWith("{")) return rawMessage
+        return runCatching {
+            JSONObject(trimmed).optString("message").takeIf { it.isNotBlank() }
+        }.getOrNull() ?: rawMessage
     }
 
     private fun updateStateForInput(transform: LoginUiState.() -> LoginUiState) {

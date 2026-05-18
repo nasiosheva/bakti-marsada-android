@@ -31,12 +31,14 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -59,7 +61,8 @@ import com.lampung.baktimarsada.core.constants.AppBuildConfig
 import com.lampung.baktimarsada.core.tenant.TenantRuntime
 import com.lampung.baktimarsada.domain.model.UserRole
 import com.lampung.baktimarsada.ui.component.BaktiCheckbox
-import com.lampung.baktimarsada.ui.component.BaktiSectionMessage
+import com.lampung.baktimarsada.ui.component.BaktiResponseSnackbarEffect
+import com.lampung.baktimarsada.ui.component.BaktiSnackbarHost
 import com.lampung.baktimarsada.ui.component.BaktiTextInput
 import com.lampung.baktimarsada.ui.theme.BaktiMarsadaTheme
 
@@ -96,6 +99,7 @@ fun LoginRoute(
         onLoginAsAdminClicked = viewModel::submitWithDemoAdmin,
         onLoginAsJemaatClicked = viewModel::submitWithDemoJemaat,
         onResetAndLoginAsAdminClicked = viewModel::resetSimulationAndLoginAsAdmin,
+        onErrorMessageConsumed = viewModel::clearErrorMessage,
         isGoogleSignInEnabled = state.isGoogleSignInEnabled
     )
 }
@@ -111,13 +115,23 @@ fun LoginScreen(
     onLoginAsAdminClicked: () -> Unit = {},
     onLoginAsJemaatClicked: () -> Unit = {},
     onResetAndLoginAsAdminClicked: () -> Unit = {},
+    onErrorMessageConsumed: () -> Unit = {},
     isGoogleSignInEnabled: Boolean = false,
     isSimulationEnabled: Boolean = AppBuildConfig.simulationEnabled
 ) {
     val tenant = TenantRuntime.current
     var isPasswordVisible by rememberSaveable { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    BaktiResponseSnackbarEffect(
+        message = state.errorMessage,
+        hostState = snackbarHostState,
+        onMessageConsumed = onErrorMessageConsumed
+    )
+
     Scaffold(
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier.fillMaxSize(),
+        snackbarHost = { BaktiSnackbarHost(hostState = snackbarHostState) }
     ) { innerPadding ->
         Box(
             modifier = Modifier
@@ -206,9 +220,6 @@ fun LoginScreen(
                             label = stringResource(id = R.string.login_remember_me),
                             onCheckedChange = onRememberMeChanged
                         )
-                        state.errorMessage?.let {
-                            BaktiSectionMessage(message = it)
-                        }
                         Button(
                             onClick = onLoginClicked,
                             enabled = !state.isLoading && state.password.isNotBlank(),
