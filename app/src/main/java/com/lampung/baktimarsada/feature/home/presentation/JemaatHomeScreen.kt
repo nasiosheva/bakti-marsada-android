@@ -2,16 +2,18 @@ package com.lampung.baktimarsada.feature.home.presentation
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
@@ -23,25 +25,27 @@ import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
-import androidx.compose.material3.NavigationDrawerItem
-import androidx.compose.material3.rememberDrawerState
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
@@ -122,6 +126,8 @@ fun JemaatHomeScreen(
         JemaatBottomDestination(AppRoutes.JEMAAT_FINANCE, stringResource(id = R.string.tab_finance), Icons.Filled.AccountBalanceWallet),
         JemaatBottomDestination(AppRoutes.JEMAAT_PAYMENTS, stringResource(id = R.string.tab_payments), Icons.Filled.Payments)
     )
+    val currentSection = destinations.currentLabel(currentRoute)
+        .ifBlank { stringResource(id = R.string.tab_profile) }
 
     val drawerNavItems = @Composable {
         destinations.forEach { destination ->
@@ -141,7 +147,9 @@ fun JemaatHomeScreen(
                         }
                     }
                 },
-                modifier = Modifier.semantics { testTag = "jemaat_drawer_nav_${destination.route}" },
+                modifier = Modifier
+                    .padding(horizontal = 12.dp, vertical = 2.dp)
+                    .semantics { testTag = "jemaat_drawer_nav_${destination.route}" },
                 label = { Text(text = destination.label) },
                 icon = {
                     Icon(
@@ -166,32 +174,39 @@ fun JemaatHomeScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
                 .background(
                     Brush.verticalGradient(
                         colors = listOf(
-                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.20f),
+                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.28f),
+                            MaterialTheme.colorScheme.background,
                             MaterialTheme.colorScheme.background
                         )
                     )
                 )
+                .padding(innerPadding)
         ) {
-            NavHost(
-                navController = navController,
-                startDestination = AppRoutes.JEMAAT_EVENTS,
-                modifier = Modifier.fillMaxSize()
-            ) {
-                composable(AppRoutes.JEMAAT_EVENTS) {
-                    eventsContent(innerPadding.calculateBottomPadding())
-                }
-                composable(AppRoutes.JEMAAT_MEMBERS) {
-                    membersContent()
-                }
-                composable(AppRoutes.JEMAAT_FINANCE) {
-                    financeContent()
-                }
-                composable(AppRoutes.JEMAAT_PAYMENTS) {
-                    paymentsContent()
+            Column(modifier = Modifier.fillMaxSize()) {
+                JemaatSectionBanner(
+                    sectorName = session.sectorContext.sectorName,
+                    currentSection = currentSection
+                )
+                NavHost(
+                    navController = navController,
+                    startDestination = AppRoutes.JEMAAT_EVENTS,
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    composable(AppRoutes.JEMAAT_EVENTS) {
+                        eventsContent(innerPadding.calculateBottomPadding())
+                    }
+                    composable(AppRoutes.JEMAAT_MEMBERS) {
+                        membersContent()
+                    }
+                    composable(AppRoutes.JEMAAT_FINANCE) {
+                        financeContent()
+                    }
+                    composable(AppRoutes.JEMAAT_PAYMENTS) {
+                        paymentsContent()
+                    }
                 }
             }
         }
@@ -200,8 +215,6 @@ fun JemaatHomeScreen(
     val topBar: @Composable () -> Unit = {
         JemaatHomeTopBar(
             session = session,
-            currentSection = destinations.currentLabel(currentRoute)
-                .ifBlank { stringResource(id = R.string.tab_profile) },
             isTablet = isTablet,
             onOpenDrawer = { scope.launch { drawerState.open() } },
             onOpenProfile = onOpenProfile
@@ -214,6 +227,14 @@ fun JemaatHomeScreen(
             drawerContent = {
                 ModalDrawerSheet {
                     Column(modifier = Modifier.fillMaxSize()) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = stringResource(id = R.string.app_name),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
                         drawerNavItems()
                     }
                 }
@@ -221,7 +242,8 @@ fun JemaatHomeScreen(
         ) {
             Scaffold(
                 topBar = topBar,
-                bottomBar = { }
+                bottomBar = { },
+                containerColor = MaterialTheme.colorScheme.background
             ) { innerPadding ->
                 content(innerPadding)
             }
@@ -229,6 +251,7 @@ fun JemaatHomeScreen(
     } else {
         Scaffold(
             topBar = topBar,
+            containerColor = MaterialTheme.colorScheme.background,
             bottomBar = {
                 BaktiBottomNavigationBar(
                     items = bottomNavItems,
@@ -264,7 +287,6 @@ fun JemaatHomeScreen(
 @Composable
 private fun JemaatHomeTopBar(
     session: SessionState,
-    currentSection: String,
     isTablet: Boolean,
     onOpenDrawer: () -> Unit,
     onOpenProfile: () -> Unit
@@ -288,16 +310,21 @@ private fun JemaatHomeTopBar(
         title = {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Surface(
-                    modifier = Modifier.size(42.dp),
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clip(CircleShape)
+                        .clickable(onClick = onOpenProfile),
                     shape = CircleShape,
                     color = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
-                    tonalElevation = 3.dp
+                    border = BorderStroke(2.dp, MaterialTheme.colorScheme.primaryContainer),
+                    tonalElevation = 2.dp
                 ) {
-                    Box(contentAlignment = androidx.compose.ui.Alignment.Center) {
+                    Box(contentAlignment = Alignment.Center) {
                         Text(
                             text = session.displayName.initials(),
                             style = MaterialTheme.typography.titleMedium,
@@ -305,14 +332,13 @@ private fun JemaatHomeTopBar(
                         )
                     }
                 }
-                Spacer(modifier = Modifier.width(12.dp))
                 Column(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
                     Row(
-                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Text(
                             text = stringResource(id = R.string.jemaat_home_greeting),
@@ -321,7 +347,10 @@ private fun JemaatHomeTopBar(
                             fontWeight = FontWeight.SemiBold
                         )
                         if (AppBuildConfig.simulationEnabled) {
-                            JemaatInfoPill(text = stringResource(id = R.string.environment_simulate))
+                            JemaatInfoPill(
+                                text = stringResource(id = R.string.environment_simulate),
+                                tonal = true
+                            )
                         }
                     }
                     Text(
@@ -331,18 +360,7 @@ private fun JemaatHomeTopBar(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
-                    Text(
-                        text = stringResource(
-                            id = R.string.jemaat_home_sector_format,
-                            session.sectorContext.sectorName
-                        ),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
                 }
-                JemaatInfoPill(text = currentSection)
             }
         },
         actions = {
@@ -357,20 +375,93 @@ private fun JemaatHomeTopBar(
 }
 
 @Composable
-private fun JemaatInfoPill(text: String) {
+private fun JemaatSectionBanner(
+    sectorName: String,
+    currentSection: String
+) {
     Surface(
-        shape = RoundedCornerShape(8.dp),
-        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.72f),
-        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        shape = RoundedCornerShape(18.dp),
+        color = MaterialTheme.colorScheme.primary,
+        contentColor = MaterialTheme.colorScheme.onPrimary,
+        tonalElevation = 6.dp
+    ) {
+        Row(
+            modifier = Modifier
+                .background(
+                    Brush.horizontalGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.primary,
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.86f)
+                        )
+                    )
+                )
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                Text(
+                    text = stringResource(id = R.string.jemaat_home_sector_format, sectorName),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = currentSection,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            Surface(
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.18f),
+                modifier = Modifier.size(36.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = Icons.Filled.Groups,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimary
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun JemaatInfoPill(text: String, tonal: Boolean = false) {
+    Surface(
+        shape = RoundedCornerShape(10.dp),
+        color = if (tonal) {
+            MaterialTheme.colorScheme.tertiaryContainer
+        } else {
+            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.72f)
+        },
+        contentColor = if (tonal) {
+            MaterialTheme.colorScheme.onTertiaryContainer
+        } else {
+            MaterialTheme.colorScheme.onPrimaryContainer
+        },
         border = BorderStroke(
             width = 1.dp,
-            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
+            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.10f)
         )
     ) {
         Text(
             text = text,
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
             style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.SemiBold,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
@@ -396,36 +487,184 @@ private fun String.initials(): String {
         .ifBlank { "J" }
 }
 
-@Preview(name = "Jemaat Home", showBackground = true)
+private val previewSession = SessionState(
+    authToken = "preview-token",
+    userId = "jemaat-1",
+    displayName = "Jemaat Kedaton",
+    role = UserRole.JEMAAT,
+    tenantContext = TenantContext(
+        tenantId = "hkbp",
+        tenantName = "HKBP",
+        subTenantId = "hkbp-kedaton",
+        subTenantName = "HKBP Kedaton"
+    ),
+    sectorContext = SectorContext(
+        sectorId = "sector-1",
+        sectorName = "Sektor 1 HKBP Kedaton"
+    )
+)
+
+private val previewSessionLongName = previewSession.copy(
+    displayName = "Bapak Pendeta Dr. Marojahan Hutapea Simanjuntak",
+    sectorContext = SectorContext(
+        sectorId = "sector-9",
+        sectorName = "Sektor 9 HKBP Kedaton Lampung Selatan"
+    )
+)
+
+@Preview(name = "Jemaat Home - Phone", showBackground = true)
 @Composable
 private fun JemaatHomeScreenPreview() {
-    val previewSession = SessionState(
-        authToken = "preview-token",
-        userId = "jemaat-1",
-        displayName = "Jemaat Kedaton",
-        role = UserRole.JEMAAT,
-        tenantContext = TenantContext(
-            tenantId = "hkbp",
-            tenantName = "HKBP",
-            subTenantId = "hkbp-kedaton",
-            subTenantName = "HKBP Kedaton"
-        ),
-        sectorContext = SectorContext(
-            sectorId = "sector-1",
-            sectorName = "Sektor 1 HKBP Kedaton"
-        )
-    )
-
     BaktiMarsadaTheme {
         JemaatHomeScreen(
             session = previewSession,
             onLogout = {},
-            eventsContent = { _ -> Text("Events placeholder") },
-            membersContent = { Text("Members placeholder") },
-            financeContent = { Text("Finance placeholder") },
-            paymentsContent = { Text("Payments placeholder") },
+            eventsContent = { _ -> Text("Events placeholder", modifier = Modifier.padding(16.dp)) },
+            membersContent = { Text("Members placeholder", modifier = Modifier.padding(16.dp)) },
+            financeContent = { Text("Finance placeholder", modifier = Modifier.padding(16.dp)) },
+            paymentsContent = { Text("Payments placeholder", modifier = Modifier.padding(16.dp)) },
             onOpenProfile = {}
         )
+    }
+}
+
+@Preview(
+    name = "Jemaat Home - Phone Dark",
+    showBackground = true,
+    uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES
+)
+@Composable
+private fun JemaatHomeScreenDarkPreview() {
+    BaktiMarsadaTheme {
+        JemaatHomeScreen(
+            session = previewSession,
+            onLogout = {},
+            eventsContent = { _ -> Text("Events placeholder", modifier = Modifier.padding(16.dp)) },
+            membersContent = { Text("Members placeholder", modifier = Modifier.padding(16.dp)) },
+            financeContent = { Text("Finance placeholder", modifier = Modifier.padding(16.dp)) },
+            paymentsContent = { Text("Payments placeholder", modifier = Modifier.padding(16.dp)) },
+            onOpenProfile = {}
+        )
+    }
+}
+
+@Preview(
+    name = "Jemaat Home - Tablet",
+    showBackground = true,
+    device = "spec:width=1280dp,height=800dp,dpi=240"
+)
+@Composable
+private fun JemaatHomeScreenTabletPreview() {
+    BaktiMarsadaTheme {
+        JemaatHomeScreen(
+            session = previewSession,
+            onLogout = {},
+            eventsContent = { _ -> Text("Events placeholder", modifier = Modifier.padding(16.dp)) },
+            membersContent = { Text("Members placeholder", modifier = Modifier.padding(16.dp)) },
+            financeContent = { Text("Finance placeholder", modifier = Modifier.padding(16.dp)) },
+            paymentsContent = { Text("Payments placeholder", modifier = Modifier.padding(16.dp)) },
+            onOpenProfile = {}
+        )
+    }
+}
+
+@Preview(name = "Jemaat Home - Long Name", showBackground = true)
+@Composable
+private fun JemaatHomeScreenLongNamePreview() {
+    BaktiMarsadaTheme {
+        JemaatHomeScreen(
+            session = previewSessionLongName,
+            onLogout = {},
+            eventsContent = { _ -> Text("Events placeholder", modifier = Modifier.padding(16.dp)) },
+            membersContent = { Text("Members placeholder", modifier = Modifier.padding(16.dp)) },
+            financeContent = { Text("Finance placeholder", modifier = Modifier.padding(16.dp)) },
+            paymentsContent = { Text("Payments placeholder", modifier = Modifier.padding(16.dp)) },
+            onOpenProfile = {}
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Preview(name = "JemaatHomeTopBar - Phone", showBackground = true)
+@Composable
+private fun JemaatHomeTopBarPhonePreview() {
+    BaktiMarsadaTheme {
+        JemaatHomeTopBar(
+            session = previewSession,
+            isTablet = false,
+            onOpenDrawer = {},
+            onOpenProfile = {}
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Preview(name = "JemaatHomeTopBar - Tablet", showBackground = true)
+@Composable
+private fun JemaatHomeTopBarTabletPreview() {
+    BaktiMarsadaTheme {
+        JemaatHomeTopBar(
+            session = previewSession,
+            isTablet = true,
+            onOpenDrawer = {},
+            onOpenProfile = {}
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Preview(name = "JemaatHomeTopBar - Long Name", showBackground = true)
+@Composable
+private fun JemaatHomeTopBarLongNamePreview() {
+    BaktiMarsadaTheme {
+        JemaatHomeTopBar(
+            session = previewSessionLongName,
+            isTablet = false,
+            onOpenDrawer = {},
+            onOpenProfile = {}
+        )
+    }
+}
+
+@Preview(name = "JemaatSectionBanner - Events", showBackground = true, widthDp = 412)
+@Composable
+private fun JemaatSectionBannerEventsPreview() {
+    BaktiMarsadaTheme {
+        JemaatSectionBanner(
+            sectorName = "Sektor 1 HKBP Kedaton",
+            currentSection = "Acara"
+        )
+    }
+}
+
+@Preview(name = "JemaatSectionBanner - Finance", showBackground = true, widthDp = 412)
+@Composable
+private fun JemaatSectionBannerFinancePreview() {
+    BaktiMarsadaTheme {
+        JemaatSectionBanner(
+            sectorName = "Sektor 9 HKBP Kedaton Lampung Selatan",
+            currentSection = "Keuangan"
+        )
+    }
+}
+
+@Preview(name = "JemaatInfoPill - Default", showBackground = true)
+@Composable
+private fun JemaatInfoPillDefaultPreview() {
+    BaktiMarsadaTheme {
+        Box(modifier = Modifier.padding(16.dp)) {
+            JemaatInfoPill(text = "Acara")
+        }
+    }
+}
+
+@Preview(name = "JemaatInfoPill - Tonal", showBackground = true)
+@Composable
+private fun JemaatInfoPillTonalPreview() {
+    BaktiMarsadaTheme {
+        Box(modifier = Modifier.padding(16.dp)) {
+            JemaatInfoPill(text = "Simulasi", tonal = true)
+        }
     }
 }
 

@@ -5,32 +5,44 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Groups
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SmallFloatingActionButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -46,13 +58,14 @@ import com.lampung.baktimarsada.core.result.AppResult
 import com.lampung.baktimarsada.domain.model.EventDetail
 import com.lampung.baktimarsada.domain.model.EventProgramItem
 import com.lampung.baktimarsada.domain.model.ProgramItemType
-import com.lampung.baktimarsada.domain.model.TenantContext
-import com.lampung.baktimarsada.domain.model.SessionState
 import com.lampung.baktimarsada.domain.model.SectorContext
+import com.lampung.baktimarsada.domain.model.SessionState
+import com.lampung.baktimarsada.domain.model.TenantContext
 import com.lampung.baktimarsada.domain.model.UserRole
+import com.lampung.baktimarsada.feature.app.navigation.AppRoutes
 import com.lampung.baktimarsada.repository.AuthRepository
 import com.lampung.baktimarsada.repository.EventRepository
-import com.lampung.baktimarsada.feature.app.navigation.AppRoutes
+import com.lampung.baktimarsada.ui.component.BaktiBottomSheet
 import com.lampung.baktimarsada.ui.component.BaktiEmptyState
 import com.lampung.baktimarsada.ui.component.BaktiErrorState
 import com.lampung.baktimarsada.ui.component.BaktiLoadingState
@@ -62,12 +75,12 @@ import com.lampung.baktimarsada.ui.component.BaktiToolbar
 import com.lampung.baktimarsada.ui.component.JemaatPill
 import com.lampung.baktimarsada.ui.theme.BaktiMarsadaTheme
 import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @Composable
 fun EventDetailRoute(
@@ -140,6 +153,7 @@ fun EventDetailContent(
             listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 0
         }
     }
+    var selectedItem by remember { mutableStateOf<Pair<Int, EventProgramItem>?>(null) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
@@ -149,12 +163,13 @@ fun EventDetailContent(
                 .background(
                     Brush.verticalGradient(
                         colors = listOf(
-                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.18f),
+                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.22f),
+                            MaterialTheme.colorScheme.background,
                             MaterialTheme.colorScheme.background
                         )
                     )
                 ),
-            contentPadding = PaddingValues(16.dp),
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 32.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             item {
@@ -168,20 +183,24 @@ fun EventDetailContent(
                 EventDetailInfoCard(event = event, isAdmin = isAdmin)
             }
             item {
-                EventProgramHeader(
-                    count = programItems.size
-                )
+                EventProgramHeader(count = programItems.size)
             }
             if (programItems.isEmpty()) {
                 item {
                     EventLegacyDescriptionCard(description = event.description)
                 }
             } else {
-                itemsIndexed(programItems, key = { _, programItem -> programItem.id.ifBlank { programItem.orderIndex } }) { index, programItem ->
-                    EventProgramItemCard(
-                        index = index,
-                        programItem = programItem
-                    )
+                item {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        programItems.forEachIndexed { index, programItem ->
+                            EventTimelineRow(
+                                index = index,
+                                isLast = index == programItems.lastIndex,
+                                programItem = programItem,
+                                onClick = { selectedItem = index to programItem }
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -203,6 +222,19 @@ fun EventDetailContent(
             )
         }
     }
+
+    selectedItem?.let { (index, programItem) ->
+        BaktiBottomSheet(
+            onDismissRequest = { selectedItem = null },
+            title = programItem.title.ifBlank { stringResource(id = R.string.program_section_title) }
+        ) {
+            EventProgramItemCard(
+                index = index,
+                programItem = programItem,
+                showIndexBadge = true
+            )
+        }
+    }
 }
 
 @Composable
@@ -213,42 +245,56 @@ private fun EventDetailHero(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
-        )
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+        Box(
+            modifier = Modifier
+                .background(
+                    Brush.linearGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.primary,
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.82f),
+                            MaterialTheme.colorScheme.tertiary.copy(alpha = 0.85f)
+                        )
+                    )
+                )
         ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                JemaatPill(
-                    text = if (isAdmin) {
-                        stringResource(id = R.string.profile_role_admin)
-                    } else {
-                        stringResource(id = R.string.profile_role_jemaat)
-                    },
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    contentColor = MaterialTheme.colorScheme.primary
+            Column(
+                modifier = Modifier.padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    JemaatPill(
+                        text = if (isAdmin) {
+                            stringResource(id = R.string.profile_role_admin)
+                        } else {
+                            stringResource(id = R.string.profile_role_jemaat)
+                        },
+                        containerColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.18f),
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    )
+                    JemaatPill(
+                        text = sectorName,
+                        containerColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.18f),
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    )
+                }
+                Text(
+                    text = event.title,
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimary
                 )
-                JemaatPill(
-                    text = sectorName,
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    contentColor = MaterialTheme.colorScheme.primary
-                )
+                if (event.description.isNotBlank()) {
+                    Text(
+                        text = event.description,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.88f)
+                    )
+                }
             }
-            Text(
-                text = event.title,
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onPrimaryContainer
-            )
-            Text(
-                text = event.description,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.78f)
-            )
         }
     }
 }
@@ -260,24 +306,28 @@ private fun EventDetailInfoCard(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        shape = RoundedCornerShape(20.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(
-            modifier = Modifier.padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             EventDetailInfoRow(
+                icon = Icons.Filled.CalendarMonth,
                 label = stringResource(id = R.string.form_schedule),
                 value = event.scheduledAt
             )
             EventDetailInfoRow(
+                icon = Icons.Filled.LocationOn,
                 label = stringResource(id = R.string.form_location),
                 value = event.location
             )
             if (isAdmin) {
                 EventDetailInfoRow(
+                    icon = Icons.Filled.Groups,
                     label = stringResource(id = R.string.form_role_sector),
                     value = event.sectorName
                 )
@@ -288,27 +338,53 @@ private fun EventDetailInfoCard(
 
 @Composable
 private fun EventDetailInfoRow(
+    icon: ImageVector,
     label: String,
     value: String
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyLarge,
-            fontWeight = FontWeight.Medium
-        )
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Surface(
+            modifier = Modifier.size(40.dp),
+            shape = RoundedCornerShape(12.dp),
+            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.55f),
+            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+        }
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = value,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
     }
 }
 
 @Composable
 private fun EventProgramHeader(count: Int) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 6.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -319,13 +395,95 @@ private fun EventProgramHeader(count: Int) {
             Text(
                 text = stringResource(id = R.string.program_section_title),
                 style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.SemiBold
+                fontWeight = FontWeight.Bold
             )
             Text(
                 text = stringResource(id = R.string.pagination_summary, count, count),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+        }
+        Surface(
+            shape = RoundedCornerShape(12.dp),
+            color = MaterialTheme.colorScheme.primaryContainer,
+            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+        ) {
+            Text(
+                text = "$count",
+                modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+        }
+    }
+}
+
+@Composable
+private fun EventTimelineRow(
+    index: Int,
+    isLast: Boolean,
+    programItem: EventProgramItem,
+    onClick: (() -> Unit)? = null
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(IntrinsicSize.Min),
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        EventTimelineRail(
+            index = index,
+            isLast = isLast,
+            modifier = Modifier.fillMaxHeight()
+        )
+        EventProgramItemCard(
+            index = index,
+            programItem = programItem,
+            showIndexBadge = false,
+            onClick = onClick,
+            modifier = Modifier
+                .weight(1f)
+                .padding(bottom = if (isLast) 0.dp else 14.dp)
+        )
+    }
+}
+
+@Composable
+private fun EventTimelineRail(
+    index: Int,
+    isLast: Boolean,
+    modifier: Modifier = Modifier
+) {
+    Box(modifier = modifier.width(36.dp)) {
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .width(2.dp)
+                .fillMaxHeight()
+                .background(
+                    if (isLast) {
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0f)
+                    } else {
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)
+                    }
+                )
+        )
+        Surface(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .size(36.dp),
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.onPrimary,
+            border = BorderStroke(3.dp, MaterialTheme.colorScheme.primaryContainer)
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Text(
+                    text = "${index + 1}",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
     }
 }
@@ -334,13 +492,14 @@ private fun EventProgramHeader(count: Int) {
 private fun EventLegacyDescriptionCard(description: String) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        shape = RoundedCornerShape(20.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Text(
             text = description,
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(18.dp),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
