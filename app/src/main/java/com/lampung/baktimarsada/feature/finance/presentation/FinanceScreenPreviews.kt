@@ -2,7 +2,7 @@ package com.lampung.baktimarsada.feature.finance.presentation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
-import com.lampung.baktimarsada.domain.model.FinanceReportDetail
+import com.lampung.baktimarsada.model.FinanceReportDetail
 import com.lampung.baktimarsada.ui.theme.BaktiMarsadaTheme
 
 private val financeItems = listOf(

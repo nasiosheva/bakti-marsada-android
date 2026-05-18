@@ -9,7 +9,7 @@ import com.lampung.baktimarsada.db.entity.WorshipTemplateEntity
 import com.lampung.baktimarsada.db.entity.WorshipTemplateItemEntity
 import com.lampung.baktimarsada.domain.model.EventDetail
 import com.lampung.baktimarsada.domain.model.EventProgramItem
-import com.lampung.baktimarsada.domain.model.FinanceReportDetail
+import com.lampung.baktimarsada.model.FinanceReportDetail
 import com.lampung.baktimarsada.domain.model.MemberDetail
 import com.lampung.baktimarsada.domain.model.PaymentObligationDetail
 import com.lampung.baktimarsada.domain.model.PaymentStatus

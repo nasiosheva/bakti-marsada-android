@@ -2,7 +2,7 @@ package com.lampung.baktimarsada.feature.dashboard.presentation
 
 import com.lampung.baktimarsada.core.result.AppResult
 import com.lampung.baktimarsada.domain.model.EventDetail
-import com.lampung.baktimarsada.domain.model.FinanceReportDetail
+import com.lampung.baktimarsada.model.FinanceReportDetail
 import com.lampung.baktimarsada.domain.model.MemberDetail
 import com.lampung.baktimarsada.domain.model.PaymentObligationDetail
 import com.lampung.baktimarsada.domain.model.PaymentStatus

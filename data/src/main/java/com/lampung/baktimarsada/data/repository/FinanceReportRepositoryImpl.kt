@@ -8,7 +8,7 @@ import com.lampung.baktimarsada.data.mapper.toEntity
 import com.lampung.baktimarsada.data.remote.AppRemoteDataSource
 import com.lampung.baktimarsada.db.AppDatabase
 import com.lampung.baktimarsada.db.dao.FinanceReportDao
-import com.lampung.baktimarsada.domain.model.FinanceReportDetail
+import com.lampung.baktimarsada.model.FinanceReportDetail
 import com.lampung.baktimarsada.domain.model.SectorContext
 import com.lampung.baktimarsada.repository.FinanceReportRepository
 import kotlinx.coroutines.flow.Flow

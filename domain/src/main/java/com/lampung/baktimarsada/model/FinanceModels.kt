@@ -1,4 +1,4 @@
-package com.lampung.baktimarsada.domain.model
+package com.lampung.baktimarsada.model
 
 data class FinanceReportSummary(
     val id: String,

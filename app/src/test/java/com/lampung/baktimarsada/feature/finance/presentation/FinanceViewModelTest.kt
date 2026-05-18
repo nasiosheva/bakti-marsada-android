@@ -1,7 +1,7 @@
 package com.lampung.baktimarsada.feature.finance.presentation
 
 import com.lampung.baktimarsada.core.result.AppResult
-import com.lampung.baktimarsada.domain.model.FinanceReportDetail
+import com.lampung.baktimarsada.model.FinanceReportDetail
 import com.lampung.baktimarsada.domain.model.SectorContext
 import com.lampung.baktimarsada.repository.FinanceReportRepository
 import com.lampung.baktimarsada.test.MainDispatcherRule

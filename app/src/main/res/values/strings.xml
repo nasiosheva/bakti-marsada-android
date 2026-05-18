@@ -97,6 +97,8 @@
     <string name="program_empty">Belum ada susunan acara.</string>
     <string name="template_program_empty">Belum ada bagian template.</string>
     <string name="program_item_number">Bagian %1$d</string>
+    <string name="form_section_event_info">Informasi Acara</string>
+    <string name="form_section_template_info">Informasi Template</string>
 
     <string name="member_title_jemaat">Direktori Anggota Sektor</string>
     <string name="member_title_admin">Kelola Direktori Anggota</string>
@@ -107,12 +109,14 @@
     <string name="finance_title_jemaat">Laporan Keuangan Terbuka</string>
     <string name="finance_title_admin">Kelola Laporan Keuangan</string>
     <string name="finance_empty">Belum ada laporan keuangan yang tersedia.</string>
+    <string name="finance_total_label">Total Nominal</string>
     <string name="dialog_add_finance">Tambah Laporan Keuangan</string>
     <string name="dialog_edit_finance">Ubah Laporan Keuangan</string>
 
     <string name="payment_title_jemaat">Kewajiban Pembayaran Sektor</string>
     <string name="payment_title_admin">Kelola Kewajiban Pembayaran</string>
     <string name="payment_empty">Belum ada kewajiban pembayaran pada sektor ini.</string>
+    <string name="payment_outstanding_label">Tagihan Belum Lunas</string>
     <string name="dialog_add_payment">Tambah Kewajiban Pembayaran</string>
     <string name="dialog_edit_payment">Ubah Kewajiban Pembayaran</string>
 
@@ -126,10 +130,16 @@
     <string name="dashboard_payments_title">Kewajiban Pembayaran</string>
     <string name="dashboard_payments_desc">Daftar tagihan sektor beserta status terkini.</string>
     <string name="dashboard_simulation_reset_action">Reset Data Simulasi</string>
+    <string name="dashboard_summary_label">Total Data Sektor</string>
+    <string name="dashboard_summary_caption">Ringkasan semua catatan pelayanan sektor.</string>
     <string name="admin_create_user_title">Buat Akun</string>
     <string name="admin_create_user_success">Akun berhasil dibuat</string>
     <string name="admin_create_user_error_default">Gagal membuat akun</string>
     <string name="admin_create_user_password_min_length">Password minimal 8 karakter</string>
+    <string name="admin_user_access_badge">Akses</string>
+    <string name="admin_user_manage_title">Manajemen Akun Sektor</string>
+    <string name="admin_user_manage_description">Kelola akun admin dan jemaat yang dapat masuk ke aplikasi.</string>
+    <string name="admin_user_create_sheet_description">Lengkapi data akun baru. Password minimal 8 karakter.</string>
     <string name="user_list_empty">Belum ada akun pada role ini.</string>
 
     <string name="profile_title">Akun Bakti Marsada</string>
@@ -141,6 +151,7 @@
     <string name="profile_user_id_label">ID Pengguna</string>
     <string name="profile_environment_label">Environment</string>
     <string name="profile_data_source_label">Data Source</string>
+    <string name="profile_info_section_title">Detail Akun</string>
     <string name="notification_channel_name">Notifikasi Bakti Marsada</string>
     <string name="notification_channel_description">Pemberitahuan penting dari aplikasi</string>
 
