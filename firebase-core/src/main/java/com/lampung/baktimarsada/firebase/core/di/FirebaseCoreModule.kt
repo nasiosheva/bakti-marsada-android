@@ -7,6 +7,8 @@ import com.google.firebase.messaging.FirebaseMessaging
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.lampung.baktimarsada.firebase.core.DefaultFirebaseRuntimeAvailability
 import com.lampung.baktimarsada.firebase.core.FirebaseRuntimeAvailability
+import com.lampung.baktimarsada.firebase.core.auth.DefaultGoogleSignInHelper
+import com.lampung.baktimarsada.firebase.core.auth.GoogleSignInHelper
 import com.lampung.baktimarsada.firebase.core.remoteconfig.DefaultTenantAwareRemoteConfigResolver
 import com.lampung.baktimarsada.firebase.core.remoteconfig.FirebaseRemoteConfigBootstrap
 import com.lampung.baktimarsada.firebase.core.remoteconfig.FirebaseRemoteConfigClient
@@ -81,6 +83,12 @@ abstract class FirebaseCoreBindingModule {
     abstract fun bindFirebaseTelemetryService(
         impl: FirebaseTelemetryServiceImpl
     ): FirebaseTelemetryService
+
+    @Binds
+    @Singleton
+    abstract fun bindGoogleSignInHelper(
+        impl: DefaultGoogleSignInHelper
+    ): GoogleSignInHelper
 }
 
 @Module

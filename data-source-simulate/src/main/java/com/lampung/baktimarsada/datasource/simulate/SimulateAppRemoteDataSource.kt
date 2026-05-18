@@ -8,6 +8,7 @@ import com.lampung.baktimarsada.network.dto.EventProgramItemDto
 import com.lampung.baktimarsada.network.dto.FinanceReportDto
 import com.lampung.baktimarsada.network.dto.CreateUserAccountRequestDto
 import com.lampung.baktimarsada.network.dto.CreateUserAccountResponseDto
+import com.lampung.baktimarsada.network.dto.GoogleLoginRequestDto
 import com.lampung.baktimarsada.network.dto.LoginRequestDto
 import com.lampung.baktimarsada.network.dto.MemberDto
 import com.lampung.baktimarsada.network.dto.PaymentObligationDto
@@ -344,6 +345,27 @@ class SimulateAppRemoteDataSource @Inject constructor() : AppRemoteDataSource {
         } ?: throw IllegalArgumentException("Invalid credentials")
 
         val token = "token-${UUID.randomUUID()}"
+        sessionTokens.add(token)
+        return SessionResponseDto(
+            authToken = token,
+            userId = account.userId,
+            displayName = account.displayName,
+            role = account.role,
+            tenantId = TenantRuntime.current.tenantId,
+            tenantName = TenantRuntime.current.tenantName,
+            subTenantId = TenantRuntime.current.subTenantId,
+            subTenantName = TenantRuntime.current.subTenantName,
+            sectorId = account.sectorId,
+            sectorName = account.sectorName
+        )
+    }
+
+    override suspend fun loginWithGoogle(request: GoogleLoginRequestDto): SessionResponseDto {
+        if (request.idToken.isBlank()) {
+            throw IllegalArgumentException("Google login token is required")
+        }
+        val account = accounts.firstOrNull { it.role == "JEMAAT" } ?: error("Jemaat account is unavailable")
+        val token = "google-${UUID.randomUUID()}"
         sessionTokens.add(token)
         return SessionResponseDto(
             authToken = token,

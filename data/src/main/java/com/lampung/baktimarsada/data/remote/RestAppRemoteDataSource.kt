@@ -3,12 +3,15 @@ package com.lampung.baktimarsada.data.remote
 import com.lampung.baktimarsada.core.tenant.TenantRuntime
 import com.lampung.baktimarsada.network.api.BaktiApiService
 import com.lampung.baktimarsada.network.dto.ApiResponseDto
+import com.lampung.baktimarsada.network.dto.BackendAuthResponseDto
 import com.lampung.baktimarsada.network.dto.BackendLoginRequestDto
+import com.lampung.baktimarsada.network.dto.BackendGoogleLoginRequestDto
 import com.lampung.baktimarsada.network.dto.CreateUserAccountRequestDto
 import com.lampung.baktimarsada.network.dto.CreateUserAccountResponseDto
 import com.lampung.baktimarsada.network.dto.EventDto
 import com.lampung.baktimarsada.network.dto.FcmTokenRequestDto
 import com.lampung.baktimarsada.network.dto.FinanceReportDto
+import com.lampung.baktimarsada.network.dto.GoogleLoginRequestDto
 import com.lampung.baktimarsada.network.dto.LoginRequestDto
 import com.lampung.baktimarsada.network.dto.MemberDto
 import com.lampung.baktimarsada.network.dto.PaymentObligationDto
@@ -29,7 +32,20 @@ abstract class RestAppRemoteDataSource(
                 password = request.password
             )
         )
-        val body = response.requireDataBody("Login failed")
+        return response.toSessionResponse("Login failed")
+    }
+
+    override suspend fun loginWithGoogle(request: GoogleLoginRequestDto): SessionResponseDto {
+        val response = apiService.loginWithGoogle(
+            BackendGoogleLoginRequestDto(idToken = request.idToken)
+        )
+        return response.toSessionResponse("Google login failed")
+    }
+
+    private fun Response<ApiResponseDto<BackendAuthResponseDto>>.toSessionResponse(
+        defaultMessage: String
+    ): SessionResponseDto {
+        val body = requireDataBody(defaultMessage)
         val token = body.session?.sessionToken ?: body.authToken
         val userId = body.user?.id ?: body.userId
         if (token.isNullOrBlank() || userId.isNullOrBlank()) {

@@ -1,5 +1,9 @@
 package com.lampung.baktimarsada.feature.auth.presentation
 
+import android.app.Activity
+import android.content.Intent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -60,6 +64,10 @@ import com.lampung.baktimarsada.core.tenant.TenantRuntime
 import com.lampung.baktimarsada.data.remote.AppRemoteDataSource
 import com.lampung.baktimarsada.domain.model.UserRole
 import com.lampung.baktimarsada.domain.usecase.LoginUseCase
+import com.lampung.baktimarsada.domain.usecase.LoginWithGoogleUseCase
+import com.lampung.baktimarsada.firebase.core.auth.GoogleSignInHelper
+import com.lampung.baktimarsada.firebase.core.auth.GoogleSignInToken
+import com.lampung.baktimarsada.firebase.notification.NotificationHelper
 import com.lampung.baktimarsada.security.SecureStorage
 import com.lampung.baktimarsada.ui.component.BaktiCheckbox
 import com.lampung.baktimarsada.ui.component.BaktiSectionMessage
@@ -79,6 +87,15 @@ fun LoginRoute(
     viewModel: LoginViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val googleSignInLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_CANCELED) {
+            viewModel.onGoogleSignInCancelled()
+            return@rememberLauncherForActivityResult
+        }
+        viewModel.onGoogleSignInResult(result.data)
+    }
 
     LaunchedEffect(state.loggedInRole) {
         state.loggedInRole?.let(onLoginSuccess)
@@ -90,9 +107,14 @@ fun LoginRoute(
         onPasswordChanged = viewModel::onPasswordChanged,
         onRememberMeChanged = viewModel::onRememberMeChanged,
         onLoginClicked = viewModel::submit,
+        onGoogleSignInClicked = {
+            viewModel.createGoogleSignInIntent()?.let(googleSignInLauncher::launch)
+                ?: viewModel.onGoogleSignInUnavailable()
+        },
         onLoginAsAdminClicked = viewModel::submitWithDemoAdmin,
         onLoginAsJemaatClicked = viewModel::submitWithDemoJemaat,
-        onResetAndLoginAsAdminClicked = viewModel::resetSimulationAndLoginAsAdmin
+        onResetAndLoginAsAdminClicked = viewModel::resetSimulationAndLoginAsAdmin,
+        isGoogleSignInEnabled = state.isGoogleSignInEnabled
     )
 }
 
@@ -103,9 +125,11 @@ fun LoginScreen(
     onPasswordChanged: (String) -> Unit,
     onRememberMeChanged: (Boolean) -> Unit = {},
     onLoginClicked: () -> Unit,
+    onGoogleSignInClicked: () -> Unit = {},
     onLoginAsAdminClicked: () -> Unit = {},
     onLoginAsJemaatClicked: () -> Unit = {},
     onResetAndLoginAsAdminClicked: () -> Unit = {},
+    isGoogleSignInEnabled: Boolean = false,
     isSimulationEnabled: Boolean = AppBuildConfig.simulationEnabled
 ) {
     val tenant = TenantRuntime.current
@@ -205,7 +229,7 @@ fun LoginScreen(
                         }
                         Button(
                             onClick = onLoginClicked,
-                            enabled = !state.isLoading,
+                            enabled = !state.isLoading && state.password.isNotBlank(),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(48.dp)
@@ -218,6 +242,37 @@ fun LoginScreen(
                                     stringResource(id = R.string.login_button)
                                 }
                             )
+                        }
+                        OutlinedButton(
+                            onClick = onGoogleSignInClicked,
+                            enabled = !state.isLoading && isGoogleSignInEnabled,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp)
+                                .semantics { testTag = "login_google_button" }
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                Surface(
+                                    shape = CircleShape,
+                                    color = MaterialTheme.colorScheme.primaryContainer,
+                                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                ) {
+                                    Box(
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = stringResource(id = R.string.login_google_badge),
+                                            style = MaterialTheme.typography.labelLarge,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                }
+                                Text(text = stringResource(id = R.string.login_google_button))
+                            }
                         }
                     }
                 }
@@ -391,16 +446,20 @@ data class LoginUiState(
     val passwordError: String? = null,
     val errorMessage: String? = null,
     val isLoading: Boolean = false,
+    val isGoogleSignInEnabled: Boolean = false,
     val loggedInRole: UserRole? = null
 )
 
 @HiltViewModel
 class LoginViewModel @Inject constructor(
     private val loginUseCase: LoginUseCase,
+    private val loginWithGoogleUseCase: LoginWithGoogleUseCase,
     private val dispatcherProvider: DispatcherProvider,
     private val stringProvider: StringProvider,
     private val remoteDataSource: AppRemoteDataSource,
-    private val secureStorage: SecureStorage
+    private val secureStorage: SecureStorage,
+    private val googleSignInHelper: GoogleSignInHelper,
+    private val notificationHelper: NotificationHelper
 ) : ViewModel() {
     private val tenant
         get() = TenantRuntime.current
@@ -416,7 +475,8 @@ class LoginViewModel @Inject constructor(
             it.copy(
                 rememberMe = rememberLogin,
                 identifier = if (rememberLogin) rememberedIdentifier else "",
-                password = if (rememberLogin) rememberedPassword else ""
+                password = if (rememberLogin) rememberedPassword else "",
+                isGoogleSignInEnabled = googleSignInHelper.isAvailable()
             )
         }
     }
@@ -450,6 +510,42 @@ class LoginViewModel @Inject constructor(
     fun submit() {
         val snapshot = _state.value
         submitCredentials(snapshot.identifier, snapshot.password)
+    }
+
+    fun createGoogleSignInIntent(): Intent? = googleSignInHelper.createSignInIntent()
+
+    fun onGoogleSignInUnavailable() {
+        _state.update {
+            it.copy(
+                errorMessage = stringProvider.get(R.string.login_google_unavailable),
+                loggedInRole = null
+            )
+        }
+    }
+
+    fun onGoogleSignInCancelled() {
+        _state.update { it.copy(isLoading = false) }
+    }
+
+    fun onGoogleSignInResult(data: Intent?) {
+        viewModelScope.launch(dispatcherProvider.io) {
+            _state.update { it.copy(isLoading = true, errorMessage = null, loggedInRole = null) }
+            val tokenResult = googleSignInHelper.extractToken(data)
+            tokenResult.fold(
+                onSuccess = { token ->
+                    loginWithGoogleToken(token)
+                },
+                onFailure = { throwable ->
+                    _state.update {
+                        it.copy(
+                            isLoading = false,
+                            errorMessage = throwable.message
+                                ?: stringProvider.get(R.string.login_google_failed)
+                        )
+                    }
+                }
+            )
+        }
     }
 
     fun submitWithDemoAdmin() {
@@ -539,6 +635,40 @@ class LoginViewModel @Inject constructor(
         }
     }
 
+    private suspend fun loginWithGoogleToken(token: GoogleSignInToken) {
+        when (val result = loginWithGoogleUseCase(token.idToken)) {
+            is AppResult.Success -> {
+                persistRememberedCredentials(
+                    rememberMe = false,
+                    identifier = "",
+                    password = ""
+                )
+                notificationHelper.showGoogleWelcomeNotification(
+                    accountLabel = token.email
+                        ?.takeIf { it.isNotBlank() }
+                        ?: result.data.displayName.takeIf { it.isNotBlank() }
+                        ?: result.data.userId
+                )
+                _state.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = null,
+                        loggedInRole = result.data.role
+                    )
+                }
+            }
+            is AppResult.Error -> {
+                _state.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = result.message,
+                        loggedInRole = null
+                    )
+                }
+            }
+        }
+    }
+
     private fun persistRememberedCredentials(identifier: String, password: String, rememberMe: Boolean) {
         if (rememberMe) {
             secureStorage.putString(AppConstants.KEY_REMEMBER_LOGIN, "true")
@@ -561,11 +691,13 @@ private fun LoginScreenDefaultPreview() {
         LoginScreen(
             state = LoginUiState(
                 identifier = "admin@demo.com",
-                password = "password123"
+                password = "password123",
+                isGoogleSignInEnabled = true
             ),
             onIdentifierChanged = {},
             onPasswordChanged = {},
             onLoginClicked = {},
+            onGoogleSignInClicked = {},
             onLoginAsAdminClicked = {},
             onLoginAsJemaatClicked = {},
             onResetAndLoginAsAdminClicked = {},
@@ -584,11 +716,13 @@ private fun LoginScreenValidationErrorPreview() {
                 password = "bad",
                 identifierError = "Identifier wajib diisi",
                 passwordError = "Password wajib diisi",
-                errorMessage = "Login gagal"
+                errorMessage = "Login gagal",
+                isGoogleSignInEnabled = true
             ),
             onIdentifierChanged = {},
             onPasswordChanged = {},
             onLoginClicked = {},
+            onGoogleSignInClicked = {},
             onLoginAsAdminClicked = {},
             onLoginAsJemaatClicked = {},
             onResetAndLoginAsAdminClicked = {},

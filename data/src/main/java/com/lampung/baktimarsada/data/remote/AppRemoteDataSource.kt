@@ -2,6 +2,7 @@ package com.lampung.baktimarsada.data.remote
 
 import com.lampung.baktimarsada.network.dto.EventDto
 import com.lampung.baktimarsada.network.dto.FinanceReportDto
+import com.lampung.baktimarsada.network.dto.GoogleLoginRequestDto
 import com.lampung.baktimarsada.network.dto.LoginRequestDto
 import com.lampung.baktimarsada.network.dto.MemberDto
 import com.lampung.baktimarsada.network.dto.PaymentObligationDto
@@ -12,6 +13,7 @@ import com.lampung.baktimarsada.network.dto.WorshipTemplateDto
 
 interface AppRemoteDataSource {
     suspend fun login(request: LoginRequestDto): SessionResponseDto
+    suspend fun loginWithGoogle(request: GoogleLoginRequestDto): SessionResponseDto
     suspend fun logout(token: String)
     suspend fun syncFcmToken(token: String)
     suspend fun fetchEvents(sectorId: String): List<EventDto>

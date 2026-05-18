@@ -10,6 +10,7 @@ val configuredDataSourceProvider = providers.gradleProperty("dataSourceProvider"
 val configuredCloudflareBaseUrl = providers.gradleProperty("cloudflareApiBaseUrl").orNull
 val configuredPythonBaseUrl = providers.gradleProperty("pythonApiBaseUrl").orNull
 val configuredTenantKey = providers.gradleProperty("tenantKey").orNull ?: "hkbp-kedaton"
+val configuredGoogleWebClientId = providers.gradleProperty("googleWebClientId").orNull ?: ""
 
 android {
     namespace = "com.lampung.baktimarsada"
@@ -38,6 +39,7 @@ android {
         buildConfigField("String", "APP_ENVIRONMENT", "\"debug\"")
         buildConfigField("String", "DATABASE_NAME", "\"bakti_marsada.db\"")
         buildConfigField("Boolean", "SIMULATION_ENABLED", "false")
+        resValue("string", "bakti_google_web_client_id", "\"$configuredGoogleWebClientId\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

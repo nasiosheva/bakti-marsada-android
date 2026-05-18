@@ -8,6 +8,8 @@
     <string name="login_remember_me">Remember me</string>
     <string name="login_loading">Memproses...</string>
     <string name="login_button">Masuk</string>
+    <string name="login_google_button">Masuk dengan Google</string>
+    <string name="login_google_badge">G</string>
     <string name="login_demo_title">Akun Demo</string>
     <string name="login_simulate_badge">Mode Simulasi</string>
     <string name="login_demo_admin">Admin: %1$s / %2$s</string>
@@ -18,6 +20,11 @@
     <string name="login_error_identifier_required">Identifier wajib diisi</string>
     <string name="login_error_password_required">Password wajib diisi</string>
     <string name="login_error_simulation_reset_failed">Gagal mereset data simulasi</string>
+    <string name="login_google_unavailable">Google Sign-In belum dikonfigurasi untuk aplikasi ini.</string>
+    <string name="login_google_failed">Google Sign-In gagal diproses.</string>
+    <string name="login_google_welcome_title">Selamat datang</string>
+    <string name="login_google_welcome_message">Masuk sebagai jemaat dengan akun %1$s</string>
+    <string name="login_google_fallback_account_label">akun Google Anda</string>
     <string name="login_password_show">Tampilkan password</string>
     <string name="login_password_hide">Sembunyikan password</string>
     <string name="environment_simulate">Mode simulasi</string>

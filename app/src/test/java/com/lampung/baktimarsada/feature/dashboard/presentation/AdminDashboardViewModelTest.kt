@@ -14,6 +14,8 @@ import com.lampung.baktimarsada.repository.MemberRepository
 import com.lampung.baktimarsada.repository.PaymentObligationRepository
 import com.lampung.baktimarsada.network.dto.EventDto
 import com.lampung.baktimarsada.network.dto.FinanceReportDto
+import com.lampung.baktimarsada.network.dto.CreateUserAccountRequestDto
+import com.lampung.baktimarsada.network.dto.CreateUserAccountResponseDto
 import com.lampung.baktimarsada.network.dto.LoginRequestDto
 import com.lampung.baktimarsada.network.dto.MemberDto
 import com.lampung.baktimarsada.network.dto.PaymentObligationDto
@@ -186,6 +188,7 @@ class AdminDashboardViewModelTest {
             if (shouldFailReset) error("reset failed")
         }
         override suspend fun login(request: LoginRequestDto): SessionResponseDto = unsupported()
+        override suspend fun loginWithGoogle(request: com.lampung.baktimarsada.network.dto.GoogleLoginRequestDto): SessionResponseDto = unsupported()
         override suspend fun logout(token: String) = Unit
         override suspend fun syncFcmToken(token: String) = Unit
         override suspend fun fetchEvents(sectorId: String): List<EventDto> = unsupported()
@@ -203,6 +206,8 @@ class AdminDashboardViewModelTest {
         override suspend fun fetchWorshipTemplates(sectorId: String): List<WorshipTemplateDto> = unsupported()
         override suspend fun saveWorshipTemplate(template: WorshipTemplateDto): WorshipTemplateDto = unsupported()
         override suspend fun deleteWorshipTemplate(templateId: String): Unit = unsupported()
+        override suspend fun createUserAccount(request: CreateUserAccountRequestDto): CreateUserAccountResponseDto = unsupported()
+        override suspend fun fetchUsersByRole(role: String): List<CreateUserAccountResponseDto> = unsupported()
         private fun unsupported(): Nothing = error("unsupported in this test")
     }
 }

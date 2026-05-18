@@ -13,16 +13,22 @@ import com.google.firebase.messaging.RemoteMessage
 import com.lampung.baktimarsada.R
 import com.lampung.baktimarsada.MainActivity
 import com.lampung.baktimarsada.core.constants.AppConstants
+import com.lampung.baktimarsada.feature.app.navigation.AppRoutes
 import com.lampung.baktimarsada.permission.PermissionManager
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 
+interface NotificationHelper {
+    fun showNotification(message: RemoteMessage)
+    fun showGoogleWelcomeNotification(accountLabel: String)
+}
+
 class FcmNotificationHelper @Inject constructor(
     @ApplicationContext private val context: Context,
     private val permissionManager: PermissionManager
-) {
+) : NotificationHelper {
 
-    fun showNotification(message: RemoteMessage) {
+    override fun showNotification(message: RemoteMessage) {
         if (!permissionManager.isNotificationGranted()) return
         val title = resolveTitle(message)
         val contentText = resolveContent(message)
@@ -67,6 +73,49 @@ class FcmNotificationHelper @Inject constructor(
             NotificationManager::class.java
         )
         notificationManager?.notify(generateNotificationId(message), notification)
+    }
+
+    override fun showGoogleWelcomeNotification(accountLabel: String) {
+        if (!permissionManager.isNotificationGranted()) return
+        val resolvedAccountLabel = accountLabel.trim().ifBlank {
+            context.getString(R.string.login_google_fallback_account_label)
+        }
+        ensureNotificationChannel()
+
+        val notificationIntent = Intent(context, MainActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            putExtra(AppConstants.FCM_NOTIFICATION_ROUTE_EXTRA, AppRoutes.JEMAAT_HOME)
+        }
+
+        val pendingIntent = PendingIntent.getActivity(
+            context,
+            AppConstants.FCM_NOTIFICATION_ID_BASE.hashCode() + 1,
+            notificationIntent,
+            createPendingIntentFlags()
+        )
+
+        val notification = NotificationCompat.Builder(context, AppConstants.FCM_NOTIFICATION_CHANNEL_ID)
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setContentTitle(context.getString(R.string.login_google_welcome_title))
+            .setContentText(
+                context.getString(
+                    R.string.login_google_welcome_message,
+                    resolvedAccountLabel
+                )
+            )
+            .setAutoCancel(true)
+            .setContentIntent(pendingIntent)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .build()
+
+        val notificationManager = ContextCompat.getSystemService(
+            context,
+            NotificationManager::class.java
+        )
+        notificationManager?.notify(
+            AppConstants.NOTIFICATION_ID_GOOGLE_WELCOME,
+            notification
+        )
     }
 
     private fun generateNotificationId(message: RemoteMessage): Int {

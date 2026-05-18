@@ -9,6 +9,7 @@ interface AuthRepository {
     suspend fun bootstrapSession(): SessionState?
     suspend fun getCurrentSession(): SessionState?
     suspend fun login(identifier: String, password: String): AppResult<SessionState>
+    suspend fun loginWithGoogle(idToken: String): AppResult<SessionState>
     suspend fun logout()
     suspend fun syncFcmToken(token: String): AppResult<Unit>
 }

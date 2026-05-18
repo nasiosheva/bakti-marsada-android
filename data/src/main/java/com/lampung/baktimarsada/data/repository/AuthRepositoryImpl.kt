@@ -9,6 +9,7 @@ import com.lampung.baktimarsada.domain.model.SessionState
 import com.lampung.baktimarsada.domain.model.TenantContext
 import com.lampung.baktimarsada.domain.model.UserRole
 import com.lampung.baktimarsada.repository.AuthRepository
+import com.lampung.baktimarsada.network.dto.GoogleLoginRequestDto
 import com.lampung.baktimarsada.network.dto.LoginRequestDto
 import com.lampung.baktimarsada.security.SecureStorage
 import kotlinx.coroutines.flow.Flow
@@ -36,31 +37,22 @@ class AuthRepositoryImpl @Inject constructor(
     override suspend fun getCurrentSession(): SessionState? = sessionStateFlow.value
 
     override suspend fun login(identifier: String, password: String): AppResult<SessionState> {
-        return runCatching {
+        return performLogin("Login failed") {
             remoteDataSource.login(
                 LoginRequestDto(
                     identifier = identifier,
                     password = password
                 )
             ).toDomain()
-        }.fold(
-            onSuccess = { session ->
-                persistSession(session)
-                sessionStateFlow.value = session
-                secureStorage.getString(AppConstants.KEY_FCM_TOKEN)
-                    ?.takeIf { it.isNotBlank() }
-                    ?.let { token ->
-                        runCatching { remoteDataSource.syncFcmToken(token) }
-                    }
-                AppResult.Success(session)
-            },
-            onFailure = { throwable ->
-                AppResult.Error(
-                    message = throwable.message ?: "Login failed",
-                    cause = throwable
-                )
-            }
-        )
+        }
+    }
+
+    override suspend fun loginWithGoogle(idToken: String): AppResult<SessionState> {
+        return performLogin("Google login failed") {
+            remoteDataSource.loginWithGoogle(
+                GoogleLoginRequestDto(idToken = idToken)
+            ).toDomain()
+        }
     }
 
     override suspend fun logout() {
@@ -80,6 +72,30 @@ class AuthRepositoryImpl @Inject constructor(
             onFailure = { throwable ->
                 AppResult.Error(
                     message = throwable.message ?: "FCM sync failed",
+                    cause = throwable
+                )
+            }
+        )
+    }
+
+    private suspend fun performLogin(
+        defaultMessage: String,
+        block: suspend () -> SessionState
+    ): AppResult<SessionState> {
+        return runCatching { block() }.fold(
+            onSuccess = { session ->
+                persistSession(session)
+                sessionStateFlow.value = session
+                secureStorage.getString(AppConstants.KEY_FCM_TOKEN)
+                    ?.takeIf { it.isNotBlank() }
+                    ?.let { token ->
+                        runCatching { remoteDataSource.syncFcmToken(token) }
+                    }
+                AppResult.Success(session)
+            },
+            onFailure = { throwable ->
+                AppResult.Error(
+                    message = throwable.message ?: defaultMessage,
                     cause = throwable
                 )
             }

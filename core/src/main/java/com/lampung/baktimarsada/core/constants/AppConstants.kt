@@ -18,6 +18,8 @@ object AppConstants {
     const val KEY_REMEMBER_LOGIN = "key_remember_login"
     const val KEY_REMEMBER_IDENTIFIER = "key_remember_identifier"
     const val KEY_REMEMBER_PASSWORD = "key_remember_password"
+    const val RESOURCE_DEFAULT_WEB_CLIENT_ID = "default_web_client_id"
+    const val RESOURCE_BAKTI_GOOGLE_WEB_CLIENT_ID = "bakti_google_web_client_id"
 
     const val FIRESTORE_COLLECTION_TRACKING = "device_events"
     const val FIRESTORE_COLLECTION_USERS = "users"
@@ -77,6 +79,7 @@ object AppConstants {
     const val TRACKING_EVENT_MESSAGE_RECEIVED = "fcm_message_received"
     const val FCM_NOTIFICATION_CHANNEL_ID = "fcm_notification_channel"
     const val FCM_NOTIFICATION_ID_BASE = "notification_id"
+    const val NOTIFICATION_ID_GOOGLE_WELCOME = 11001
     const val FCM_NOTIFICATION_TITLE = "title"
     const val FCM_NOTIFICATION_MESSAGE = "message"
     const val FCM_NOTIFICATION_BODY = "body"
@@ -90,6 +93,7 @@ object AppConstants {
     const val QUALIFIER_SIMULATE_SOURCE = "simulate_source"
     const val ROUTE_SYNC_FCM_TOKEN = "v1/device/fcm-token"
     const val ROUTE_AUTH_LOGIN = "auth/login"
+    const val ROUTE_AUTH_GOOGLE_LOGIN = "auth/google-login"
     const val ROUTE_AUTH_LOGOUT = "auth/logout"
     const val ROUTE_EVENTS = "v1/events"
     const val ROUTE_WORSHIP_TEMPLATES = "v1/worship-templates"

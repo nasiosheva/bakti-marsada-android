@@ -5,10 +5,18 @@ data class LoginRequestDto(
     val password: String
 )
 
+data class GoogleLoginRequestDto(
+    val idToken: String
+)
+
 data class BackendLoginRequestDto(
     val email: String? = null,
     val identifier: String? = null,
     val password: String
+)
+
+data class BackendGoogleLoginRequestDto(
+    val idToken: String
 )
 
 data class CreateUserAccountRequestDto(

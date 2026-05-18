@@ -52,7 +52,7 @@ import com.lampung.baktimarsada.feature.home.presentation.AdminHomeRoute
 import com.lampung.baktimarsada.feature.home.presentation.JemaatHomeRoute
 import com.lampung.baktimarsada.feature.profile.presentation.ProfileRoute
 import com.lampung.baktimarsada.feature.dashboard.presentation.AdminUserCreateRoute
-import com.lampung.baktimarsada.firebase.notification.FcmNotificationHelper
+import com.lampung.baktimarsada.firebase.notification.NotificationHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import com.google.firebase.messaging.RemoteMessage
 import javax.inject.Inject
@@ -312,7 +312,7 @@ class AppEntryViewModel @Inject constructor(
     private val memberRepository: MemberRepository,
     private val financeReportRepository: FinanceReportRepository,
     private val paymentObligationRepository: PaymentObligationRepository,
-    private val notificationHelper: FcmNotificationHelper
+    private val notificationHelper: NotificationHelper
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(AppEntryUiState())

@@ -18,6 +18,10 @@ export interface LoginInput {
   password: string;
 }
 
+export interface GoogleLoginInput {
+  idToken: string;
+}
+
 export interface AuthResult {
   user: AuthUserSummary;
   session: AuthSession;
@@ -39,10 +43,62 @@ export interface UserListItem {
   role: string;
 }
 
+export interface GoogleIdentityPayload {
+  sub: string;
+  email: string;
+  emailVerified: boolean;
+  fullName: string;
+}
+
+export interface GoogleTokenVerifier {
+  verifyIdToken(idToken: string): Promise<GoogleIdentityPayload>;
+}
+
+export class GoogleTokenInfoVerifier implements GoogleTokenVerifier {
+  constructor(
+    private readonly fetchImpl: typeof fetch = fetch,
+    private readonly allowedAudiences: string[] = []
+  ) {}
+
+  async verifyIdToken(idToken: string): Promise<GoogleIdentityPayload> {
+    if (!idToken.trim()) {
+      throw new AuthError(400, "INVALID_GOOGLE_TOKEN", "Google token is required");
+    }
+
+    const response = await this.fetchImpl(
+      `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(idToken)}`
+    );
+    if (!response.ok) {
+      throw new AuthError(401, "INVALID_GOOGLE_TOKEN", "Invalid Google token");
+    }
+
+    const body = await response.json<{
+      sub?: string;
+      email?: string;
+      email_verified?: string | boolean;
+      name?: string;
+      aud?: string;
+    }>();
+
+    const audience = body.aud?.trim();
+    if (this.allowedAudiences.length > 0 && (!audience || !this.allowedAudiences.includes(audience))) {
+      throw new AuthError(401, "INVALID_GOOGLE_AUDIENCE", "Google audience is not allowed");
+    }
+
+    return {
+      sub: body.sub?.trim() ?? "",
+      email: normalizeEmail(body.email ?? ""),
+      emailVerified: String(body.email_verified).trim().toLowerCase() === "true",
+      fullName: body.name?.trim() || body.email?.split("@")[0]?.trim() || "Google User"
+    };
+  }
+}
+
 export class AuthService {
   constructor(
     private readonly repository: AuthRepository,
     private readonly crypto: AuthCrypto = new WebAuthCrypto(),
+    private readonly googleTokenVerifier: GoogleTokenVerifier = new GoogleTokenInfoVerifier(),
     private readonly now: () => Date = () => new Date()
   ) {}
 
@@ -105,6 +161,43 @@ export class AuthService {
     }
 
     return this.createSessionForUser(user);
+  }
+
+  async loginWithGoogle(input: GoogleLoginInput): Promise<AuthResult> {
+    const identity = await this.googleTokenVerifier.verifyIdToken(input.idToken);
+    if (!identity.sub || !identity.email || !identity.emailVerified) {
+      throw new AuthError(401, "INVALID_GOOGLE_TOKEN", "Google account is not verified");
+    }
+
+    const existingUser = await this.repository.findUserByEmail(identity.email);
+    if (existingUser && existingUser.is_active !== 1) {
+      throw new AuthError(401, "INVALID_CREDENTIALS", "Invalid credentials");
+    }
+    if (existingUser && normalizeRole(existingUser.role) !== "JEMAAT") {
+      throw new AuthError(403, "GOOGLE_LOGIN_JEMAAT_ONLY", "Google login is only available for jemaat");
+    }
+
+    if (existingUser) {
+      return this.createSessionForUser(existingUser);
+    }
+
+    const username = await this.resolveAvailableUsername(identity.email);
+    const userId = webCrypto.randomUUID();
+    await this.repository.createUser({
+      id: userId,
+      username,
+      email: identity.email,
+      passwordHash: `google:${identity.sub}`,
+      fullName: identity.fullName,
+      role: "JEMAAT"
+    });
+
+    const createdUser = await this.repository.findUserById(userId);
+    if (!createdUser) {
+      throw new AuthError(500, "INTERNAL_SERVER_ERROR", "Failed to create Google user");
+    }
+
+    return this.createSessionForUser(createdUser);
   }
 
   async me(sessionToken: string): Promise<AuthUserSummary> {
@@ -175,6 +268,18 @@ export class AuthService {
       fullName: user.full_name,
       role: user.role
     }));
+  }
+
+  private async resolveAvailableUsername(email: string): Promise<string> {
+    const baseUsername = normalizeUsername(email.split("@")[0] || "");
+    this.assertUsername(baseUsername);
+    let candidate = baseUsername
+    let suffix = 1
+    while (await this.repository.findUserByUsername(candidate)) {
+      suffix += 1
+      candidate = `${baseUsername}${suffix}`
+    }
+    return candidate
   }
 
   private async createSessionForUser(user: UserRecord): Promise<AuthResult> {
@@ -261,8 +366,21 @@ export class AuthService {
   }
 }
 
-export function createAuthService(db: D1Database): AuthService {
-  return new AuthService(new AuthRepository(db));
+export function createAuthService(
+  db: D1Database,
+  options: {
+    googleAllowedAudiences?: string[];
+    fetchImpl?: typeof fetch;
+  } = {}
+): AuthService {
+  return new AuthService(
+    new AuthRepository(db),
+    new WebAuthCrypto(),
+    new GoogleTokenInfoVerifier(
+      options.fetchImpl ?? fetch,
+      options.googleAllowedAudiences ?? []
+    )
+  );
 }
 
 function normalizeEmail(email: string): string {

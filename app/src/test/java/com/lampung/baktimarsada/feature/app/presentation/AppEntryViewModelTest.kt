@@ -1,13 +1,27 @@
 package com.lampung.baktimarsada.feature.app.presentation
 
+import com.google.firebase.messaging.RemoteMessage
+import com.lampung.baktimarsada.core.result.AppResult
+import com.lampung.baktimarsada.domain.model.EventDetail
+import com.lampung.baktimarsada.domain.model.FinanceReportDetail
+import com.lampung.baktimarsada.domain.model.MemberDetail
+import com.lampung.baktimarsada.domain.model.PaymentObligationDetail
+import com.lampung.baktimarsada.domain.model.SectorContext
 import com.lampung.baktimarsada.domain.model.UserRole
 import com.lampung.baktimarsada.domain.usecase.BootstrapSessionUseCase
 import com.lampung.baktimarsada.domain.usecase.LogoutUseCase
 import com.lampung.baktimarsada.domain.usecase.ObserveSessionUseCase
 import com.lampung.baktimarsada.feature.app.navigation.AppRoutes
+import com.lampung.baktimarsada.firebase.notification.NotificationHelper
+import com.lampung.baktimarsada.repository.EventRepository
+import com.lampung.baktimarsada.repository.FinanceReportRepository
+import com.lampung.baktimarsada.repository.MemberRepository
+import com.lampung.baktimarsada.repository.PaymentObligationRepository
 import com.lampung.baktimarsada.test.MainDispatcherRule
 import com.lampung.baktimarsada.test.fakes.FakeAuthRepository
 import com.lampung.baktimarsada.test.fakes.sampleSession
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -29,7 +43,12 @@ class AppEntryViewModelTest {
         val viewModel = AppEntryViewModel(
             observeSessionUseCase = ObserveSessionUseCase(repository),
             bootstrapSessionUseCase = BootstrapSessionUseCase(repository),
-            logoutUseCase = LogoutUseCase(repository)
+            logoutUseCase = LogoutUseCase(repository),
+            eventRepository = FakeEventRepository(),
+            memberRepository = FakeMemberRepository(),
+            financeReportRepository = FakeFinanceReportRepository(),
+            paymentObligationRepository = FakePaymentObligationRepository(),
+            notificationHelper = FakeNotificationHelper()
         )
         advanceUntilIdle()
 
@@ -44,7 +63,12 @@ class AppEntryViewModelTest {
         val viewModel = AppEntryViewModel(
             observeSessionUseCase = ObserveSessionUseCase(repository),
             bootstrapSessionUseCase = BootstrapSessionUseCase(repository),
-            logoutUseCase = LogoutUseCase(repository)
+            logoutUseCase = LogoutUseCase(repository),
+            eventRepository = FakeEventRepository(),
+            memberRepository = FakeMemberRepository(),
+            financeReportRepository = FakeFinanceReportRepository(),
+            paymentObligationRepository = FakePaymentObligationRepository(),
+            notificationHelper = FakeNotificationHelper()
         )
         advanceUntilIdle()
 
@@ -58,7 +82,12 @@ class AppEntryViewModelTest {
         val viewModel = AppEntryViewModel(
             observeSessionUseCase = ObserveSessionUseCase(repository),
             bootstrapSessionUseCase = BootstrapSessionUseCase(repository),
-            logoutUseCase = LogoutUseCase(repository)
+            logoutUseCase = LogoutUseCase(repository),
+            eventRepository = FakeEventRepository(),
+            memberRepository = FakeMemberRepository(),
+            financeReportRepository = FakeFinanceReportRepository(),
+            paymentObligationRepository = FakePaymentObligationRepository(),
+            notificationHelper = FakeNotificationHelper()
         )
         advanceUntilIdle()
 
@@ -67,6 +96,40 @@ class AppEntryViewModelTest {
 
         assertEquals(AppRoutes.LOGIN, viewModel.state.value.pendingRoute)
         assertNull(viewModel.state.value.session)
+    }
+
+    private class FakeEventRepository : EventRepository {
+        override fun observeEvents(): Flow<List<EventDetail>> = flowOf(emptyList())
+        override suspend fun refresh(sectorContext: SectorContext): AppResult<Unit> = AppResult.Success(Unit)
+        override suspend fun save(event: EventDetail, sectorContext: SectorContext): AppResult<Unit> = AppResult.Success(Unit)
+        override suspend fun delete(eventId: String, sectorContext: SectorContext): AppResult<Unit> = AppResult.Success(Unit)
+    }
+
+    private class FakeMemberRepository : MemberRepository {
+        override fun observeMembers(): Flow<List<MemberDetail>> = flowOf(emptyList())
+        override suspend fun refresh(sectorContext: SectorContext): AppResult<Unit> = AppResult.Success(Unit)
+        override suspend fun save(member: MemberDetail, sectorContext: SectorContext): AppResult<Unit> = AppResult.Success(Unit)
+        override suspend fun delete(memberId: String, sectorContext: SectorContext): AppResult<Unit> = AppResult.Success(Unit)
+    }
+
+    private class FakeFinanceReportRepository : FinanceReportRepository {
+        override fun observeReports(): Flow<List<FinanceReportDetail>> = flowOf(emptyList())
+        override suspend fun refresh(sectorContext: SectorContext): AppResult<Unit> = AppResult.Success(Unit)
+        override suspend fun save(report: FinanceReportDetail, sectorContext: SectorContext): AppResult<Unit> = AppResult.Success(Unit)
+        override suspend fun delete(reportId: String, sectorContext: SectorContext): AppResult<Unit> = AppResult.Success(Unit)
+        override suspend fun toggleVisibility(report: FinanceReportDetail, sectorContext: SectorContext): AppResult<Unit> = AppResult.Success(Unit)
+    }
+
+    private class FakePaymentObligationRepository : PaymentObligationRepository {
+        override fun observeObligations(): Flow<List<PaymentObligationDetail>> = flowOf(emptyList())
+        override suspend fun refresh(sectorContext: SectorContext): AppResult<Unit> = AppResult.Success(Unit)
+        override suspend fun save(obligation: PaymentObligationDetail, sectorContext: SectorContext): AppResult<Unit> = AppResult.Success(Unit)
+        override suspend fun delete(obligationId: String, sectorContext: SectorContext): AppResult<Unit> = AppResult.Success(Unit)
+    }
+
+    private class FakeNotificationHelper : NotificationHelper {
+        override fun showNotification(message: RemoteMessage) = Unit
+        override fun showGoogleWelcomeNotification(accountLabel: String) = Unit
     }
 }
 

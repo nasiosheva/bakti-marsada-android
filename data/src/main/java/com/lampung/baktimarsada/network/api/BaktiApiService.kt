@@ -3,6 +3,7 @@ package com.lampung.baktimarsada.network.api
 import com.lampung.baktimarsada.core.constants.AppConstants
 import com.lampung.baktimarsada.network.dto.ApiResponseDto
 import com.lampung.baktimarsada.network.dto.BackendAuthResponseDto
+import com.lampung.baktimarsada.network.dto.BackendGoogleLoginRequestDto
 import com.lampung.baktimarsada.network.dto.BackendLoginRequestDto
 import com.lampung.baktimarsada.network.dto.CreateUserAccountRequestDto
 import com.lampung.baktimarsada.network.dto.CreateUserAccountResponseDto
@@ -24,6 +25,9 @@ import retrofit2.http.Query
 interface BaktiApiService {
     @POST(AppConstants.ROUTE_AUTH_LOGIN)
     suspend fun login(@Body request: BackendLoginRequestDto): Response<ApiResponseDto<BackendAuthResponseDto>>
+
+    @POST(AppConstants.ROUTE_AUTH_GOOGLE_LOGIN)
+    suspend fun loginWithGoogle(@Body request: BackendGoogleLoginRequestDto): Response<ApiResponseDto<BackendAuthResponseDto>>
 
     @POST(AppConstants.ROUTE_AUTH_LOGOUT)
     suspend fun logout(@Header("Authorization") authorization: String): Response<ApiResponseDto<Unit?>>

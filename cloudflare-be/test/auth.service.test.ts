@@ -65,6 +65,68 @@ describe("AuthService", () => {
 
     expect(repo.state.revokedSessionIds).toEqual(["session-1"]);
   });
+
+  it("logs in with Google and auto-creates jemaat account", async () => {
+    const repo = createFakeRepository();
+    const crypto = createFakeCrypto();
+    const googleVerifier = {
+      async verifyIdToken() {
+        return {
+          sub: "google-sub-1",
+          email: "google.user@example.com",
+          emailVerified: true,
+          fullName: "Google User"
+        };
+      }
+    };
+    const service = new AuthService(repo, crypto, googleVerifier, () => new Date("2026-05-17T00:00:00.000Z"));
+
+    const result = await service.loginWithGoogle({
+      idToken: "valid-google-token"
+    });
+
+    expect(result.user.email).toBe("google.user@example.com");
+    expect(result.user.role).toBe("JEMAAT");
+    expect(repo.state.createdUsers).toHaveLength(1);
+    expect(repo.state.createdUsers[0]?.username).toBe("google.user");
+  });
+
+  it("rejects Google login for admin account", async () => {
+    const repo = createFakeRepository({
+      user: {
+        id: "admin-1",
+        username: "admin1",
+        email: "admin@example.com",
+        password_hash: "hash",
+        full_name: "Admin User",
+        role: "ADMIN",
+        is_active: 1,
+        created_at: "2026-05-17T00:00:00.000Z",
+        updated_at: "2026-05-17T00:00:00.000Z"
+      }
+    });
+    const crypto = createFakeCrypto();
+    const googleVerifier = {
+      async verifyIdToken() {
+        return {
+          sub: "google-sub-admin",
+          email: "admin@example.com",
+          emailVerified: true,
+          fullName: "Admin User"
+        };
+      }
+    };
+    const service = new AuthService(repo, crypto, googleVerifier, () => new Date("2026-05-17T00:00:00.000Z"));
+
+    await expect(
+      service.loginWithGoogle({
+        idToken: "admin-google-token"
+      })
+    ).rejects.toMatchObject({
+      status: 403,
+      code: "GOOGLE_LOGIN_JEMAAT_ONLY"
+    });
+  });
 });
 
 function createFakeCrypto() {

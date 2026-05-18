@@ -14,12 +14,24 @@ const DEFAULT_TENANT = {
 };
 
 type AuthRouteDependencies = {
-  createService?: (db: D1Database) => AuthService;
+  createService?: (
+    db: D1Database,
+    options?: {
+      googleAllowedAudiences?: string[];
+    }
+  ) => AuthService;
 };
 
 export function createAuthRoute(deps: AuthRouteDependencies = {}) {
   const route = new Hono<{ Bindings: AppBindings }>();
   const createService = deps.createService ?? createAuthService;
+  const createServiceForContext = (c: { env: AppBindings }) => {
+    const googleAllowedAudiences = c.env.GOOGLE_OAUTH_CLIENT_IDS
+      ?.split(",")
+      .map((value) => value.trim())
+      .filter(Boolean) ?? [];
+    return createService(c.env.DB, { googleAllowedAudiences });
+  };
 
   route.post("/register", async (c) => {
     try {
@@ -30,7 +42,7 @@ export function createAuthRoute(deps: AuthRouteDependencies = {}) {
         fullName?: string;
       }>();
 
-      const service = createService(c.env.DB);
+      const service = createServiceForContext(c);
       const result = await service.register({
         username: body.username ?? body.email?.split("@")[0] ?? "",
         email: body.email ?? "",
@@ -52,7 +64,7 @@ export function createAuthRoute(deps: AuthRouteDependencies = {}) {
         password?: string;
       }>();
 
-      const service = createService(c.env.DB);
+      const service = createServiceForContext(c);
       const result = await service.login({
         identifier: body.identifier ?? body.email ?? "",
         password: body.password ?? ""
@@ -64,9 +76,26 @@ export function createAuthRoute(deps: AuthRouteDependencies = {}) {
     }
   });
 
+  route.post("/google-login", async (c) => {
+    try {
+      const body = await c.req.json<{
+        idToken?: string;
+      }>();
+
+      const service = createServiceForContext(c);
+      const result = await service.loginWithGoogle({
+        idToken: body.idToken ?? ""
+      });
+
+      return successResponse(toAuthResponse(result), { message: "Login success" });
+    } catch (error) {
+      return mapAuthError(error);
+    }
+  });
+
   route.get("/me", async (c) => {
     try {
-      const service = createService(c.env.DB);
+      const service = createServiceForContext(c);
       const sessionToken = getBearerToken(c.req.header("Authorization"));
       const user = await service.me(sessionToken);
 
@@ -78,7 +107,7 @@ export function createAuthRoute(deps: AuthRouteDependencies = {}) {
 
   route.post("/logout", async (c) => {
     try {
-      const service = createService(c.env.DB);
+      const service = createServiceForContext(c);
       const sessionToken = getBearerToken(c.req.header("Authorization"));
       await service.logout(sessionToken);
 

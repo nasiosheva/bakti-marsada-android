@@ -28,6 +28,14 @@ class FakeAuthRepository(
         }
     }
 
+    override suspend fun loginWithGoogle(idToken: String): AppResult<SessionState> {
+        return loginResult.also { result ->
+            if (result is AppResult.Success) {
+                sessionFlow.value = result.data
+            }
+        }
+    }
+
     override suspend fun logout() {
         sessionFlow.value = null
     }

@@ -12,6 +12,7 @@ import com.lampung.baktimarsada.network.dto.EventProgramItemDto
 import com.lampung.baktimarsada.network.dto.FinanceReportDto
 import com.lampung.baktimarsada.network.dto.CreateUserAccountRequestDto
 import com.lampung.baktimarsada.network.dto.CreateUserAccountResponseDto
+import com.lampung.baktimarsada.network.dto.GoogleLoginRequestDto
 import com.lampung.baktimarsada.network.dto.LoginRequestDto
 import com.lampung.baktimarsada.network.dto.MemberDto
 import com.lampung.baktimarsada.network.dto.PaymentObligationDto
@@ -79,6 +80,24 @@ class FirebaseAppRemoteDataSource @Inject constructor(
             subTenantName = TenantRuntime.current.subTenantName,
             sectorId = sectorId,
             sectorName = sectorName
+        )
+    }
+
+    override suspend fun loginWithGoogle(request: GoogleLoginRequestDto): SessionResponseDto {
+        if (request.idToken.isBlank()) {
+            throw IllegalArgumentException("Google login token is required")
+        }
+        return SessionResponseDto(
+            authToken = "firebase-google-${UUID.randomUUID()}",
+            userId = "firebase-google-user",
+            displayName = "Google Jemaat",
+            role = "JEMAAT",
+            tenantId = TenantRuntime.current.tenantId,
+            tenantName = TenantRuntime.current.tenantName,
+            subTenantId = TenantRuntime.current.subTenantId,
+            subTenantName = TenantRuntime.current.subTenantName,
+            sectorId = TenantRuntime.current.defaultSectorId,
+            sectorName = TenantRuntime.current.defaultSectorName
         )
     }
 
