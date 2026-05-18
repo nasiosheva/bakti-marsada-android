@@ -70,6 +70,7 @@
     <string name="tab_members">Anggota</string>
     <string name="tab_finance">Keuangan</string>
     <string name="tab_payments">Tagihan</string>
+    <string name="tab_arisan">Arisan</string>
     <string name="tab_profile">Profil</string>
     <string name="jemaat_count_events">%1$d acara</string>
     <string name="jemaat_count_members">%1$d anggota</string>
@@ -94,6 +95,7 @@
     <string name="event_section_above_one_month">Di Atas 1 Bulan</string>
     <string name="event_section_with_count">%1$s (%2$d)</string>
     <string name="action_scroll_to_top">Ke Atas</string>
+    <string name="action_open_maps">Buka Maps</string>
     <string name="program_empty">Belum ada susunan acara.</string>
     <string name="template_program_empty">Belum ada bagian template.</string>
     <string name="program_item_number">Bagian %1$d</string>
@@ -209,6 +211,23 @@
     <string name="payment_status_unpaid">Belum Dibayar</string>
     <string name="payment_status_paid">Lunas</string>
     <string name="payment_status_overdue">Jatuh Tempo Lewat</string>
+    <string name="arisan_title">Arisan Sektor</string>
+    <string name="arisan_contribution_amount">Iuran per periode: %1$s</string>
+    <string name="arisan_participant_count">Peserta</string>
+    <string name="arisan_paid_count">Sudah Bayar</string>
+    <string name="arisan_action_generate_dues">Buat Tagihan</string>
+    <string name="arisan_action_draw_winner">Undi</string>
+    <string name="arisan_action_redraw">Undi Ulang</string>
+    <string name="arisan_redraw_confirm_title">Konfirmasi Undi Ulang</string>
+    <string name="arisan_redraw_confirm_message">Pemenang saat ini adalah %1$s. Undi ulang akan memilih nama berbeda jika masih ada kandidat lain.</string>
+    <string name="arisan_my_due_status">Status Iuran Saya</string>
+    <string name="arisan_not_registered">Akun ini belum cocok dengan data peserta arisan.</string>
+    <string name="arisan_schedule_title">Periode Aktif</string>
+    <string name="arisan_due_date">Jatuh tempo: %1$s</string>
+    <string name="arisan_winner">Pemenang: %1$s</string>
+    <string name="arisan_participants_title">Peserta Arisan</string>
+    <string name="arisan_empty_participants">Belum ada peserta. Tambahkan anggota sektor terlebih dahulu.</string>
+    <string name="arisan_due_not_generated">Tagihan belum dibuat</string>
     <string name="pagination_summary">%1$d dari %2$d data</string>
 
 </resources>

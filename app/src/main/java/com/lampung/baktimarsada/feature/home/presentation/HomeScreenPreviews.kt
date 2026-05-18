@@ -36,6 +36,7 @@ private fun JemaatHomeScreenPreview() {
             membersContent = { Text("Members placeholder") },
             financeContent = { Text("Finance placeholder") },
             paymentsContent = { Text("Payments placeholder") },
+            arisanContent = { _ -> Text("Arisan placeholder") },
             onOpenProfile = {}
         )
     }

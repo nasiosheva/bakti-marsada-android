@@ -71,7 +71,7 @@ class SimulateAppRemoteDataSource @Inject constructor() : AppRemoteDataSource {
                 title = "Partangiangan Rabu Malam",
                 description = "Ibadah rutin sektor dengan renungan dan doa syafaat.",
                 scheduledAt = "2026-05-20 19:30",
-                location = "Rumah Keluarga Sinaga",
+                location = "Rumah Keluarga Sinaga - https://maps.app.goo.gl/example",
                 sectorId = TenantRuntime.current.defaultSectorId,
                 sectorName = TenantRuntime.current.defaultSectorName,
                 programItems = templateItemsForEvent("event-1", seedSectorTemplateItems("template-sector"))
@@ -328,6 +328,30 @@ class SimulateAppRemoteDataSource @Inject constructor() : AppRemoteDataSource {
                 amount = 250_000,
                 dueDate = "2026-05-10",
                 status = "OVERDUE",
+                sectorId = TenantRuntime.current.defaultSectorId,
+                sectorName = TenantRuntime.current.defaultSectorName
+            ),
+            PaymentObligationDto(
+                id = "payment-arisan-1",
+                memberId = "member-1",
+                memberName = "P. Simanjuntak",
+                title = "Iuran Arisan Mei 2026",
+                description = "Iuran arisan sektor untuk periode Mei 2026.",
+                amount = 100_000,
+                dueDate = "2026-05-30",
+                status = "PAID",
+                sectorId = TenantRuntime.current.defaultSectorId,
+                sectorName = TenantRuntime.current.defaultSectorName
+            ),
+            PaymentObligationDto(
+                id = "payment-arisan-2",
+                memberId = "member-2",
+                memberName = "S. Sihombing",
+                title = "Iuran Arisan Mei 2026",
+                description = "Iuran arisan sektor untuk periode Mei 2026.",
+                amount = 100_000,
+                dueDate = "2026-05-30",
+                status = "UNPAID",
                 sectorId = TenantRuntime.current.defaultSectorId,
                 sectorName = TenantRuntime.current.defaultSectorName
             )

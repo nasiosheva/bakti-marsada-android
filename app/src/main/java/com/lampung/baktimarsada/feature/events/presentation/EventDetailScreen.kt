@@ -1,5 +1,7 @@
 package com.lampung.baktimarsada.feature.events.presentation
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -27,6 +29,7 @@ import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SmallFloatingActionButton
@@ -43,6 +46,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -304,6 +308,8 @@ private fun EventDetailInfoCard(
     event: EventDetail,
     isAdmin: Boolean
 ) {
+    val context = LocalContext.current
+    val locationUrl = remember(event.location) { event.location.extractFirstUrl() }
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
@@ -323,7 +329,27 @@ private fun EventDetailInfoCard(
             EventDetailInfoRow(
                 icon = Icons.Filled.LocationOn,
                 label = stringResource(id = R.string.form_location),
-                value = event.location
+                value = event.location,
+                trailing = {
+                    if (locationUrl != null) {
+                        IconButton(
+                            onClick = {
+                                runCatching {
+                                    context.startActivity(
+                                        Intent(Intent.ACTION_VIEW, Uri.parse(locationUrl))
+                                    )
+                                }
+                            },
+                            modifier = Modifier.size(40.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.LocationOn,
+                                contentDescription = stringResource(id = R.string.action_open_maps),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                }
             )
             if (isAdmin) {
                 EventDetailInfoRow(
@@ -340,7 +366,8 @@ private fun EventDetailInfoCard(
 private fun EventDetailInfoRow(
     icon: ImageVector,
     label: String,
-    value: String
+    value: String,
+    trailing: @Composable (() -> Unit)? = null
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -376,6 +403,7 @@ private fun EventDetailInfoRow(
                 fontWeight = FontWeight.SemiBold
             )
         }
+        trailing?.invoke()
     }
 }
 
@@ -504,6 +532,13 @@ private fun EventLegacyDescriptionCard(description: String) {
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
+}
+
+private fun String.extractFirstUrl(): String? {
+    return Regex("""https?://\S+""")
+        .find(this)
+        ?.value
+        ?.trimEnd('.', ',', ';', ')', ']')
 }
 
 data class EventDetailUiState(

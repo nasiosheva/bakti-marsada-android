@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -67,6 +68,7 @@ import com.lampung.baktimarsada.domain.model.SessionState
 import com.lampung.baktimarsada.domain.model.TenantContext
 import com.lampung.baktimarsada.domain.model.UserRole
 import com.lampung.baktimarsada.feature.app.navigation.AppRoutes
+import com.lampung.baktimarsada.feature.arisan.presentation.ArisanRoute
 import com.lampung.baktimarsada.feature.events.presentation.EventRoute
 import com.lampung.baktimarsada.feature.finance.presentation.FinanceRoute
 import com.lampung.baktimarsada.feature.members.presentation.MemberRoute
@@ -98,6 +100,13 @@ fun JemaatHomeRoute(
         membersContent = { MemberRoute(isAdmin = false, session = session) },
         financeContent = { FinanceRoute(isAdmin = false, session = session) },
         paymentsContent = { PaymentRoute(isAdmin = false, session = session) },
+        arisanContent = { bottomContentPadding ->
+            ArisanRoute(
+                isAdmin = false,
+                session = session,
+                bottomContentPadding = bottomContentPadding
+            )
+        },
         onOpenProfile = onOpenProfile
     )
 }
@@ -111,6 +120,7 @@ fun JemaatHomeScreen(
     membersContent: @Composable () -> Unit,
     financeContent: @Composable () -> Unit,
     paymentsContent: @Composable () -> Unit,
+    arisanContent: @Composable (bottomContentPadding: Dp) -> Unit,
     onOpenProfile: () -> Unit
 ) {
     val navController = rememberNavController()
@@ -123,7 +133,8 @@ fun JemaatHomeScreen(
         JemaatBottomDestination(AppRoutes.JEMAAT_EVENTS, stringResource(id = R.string.tab_events), Icons.Filled.Event),
         JemaatBottomDestination(AppRoutes.JEMAAT_MEMBERS, stringResource(id = R.string.tab_members), Icons.Filled.Groups),
         JemaatBottomDestination(AppRoutes.JEMAAT_FINANCE, stringResource(id = R.string.tab_finance), Icons.Filled.AccountBalanceWallet),
-        JemaatBottomDestination(AppRoutes.JEMAAT_PAYMENTS, stringResource(id = R.string.tab_payments), Icons.Filled.Payments)
+        JemaatBottomDestination(AppRoutes.JEMAAT_PAYMENTS, stringResource(id = R.string.tab_payments), Icons.Filled.Payments),
+        JemaatBottomDestination(AppRoutes.JEMAAT_ARISAN, stringResource(id = R.string.tab_arisan), Icons.Filled.Savings)
     )
     val currentSection = destinations.currentLabel(currentRoute)
         .ifBlank { stringResource(id = R.string.tab_profile) }
@@ -205,6 +216,9 @@ fun JemaatHomeScreen(
                     }
                     composable(AppRoutes.JEMAAT_PAYMENTS) {
                         paymentsContent()
+                    }
+                    composable(AppRoutes.JEMAAT_ARISAN) {
+                        arisanContent(innerPadding.calculateBottomPadding())
                     }
                 }
             }
@@ -522,6 +536,7 @@ private fun JemaatHomeScreenPreview() {
             membersContent = { Text("Members placeholder", modifier = Modifier.padding(16.dp)) },
             financeContent = { Text("Finance placeholder", modifier = Modifier.padding(16.dp)) },
             paymentsContent = { Text("Payments placeholder", modifier = Modifier.padding(16.dp)) },
+            arisanContent = { _ -> Text("Arisan placeholder", modifier = Modifier.padding(16.dp)) },
             onOpenProfile = {}
         )
     }
@@ -542,6 +557,7 @@ private fun JemaatHomeScreenDarkPreview() {
             membersContent = { Text("Members placeholder", modifier = Modifier.padding(16.dp)) },
             financeContent = { Text("Finance placeholder", modifier = Modifier.padding(16.dp)) },
             paymentsContent = { Text("Payments placeholder", modifier = Modifier.padding(16.dp)) },
+            arisanContent = { _ -> Text("Arisan placeholder", modifier = Modifier.padding(16.dp)) },
             onOpenProfile = {}
         )
     }
@@ -562,6 +578,7 @@ private fun JemaatHomeScreenTabletPreview() {
             membersContent = { Text("Members placeholder", modifier = Modifier.padding(16.dp)) },
             financeContent = { Text("Finance placeholder", modifier = Modifier.padding(16.dp)) },
             paymentsContent = { Text("Payments placeholder", modifier = Modifier.padding(16.dp)) },
+            arisanContent = { _ -> Text("Arisan placeholder", modifier = Modifier.padding(16.dp)) },
             onOpenProfile = {}
         )
     }
@@ -578,6 +595,7 @@ private fun JemaatHomeScreenLongNamePreview() {
             membersContent = { Text("Members placeholder", modifier = Modifier.padding(16.dp)) },
             financeContent = { Text("Finance placeholder", modifier = Modifier.padding(16.dp)) },
             paymentsContent = { Text("Payments placeholder", modifier = Modifier.padding(16.dp)) },
+            arisanContent = { _ -> Text("Arisan placeholder", modifier = Modifier.padding(16.dp)) },
             onOpenProfile = {}
         )
     }

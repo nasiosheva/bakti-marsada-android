@@ -16,6 +16,7 @@ object AppRoutes {
     const val JEMAAT_MEMBERS = "jemaat_members"
     const val JEMAAT_FINANCE = "jemaat_finance"
     const val JEMAAT_PAYMENTS = "jemaat_payments"
+    const val JEMAAT_ARISAN = "jemaat_arisan"
     const val JEMAAT_PROFILE = "jemaat_profile"
 
     const val ADMIN_DASHBOARD = "admin_dashboard"
@@ -30,6 +31,7 @@ object AppRoutes {
     const val ADMIN_MEMBERS = "admin_members"
     const val ADMIN_FINANCE = "admin_finance"
     const val ADMIN_PAYMENTS = "admin_payments"
+    const val ADMIN_ARISAN = "admin_arisan"
     const val ADMIN_PROFILE = "admin_profile"
     const val ADMIN_USER_CREATE = "admin_user_create"
 

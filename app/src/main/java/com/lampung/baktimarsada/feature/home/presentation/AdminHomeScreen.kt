@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PersonAdd
+import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -70,6 +71,7 @@ import com.lampung.baktimarsada.domain.model.SessionState
 import com.lampung.baktimarsada.domain.model.TenantContext
 import com.lampung.baktimarsada.domain.model.UserRole
 import com.lampung.baktimarsada.feature.app.navigation.AppRoutes
+import com.lampung.baktimarsada.feature.arisan.presentation.ArisanRoute
 import com.lampung.baktimarsada.feature.dashboard.presentation.AdminDashboardRoute
 import com.lampung.baktimarsada.feature.events.presentation.EventRoute
 import com.lampung.baktimarsada.feature.finance.presentation.FinanceRoute
@@ -106,6 +108,13 @@ fun AdminHomeRoute(
         membersContent = { MemberRoute(isAdmin = true, session = session) },
         financeContent = { FinanceRoute(isAdmin = true, session = session) },
         paymentsContent = { PaymentRoute(isAdmin = true, session = session) },
+        arisanContent = { bottomContentPadding ->
+            ArisanRoute(
+                isAdmin = true,
+                session = session,
+                bottomContentPadding = bottomContentPadding
+            )
+        },
         onOpenCreateUser = onOpenCreateUser,
         onOpenProfile = onOpenProfile
     )
@@ -120,6 +129,7 @@ fun AdminHomeScreen(
     membersContent: @Composable () -> Unit,
     financeContent: @Composable () -> Unit,
     paymentsContent: @Composable () -> Unit,
+    arisanContent: @Composable (bottomContentPadding: Dp) -> Unit,
     onOpenCreateUser: () -> Unit,
     onOpenProfile: () -> Unit
 ) {
@@ -134,7 +144,8 @@ fun AdminHomeScreen(
         AdminBottomDestination(AppRoutes.ADMIN_EVENTS, stringResource(id = R.string.tab_events), Icons.Filled.Event),
         AdminBottomDestination(AppRoutes.ADMIN_MEMBERS, stringResource(id = R.string.tab_members), Icons.Filled.Groups),
         AdminBottomDestination(AppRoutes.ADMIN_FINANCE, stringResource(id = R.string.tab_finance), Icons.Filled.AccountBalanceWallet),
-        AdminBottomDestination(AppRoutes.ADMIN_PAYMENTS, stringResource(id = R.string.tab_payments), Icons.Filled.Payments)
+        AdminBottomDestination(AppRoutes.ADMIN_PAYMENTS, stringResource(id = R.string.tab_payments), Icons.Filled.Payments),
+        AdminBottomDestination(AppRoutes.ADMIN_ARISAN, stringResource(id = R.string.tab_arisan), Icons.Filled.Savings)
     )
     val currentSection = destinations.currentLabel(currentRoute)
         .ifBlank { stringResource(id = R.string.admin_home_title) }
@@ -219,6 +230,9 @@ fun AdminHomeScreen(
                     }
                     composable(AppRoutes.ADMIN_PAYMENTS) {
                         paymentsContent()
+                    }
+                    composable(AppRoutes.ADMIN_ARISAN) {
+                        arisanContent(innerPadding.calculateBottomPadding())
                     }
                 }
             }
@@ -538,6 +552,7 @@ private fun AdminHomeScreenPreview() {
             membersContent = { Text("Members placeholder", modifier = Modifier.padding(16.dp)) },
             financeContent = { Text("Finance placeholder", modifier = Modifier.padding(16.dp)) },
             paymentsContent = { Text("Payments placeholder", modifier = Modifier.padding(16.dp)) },
+            arisanContent = { _ -> Text("Arisan placeholder", modifier = Modifier.padding(16.dp)) },
             onOpenCreateUser = {},
             onOpenProfile = {}
         )
@@ -560,6 +575,7 @@ private fun AdminHomeScreenDarkPreview() {
             membersContent = { Text("Members placeholder", modifier = Modifier.padding(16.dp)) },
             financeContent = { Text("Finance placeholder", modifier = Modifier.padding(16.dp)) },
             paymentsContent = { Text("Payments placeholder", modifier = Modifier.padding(16.dp)) },
+            arisanContent = { _ -> Text("Arisan placeholder", modifier = Modifier.padding(16.dp)) },
             onOpenCreateUser = {},
             onOpenProfile = {}
         )
@@ -577,6 +593,7 @@ private fun AdminHomeTabletPreview() {
             membersContent = { Text("Members placeholder", modifier = Modifier.padding(16.dp)) },
             financeContent = { Text("Finance placeholder", modifier = Modifier.padding(16.dp)) },
             paymentsContent = { Text("Payments placeholder", modifier = Modifier.padding(16.dp)) },
+            arisanContent = { _ -> Text("Arisan placeholder", modifier = Modifier.padding(16.dp)) },
             onOpenCreateUser = {},
             onOpenProfile = {}
         )
