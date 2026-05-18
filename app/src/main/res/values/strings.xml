@@ -112,6 +112,7 @@
     <string name="admin_create_user_title">Buat Akun</string>
     <string name="admin_create_user_success">Akun berhasil dibuat</string>
     <string name="admin_create_user_error_default">Gagal membuat akun</string>
+    <string name="admin_create_user_password_min_length">Password minimal 8 karakter</string>
     <string name="user_list_empty">Belum ada akun pada role ini.</string>
 
     <string name="profile_title">Akun Bakti Marsada</string>

@@ -46,7 +46,7 @@ export class AuthRepository {
       .first<UserRecord>();
   }
 
-  async findAdminUserByUsername(username: string): Promise<UserRecord | null> {
+  async findUserByUsername(username: string): Promise<UserRecord | null> {
     return this.db
       .prepare(
         `SELECT * FROM users
@@ -54,16 +54,8 @@ export class AuthRepository {
            lower(username) = ?1
            OR lower(substr(email, 1, instr(email, '@') - 1)) = ?1
          )
-           AND upper(role) = 'ADMIN'
          LIMIT 1`
       )
-      .bind(username.toLowerCase())
-      .first<UserRecord>();
-  }
-
-  async findUserByUsername(username: string): Promise<UserRecord | null> {
-    return this.db
-      .prepare("SELECT * FROM users WHERE lower(username) = ?1 LIMIT 1")
       .bind(username.toLowerCase())
       .first<UserRecord>();
   }

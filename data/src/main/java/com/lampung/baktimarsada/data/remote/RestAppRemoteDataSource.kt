@@ -21,10 +21,11 @@ abstract class RestAppRemoteDataSource(
 ) : AppRemoteDataSource {
 
     override suspend fun login(request: LoginRequestDto): SessionResponseDto {
+        val normalizedIdentifier = request.identifier.trim()
         val response = apiService.login(
             BackendLoginRequestDto(
-                email = request.identifier.trim(),
-                identifier = request.identifier.trim(),
+                email = null,
+                identifier = normalizedIdentifier,
                 password = request.password
             )
         )

@@ -94,7 +94,7 @@ export class AuthService {
 
     const user = identifier.includes("@")
       ? await this.repository.findUserByEmail(identifier)
-      : await this.repository.findAdminUserByUsername(identifier);
+      : await this.repository.findUserByUsername(identifier);
     if (!user || user.is_active !== 1) {
       throw new AuthError(401, "INVALID_CREDENTIALS", "Invalid credentials");
     }

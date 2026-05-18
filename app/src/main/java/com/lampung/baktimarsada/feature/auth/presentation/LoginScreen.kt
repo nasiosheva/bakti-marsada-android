@@ -44,6 +44,7 @@ import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
@@ -60,6 +61,7 @@ import com.lampung.baktimarsada.domain.model.UserRole
 import com.lampung.baktimarsada.domain.usecase.LoginUseCase
 import com.lampung.baktimarsada.ui.component.BaktiSectionMessage
 import com.lampung.baktimarsada.ui.component.BaktiTextInput
+import com.lampung.baktimarsada.ui.theme.BaktiMarsadaTheme
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -509,3 +511,46 @@ class LoginViewModel @Inject constructor(
 }
 
 // created by Mories Deo Hutapea, S.E.,S.Kom
+
+@Preview(name = "Login - default", showBackground = true)
+@Composable
+private fun LoginScreenDefaultPreview() {
+    BaktiMarsadaTheme {
+        LoginScreen(
+            state = LoginUiState(
+                identifier = "admin@demo.com",
+                password = "password123"
+            ),
+            onIdentifierChanged = {},
+            onPasswordChanged = {},
+            onLoginClicked = {},
+            onLoginAsAdminClicked = {},
+            onLoginAsJemaatClicked = {},
+            onResetAndLoginAsAdminClicked = {},
+            isSimulationEnabled = true
+        )
+    }
+}
+
+@Preview(name = "Login - validation error", showBackground = true)
+@Composable
+private fun LoginScreenValidationErrorPreview() {
+    BaktiMarsadaTheme {
+        LoginScreen(
+            state = LoginUiState(
+                identifier = "",
+                password = "bad",
+                identifierError = "Identifier wajib diisi",
+                passwordError = "Password wajib diisi",
+                errorMessage = "Login gagal"
+            ),
+            onIdentifierChanged = {},
+            onPasswordChanged = {},
+            onLoginClicked = {},
+            onLoginAsAdminClicked = {},
+            onLoginAsJemaatClicked = {},
+            onResetAndLoginAsAdminClicked = {},
+            isSimulationEnabled = false
+        )
+    }
+}
