@@ -348,7 +348,7 @@ private fun LoginHeader(
         }
         if (isSimulationEnabled) {
             Surface(
-                shape = RoundedCornerShape(8.dp),
+                shape = RoundedCornerShape(10.dp),
                 color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.86f),
                 contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
                 border = BorderStroke(
@@ -372,15 +372,15 @@ private fun LoginFormCard(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.98f)
         ),
         border = BorderStroke(
             width = 1.dp,
-            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.70f)
+            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Box(modifier = Modifier.fillMaxWidth()) {
             Box(
@@ -414,7 +414,7 @@ private fun LoginPrimaryButton(
     Button(
         onClick = onClick,
         enabled = enabled,
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(14.dp),
         colors = ButtonDefaults.buttonColors(
             containerColor = MaterialTheme.colorScheme.primary,
             contentColor = MaterialTheme.colorScheme.onPrimary
@@ -436,7 +436,7 @@ private fun GoogleSignInButton(
     OutlinedButton(
         onClick = onClick,
         enabled = enabled,
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(14.dp),
         border = BorderStroke(
             width = 1.dp,
             color = MaterialTheme.colorScheme.outline.copy(alpha = if (enabled) 0.58f else 0.24f)
@@ -487,15 +487,15 @@ private fun DemoLoginCard(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.84f)
         ),
         border = BorderStroke(
             width = 1.dp,
-            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.62f)
+            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(
             modifier = Modifier
@@ -535,7 +535,7 @@ private fun DemoLoginCard(
                 OutlinedButton(
                     onClick = onLoginAsAdminClicked,
                     enabled = !isLoading,
-                    shape = RoundedCornerShape(8.dp),
+                    shape = RoundedCornerShape(14.dp),
                     modifier = Modifier
                         .weight(1f)
                         .semantics { testTag = "login_demo_admin_button" }
@@ -545,7 +545,7 @@ private fun DemoLoginCard(
                 OutlinedButton(
                     onClick = onLoginAsJemaatClicked,
                     enabled = !isLoading,
-                    shape = RoundedCornerShape(8.dp),
+                    shape = RoundedCornerShape(14.dp),
                     modifier = Modifier
                         .weight(1f)
                         .semantics { testTag = "login_demo_jemaat_button" }
@@ -556,7 +556,7 @@ private fun DemoLoginCard(
             OutlinedButton(
                 onClick = onResetAndLoginAsAdminClicked,
                 enabled = !isLoading,
-                shape = RoundedCornerShape(8.dp),
+                shape = RoundedCornerShape(14.dp),
                 modifier = Modifier
                     .fillMaxWidth()
                     .semantics { testTag = "login_demo_reset_admin_button" }

@@ -1,5 +1,8 @@
 package com.lampung.baktimarsada.feature.arisan.presentation
 
+import android.app.Activity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -10,6 +13,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -40,6 +44,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -61,6 +66,7 @@ import com.lampung.baktimarsada.domain.model.PaymentStatus
 import com.lampung.baktimarsada.domain.model.SectorContext
 import com.lampung.baktimarsada.domain.model.SessionState
 import com.lampung.baktimarsada.domain.model.UserRole
+import com.lampung.baktimarsada.feature.roulette.presentation.RouletteLauncher
 import com.lampung.baktimarsada.repository.MemberRepository
 import com.lampung.baktimarsada.repository.PaymentObligationRepository
 import com.lampung.baktimarsada.ui.component.BaktiBottomSheet
@@ -84,6 +90,15 @@ fun ArisanRoute(
     viewModel: ArisanViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val rouletteLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val winnerName = RouletteLauncher.parseWinnerName(result)
+        if (!winnerName.isNullOrBlank()) {
+            viewModel.setWinner(winnerName)
+        }
+    }
 
     LaunchedEffect(session.sectorContext.sectorId) {
         viewModel.refresh(session.sectorContext)
@@ -95,7 +110,18 @@ fun ArisanRoute(
         state = state,
         bottomContentPadding = bottomContentPadding,
         onGeneratePeriod = { viewModel.generatePeriod(session.sectorContext) },
-        onDrawWinner = viewModel::drawWinner
+        onDrawWinner = {
+            val candidates = state.buildWinnerCandidates()
+            if (candidates.isEmpty()) {
+                viewModel.setWinner("")
+            } else {
+                val intent = RouletteLauncher.createIntent(
+                    context = context,
+                    participantNames = candidates.map { it.memberName }
+                )
+                rouletteLauncher.launch(intent)
+            }
+        }
     )
 }
 
@@ -170,20 +196,13 @@ class ArisanViewModel @Inject constructor(
         }
     }
 
-    fun drawWinner() {
-        val participants = _state.value.group?.participants.orEmpty()
-        val previousWinnerName = _state.value.winnerName
-        val candidates = participants
-            .filter { it.hasPaid }
-            .ifEmpty { participants }
-        val winnerPool = candidates
-            .filterNot { it.memberName == previousWinnerName }
-            .ifEmpty { candidates }
-        val winner = winnerPool.randomOrNull()
+    fun setWinner(winnerName: String) {
         _state.update { state ->
             state.copy(
-                winnerName = winner?.memberName,
-                message = winner?.let { "Pemenang arisan: ${it.memberName}" } ?: "Belum ada peserta arisan."
+                winnerName = winnerName.takeIf { it.isNotBlank() },
+                message = winnerName.takeIf { it.isNotBlank() }
+                    ?.let { "Pemenang arisan: $it" }
+                    ?: "Belum ada peserta arisan."
             )
         }
     }
@@ -227,6 +246,16 @@ class ArisanViewModel @Inject constructor(
         private const val ARISAN_DUE_DATE = "2026-05-30"
         private const val ARISAN_CONTRIBUTION_AMOUNT = 100_000L
     }
+}
+
+private fun ArisanUiState.buildWinnerCandidates(): List<ArisanParticipant> {
+    val participants = group?.participants.orEmpty()
+    val candidates = participants
+        .filter { it.hasPaid }
+        .ifEmpty { participants }
+    return candidates
+        .filterNot { it.memberName == winnerName }
+        .ifEmpty { candidates }
 }
 
 @Composable
@@ -322,11 +351,7 @@ private fun ArisanContent(
                 }
             }
             item {
-                Text(
-                    text = stringResource(id = R.string.arisan_schedule_title),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
+                ArisanSectionHeader(title = stringResource(id = R.string.arisan_schedule_title))
             }
             item {
                 ArisanPeriodCard(
@@ -335,10 +360,9 @@ private fun ArisanContent(
                 )
             }
             item {
-                Text(
-                    text = stringResource(id = R.string.arisan_participants_title),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+                ArisanSectionHeader(
+                    title = stringResource(id = R.string.arisan_participants_title),
+                    count = participants.size.takeIf { it > 0 }
                 )
             }
             if (participants.isEmpty()) {
@@ -395,7 +419,11 @@ private fun ArisanRedrawConfirmationSheet(
                 Button(
                     onClick = onConfirm,
                     modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(14.dp)
+                    shape = RoundedCornerShape(14.dp),
+                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer,
+                        contentColor = MaterialTheme.colorScheme.onErrorContainer
+                    )
                 ) {
                     Text(text = stringResource(id = R.string.arisan_action_redraw))
                 }
@@ -423,6 +451,7 @@ private fun ArisanHeroCard(
                     Brush.linearGradient(
                         colors = listOf(
                             MaterialTheme.colorScheme.primary,
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.82f),
                             MaterialTheme.colorScheme.tertiary.copy(alpha = 0.85f)
                         )
                     )
@@ -549,35 +578,96 @@ private fun ArisanParticipantCard(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
-        Row(
-            modifier = Modifier.padding(14.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        Row(modifier = Modifier.fillMaxWidth()) {
+            Box(
+                modifier = Modifier
+                    .width(4.dp)
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                MaterialTheme.colorScheme.primary,
+                                MaterialTheme.colorScheme.tertiary
+                            )
+                        )
+                    )
+            ) {
+                Spacer(modifier = Modifier.height(72.dp))
+            }
+            Row(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(14.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Surface(
+                    modifier = Modifier.size(42.dp),
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(imageVector = Icons.Filled.Wallet, contentDescription = null)
+                    }
+                }
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(participant.memberName, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                    if (showPaymentStatus) {
+                        Text(
+                            text = participant.paymentStatus?.toPaymentStatusLabel() ?: stringResource(id = R.string.arisan_due_not_generated),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ArisanSectionHeader(
+    title: String,
+    count: Int? = null
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 4.dp, start = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Surface(
+            modifier = Modifier
+                .width(4.dp)
+                .height(20.dp),
+            shape = RoundedCornerShape(2.dp),
+            color = MaterialTheme.colorScheme.primary
+        ) {}
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.weight(1f)
+        )
+        if (count != null) {
             Surface(
-                modifier = Modifier.size(42.dp),
-                shape = CircleShape,
+                shape = RoundedCornerShape(10.dp),
                 color = MaterialTheme.colorScheme.primaryContainer,
                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer
             ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(imageVector = Icons.Filled.Wallet, contentDescription = null)
-                }
-            }
-            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(participant.memberName, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                if (showPaymentStatus) {
-                    Text(
-                        text = participant.paymentStatus?.toPaymentStatusLabel() ?: stringResource(id = R.string.arisan_due_not_generated),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+                Text(
+                    text = "$count",
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp),
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold
+                )
             }
         }
     }

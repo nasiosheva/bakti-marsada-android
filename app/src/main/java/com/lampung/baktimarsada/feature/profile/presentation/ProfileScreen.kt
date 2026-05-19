@@ -29,6 +29,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -119,7 +120,7 @@ fun ProfileScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .semantics { testTag = "profile_test_send_notification_button" },
-                isPrimary = true
+                isSecondary = true
             )
             ProfileActionCard(
                 icon = Icons.AutoMirrored.Filled.Logout,
@@ -147,6 +148,7 @@ fun ProfileScreen(
                     OutlinedButton(
                         onClick = { showLogoutSheet = false },
                         modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(14.dp)
                     ) {
                         Text(text = stringResource(id = R.string.action_cancel))
                     }
@@ -155,7 +157,12 @@ fun ProfileScreen(
                             showLogoutSheet = false
                             onLogout()
                         },
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer,
+                            contentColor = MaterialTheme.colorScheme.onErrorContainer
+                        )
                     ) {
                         Text(text = stringResource(id = R.string.action_logout))
                     }
@@ -241,9 +248,9 @@ private fun ProfileInfoSection(
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(22.dp),
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(
@@ -380,29 +387,12 @@ private fun ProfileActionCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     isPrimary: Boolean = false,
+    isSecondary: Boolean = false,
     isDestructive: Boolean = false
 ) {
-    val containerColor = when {
-        isDestructive -> MaterialTheme.colorScheme.errorContainer
-        isPrimary -> MaterialTheme.colorScheme.primary
-        else -> MaterialTheme.colorScheme.surface
-    }
-    val contentColor = when {
-        isDestructive -> MaterialTheme.colorScheme.onErrorContainer
-        isPrimary -> MaterialTheme.colorScheme.onPrimary
-        else -> MaterialTheme.colorScheme.onSurface
-    }
-
-    Button(
-        onClick = onClick,
-        modifier = modifier.height(54.dp),
-        shape = RoundedCornerShape(18.dp),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = containerColor,
-            contentColor = contentColor
-        ),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp)
-    ) {
+    val shape = RoundedCornerShape(18.dp)
+    val contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp)
+    val labelContent: @Composable () -> Unit = {
         Icon(imageVector = icon, contentDescription = null)
         Spacer(modifier = Modifier.width(10.dp))
         Text(
@@ -410,6 +400,43 @@ private fun ProfileActionCard(
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.Bold
         )
+    }
+
+    when {
+        isSecondary -> {
+            FilledTonalButton(
+                onClick = onClick,
+                modifier = modifier.height(54.dp),
+                shape = shape,
+                contentPadding = contentPadding
+            ) {
+                labelContent()
+            }
+        }
+        else -> {
+            val containerColor = when {
+                isDestructive -> MaterialTheme.colorScheme.errorContainer
+                isPrimary -> MaterialTheme.colorScheme.primary
+                else -> MaterialTheme.colorScheme.surface
+            }
+            val contentColor = when {
+                isDestructive -> MaterialTheme.colorScheme.onErrorContainer
+                isPrimary -> MaterialTheme.colorScheme.onPrimary
+                else -> MaterialTheme.colorScheme.onSurface
+            }
+            Button(
+                onClick = onClick,
+                modifier = modifier.height(54.dp),
+                shape = shape,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = containerColor,
+                    contentColor = contentColor
+                ),
+                contentPadding = contentPadding
+            ) {
+                labelContent()
+            }
+        }
     }
 }
 

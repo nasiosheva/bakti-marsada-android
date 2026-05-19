@@ -151,6 +151,7 @@ dependencies {
     implementation(project(":data"))
     implementation(project(":ui"))
     implementation(project(":firebase-core"))
+    implementation(project(":feature-roulette"))
     implementation(project(":data-source-cloudflare"))
     implementation(project(":data-source-python"))
     implementation(project(":data-source-firebase"))
@@ -208,7 +209,7 @@ dependencies {
     add("simulateImplementation", libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.chucker)
     add("simulateImplementation", libs.chucker)
-    releaseImplementation(libs.chucker)
+    releaseImplementation(libs.chucker.no.op)
 }
 
 val googleServicesConfigCandidates = listOf(
