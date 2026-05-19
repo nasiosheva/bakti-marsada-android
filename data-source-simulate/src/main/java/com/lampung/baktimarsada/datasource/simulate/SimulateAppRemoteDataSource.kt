@@ -96,6 +96,42 @@ class SimulateAppRemoteDataSource @Inject constructor() : AppRemoteDataSource {
                 location = "Rumah Keluarga Hutagalung",
                 sectorId = TenantRuntime.current.defaultSectorId,
                 sectorName = TenantRuntime.current.defaultSectorName
+            ),
+            EventDto(
+                id = "event-4",
+                title = "Persiapan Ibadah Minggu",
+                description = "Koordinasi liturgis, song leader, dan petugas kolektan.",
+                scheduledAt = "2026-06-01 19:30",
+                location = "Ruang Konsistori HKBP Bethesda",
+                sectorId = TenantRuntime.current.defaultSectorId,
+                sectorName = TenantRuntime.current.defaultSectorName
+            ),
+            EventDto(
+                id = "event-5",
+                title = "Partangiangan Lansia",
+                description = "Persekutuan khusus lansia dengan fokus penguatan iman dan kesehatan rohani.",
+                scheduledAt = "2026-06-05 17:00",
+                location = "Rumah Keluarga Siahaan",
+                sectorId = TenantRuntime.current.defaultSectorId,
+                sectorName = TenantRuntime.current.defaultSectorName
+            ),
+            EventDto(
+                id = "event-6",
+                title = "PA Sektor Pemuda",
+                description = "Pendalaman Alkitab pemuda sektor disertai diskusi kelompok kecil.",
+                scheduledAt = "2026-06-08 19:00",
+                location = "Aula Pemuda HKBP - https://maps.app.goo.gl/hkbpPemuda",
+                sectorId = TenantRuntime.current.defaultSectorId,
+                sectorName = TenantRuntime.current.defaultSectorName
+            ),
+            EventDto(
+                id = "event-7",
+                title = "Kunjungan Diakonia",
+                description = "Kunjungan kasih ke keluarga yang sakit dan lanjut usia.",
+                scheduledAt = "2026-06-12 16:30",
+                location = "Titik kumpul: Rumah Pengurus Sektor",
+                sectorId = TenantRuntime.current.defaultSectorId,
+                sectorName = TenantRuntime.current.defaultSectorName
             )
         )
     }
@@ -256,6 +292,56 @@ class SimulateAppRemoteDataSource @Inject constructor() : AppRemoteDataSource {
                 roleInSector = "Jemaat",
                 sectorId = TenantRuntime.current.defaultSectorId,
                 sectorName = TenantRuntime.current.defaultSectorName
+            ),
+            MemberDto(
+                id = "member-4",
+                fullName = "L. Sitorus",
+                familyGroup = "Keluarga Sitorus/Simbolon",
+                phoneNumber = "081377889900",
+                address = "Jl. Cempaka No. 19",
+                roleInSector = "Bendahara Sektor",
+                sectorId = TenantRuntime.current.defaultSectorId,
+                sectorName = TenantRuntime.current.defaultSectorName
+            ),
+            MemberDto(
+                id = "member-5",
+                fullName = "M. Hutabarat",
+                familyGroup = "Keluarga Hutabarat/Sinaga",
+                phoneNumber = "082166554433",
+                address = "Jl. Anggrek No. 2",
+                roleInSector = "Jemaat",
+                sectorId = TenantRuntime.current.defaultSectorId,
+                sectorName = TenantRuntime.current.defaultSectorName
+            ),
+            MemberDto(
+                id = "member-6",
+                fullName = "E. Sitanggang",
+                familyGroup = "Keluarga Sitanggang/Marbun",
+                phoneNumber = "081299911122",
+                address = "Jl. Flamboyan No. 6",
+                roleInSector = "Guru Sekolah Minggu",
+                sectorId = TenantRuntime.current.defaultSectorId,
+                sectorName = TenantRuntime.current.defaultSectorName
+            ),
+            MemberDto(
+                id = "member-7",
+                fullName = "D. Tampubolon",
+                familyGroup = "Keluarga Tampubolon/Panjaitan",
+                phoneNumber = "082244667788",
+                address = "Jl. Sakura No. 12",
+                roleInSector = "Jemaat",
+                sectorId = TenantRuntime.current.defaultSectorId,
+                sectorName = TenantRuntime.current.defaultSectorName
+            ),
+            MemberDto(
+                id = "member-8",
+                fullName = "N. Manurung",
+                familyGroup = "Keluarga Manurung/Siregar",
+                phoneNumber = "081355443322",
+                address = "Jl. Dahlia No. 20",
+                roleInSector = "Koordinator Pemuda",
+                sectorId = TenantRuntime.current.defaultSectorId,
+                sectorName = TenantRuntime.current.defaultSectorName
             )
         )
     }
@@ -288,6 +374,36 @@ class SimulateAppRemoteDataSource @Inject constructor() : AppRemoteDataSource {
                 description = "Biaya cetak warta, transport pelayanan, dan alat tulis sektor.",
                 periodLabel = "April 2026",
                 amount = 875_000,
+                isVisibleToJemaat = true,
+                sectorId = TenantRuntime.current.defaultSectorId,
+                sectorName = TenantRuntime.current.defaultSectorName
+            ),
+            FinanceReportDto(
+                id = "finance-4",
+                title = "Laporan Retreat Pemuda",
+                description = "Rekap pemasukan iuran retreat dan pengeluaran konsumsi/kendaraan.",
+                periodLabel = "Juni 2026",
+                amount = 3_450_000,
+                isVisibleToJemaat = true,
+                sectorId = TenantRuntime.current.defaultSectorId,
+                sectorName = TenantRuntime.current.defaultSectorName
+            ),
+            FinanceReportDto(
+                id = "finance-5",
+                title = "Dana Sosial Kematian",
+                description = "Kas khusus dukungan keluarga duka di lingkungan sektor.",
+                periodLabel = "Semester I 2026",
+                amount = 5_200_000,
+                isVisibleToJemaat = false,
+                sectorId = TenantRuntime.current.defaultSectorId,
+                sectorName = TenantRuntime.current.defaultSectorName
+            ),
+            FinanceReportDto(
+                id = "finance-6",
+                title = "Biaya Operasional Paskah",
+                description = "Pengeluaran dekorasi, sound system, dan konsumsi ibadah paskah.",
+                periodLabel = "Maret 2026",
+                amount = 2_100_000,
                 isVisibleToJemaat = true,
                 sectorId = TenantRuntime.current.defaultSectorId,
                 sectorName = TenantRuntime.current.defaultSectorName
@@ -354,6 +470,66 @@ class SimulateAppRemoteDataSource @Inject constructor() : AppRemoteDataSource {
                 amount = 100_000,
                 dueDate = "2026-05-30",
                 status = "UNPAID",
+                sectorId = TenantRuntime.current.defaultSectorId,
+                sectorName = TenantRuntime.current.defaultSectorName
+            ),
+            PaymentObligationDto(
+                id = "payment-4",
+                memberId = "member-4",
+                memberName = "L. Sitorus",
+                title = "Iuran Sektor Juni",
+                description = "Iuran bulanan sektor bulan Juni 2026.",
+                amount = 50_000,
+                dueDate = "2026-06-25",
+                status = "UNPAID",
+                sectorId = TenantRuntime.current.defaultSectorId,
+                sectorName = TenantRuntime.current.defaultSectorName
+            ),
+            PaymentObligationDto(
+                id = "payment-5",
+                memberId = "member-5",
+                memberName = "M. Hutabarat",
+                title = "Kontribusi Retreat Pemuda",
+                description = "Kontribusi kegiatan retreat pemuda sektor.",
+                amount = 200_000,
+                dueDate = "2026-06-15",
+                status = "PAID",
+                sectorId = TenantRuntime.current.defaultSectorId,
+                sectorName = TenantRuntime.current.defaultSectorName
+            ),
+            PaymentObligationDto(
+                id = "payment-6",
+                memberId = "member-6",
+                memberName = "E. Sitanggang",
+                title = "Iuran Perayaan Natal",
+                description = "Tabungan iuran persiapan kegiatan natal sektor.",
+                amount = 150_000,
+                dueDate = "2026-06-20",
+                status = "OVERDUE",
+                sectorId = TenantRuntime.current.defaultSectorId,
+                sectorName = TenantRuntime.current.defaultSectorName
+            ),
+            PaymentObligationDto(
+                id = "payment-arisan-3",
+                memberId = "member-3",
+                memberName = "R. Naibaho",
+                title = "Iuran Arisan Juni 2026",
+                description = "Iuran arisan sektor untuk periode Juni 2026.",
+                amount = 100_000,
+                dueDate = "2026-06-30",
+                status = "UNPAID",
+                sectorId = TenantRuntime.current.defaultSectorId,
+                sectorName = TenantRuntime.current.defaultSectorName
+            ),
+            PaymentObligationDto(
+                id = "payment-arisan-4",
+                memberId = "member-4",
+                memberName = "L. Sitorus",
+                title = "Iuran Arisan Juni 2026",
+                description = "Iuran arisan sektor untuk periode Juni 2026.",
+                amount = 100_000,
+                dueDate = "2026-06-30",
+                status = "PAID",
                 sectorId = TenantRuntime.current.defaultSectorId,
                 sectorName = TenantRuntime.current.defaultSectorName
             )
@@ -615,6 +791,24 @@ class SimulateAppRemoteDataSource @Inject constructor() : AppRemoteDataSource {
                     password = TenantRuntime.current.sampleJemaatPassword,
                     userId = "jemaat-1",
                     displayName = "Jemaat Sektor 1",
+                    role = "JEMAAT",
+                    sectorId = TenantRuntime.current.defaultSectorId,
+                    sectorName = TenantRuntime.current.defaultSectorName
+                ),
+                SampleAccount(
+                    identifier = "admin2.simulate@baktimarsada.local",
+                    password = "AdminSimulate123",
+                    userId = "admin-2",
+                    displayName = "Admin Operasional",
+                    role = "ADMIN",
+                    sectorId = TenantRuntime.current.defaultSectorId,
+                    sectorName = TenantRuntime.current.defaultSectorName
+                ),
+                SampleAccount(
+                    identifier = "jemaat2.simulate@baktimarsada.local",
+                    password = "JemaatSimulate123",
+                    userId = "jemaat-2",
+                    displayName = "Jemaat Simulasi 2",
                     role = "JEMAAT",
                     sectorId = TenantRuntime.current.defaultSectorId,
                     sectorName = TenantRuntime.current.defaultSectorName

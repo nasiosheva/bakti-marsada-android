@@ -38,7 +38,7 @@ class FinanceViewModelTest {
         val report = viewModel.state.value.items.first()
         assertTrue(report.isVisibleToJemaat)
 
-        viewModel.toggleVisibility(report)
+        viewModel.onEvent(FinanceEvent.ToggleVisibility(report))
         advanceUntilIdle()
 
         assertFalse(viewModel.state.value.items.first().isVisibleToJemaat)

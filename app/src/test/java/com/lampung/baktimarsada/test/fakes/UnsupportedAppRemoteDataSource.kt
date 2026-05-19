@@ -7,6 +7,7 @@ import com.lampung.baktimarsada.network.dto.EventDto
 import com.lampung.baktimarsada.network.dto.FinanceReportDto
 import com.lampung.baktimarsada.network.dto.GoogleLoginRequestDto
 import com.lampung.baktimarsada.network.dto.LoginRequestDto
+import com.lampung.baktimarsada.network.dto.ArisanParticipantDto
 import com.lampung.baktimarsada.network.dto.MemberDto
 import com.lampung.baktimarsada.network.dto.PaymentObligationDto
 import com.lampung.baktimarsada.network.dto.SessionResponseDto
@@ -29,6 +30,9 @@ open class UnsupportedAppRemoteDataSource : AppRemoteDataSource {
     override suspend fun fetchPaymentObligations(sectorId: String): List<PaymentObligationDto> = unsupported()
     override suspend fun savePaymentObligation(obligation: PaymentObligationDto): PaymentObligationDto = unsupported()
     override suspend fun deletePaymentObligation(obligationId: String): Unit = unsupported()
+    override suspend fun fetchArisanParticipants(sectorId: String): List<ArisanParticipantDto> = unsupported()
+    override suspend fun replaceArisanParticipants(sectorId: String, memberIds: List<String>): List<ArisanParticipantDto> = unsupported()
+    override suspend fun fillArisanParticipantsFromMembers(sectorId: String): List<ArisanParticipantDto> = unsupported()
     override suspend fun fetchWorshipTemplates(sectorId: String): List<WorshipTemplateDto> = unsupported()
     override suspend fun saveWorshipTemplate(template: WorshipTemplateDto): WorshipTemplateDto = unsupported()
     override suspend fun deleteWorshipTemplate(templateId: String): Unit = unsupported()

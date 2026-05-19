@@ -1,6 +1,8 @@
 package com.lampung.baktimarsada.feature.roulette.presentation
 
 import android.graphics.Paint
+import android.media.AudioManager
+import android.media.ToneGenerator
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
@@ -28,8 +30,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -49,8 +53,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.lampung.baktimarsada.feature.roulette.R
 import com.lampung.baktimarsada.feature.roulette.model.RoulettePendingSpin
+import kotlin.math.abs
 import kotlin.math.cos
+import kotlin.math.floor
 import kotlin.math.sin
+import kotlinx.coroutines.launch
 
 @Composable
 internal fun RouletteWheelCard(
@@ -60,9 +67,32 @@ internal fun RouletteWheelCard(
     onSpinAnimationCompleted: (Long) -> Unit
 ) {
     val rotation = remember { Animatable(0f) }
+    val toneGenerator = remember {
+        runCatching { ToneGenerator(AudioManager.STREAM_MUSIC, TONE_VOLUME) }.getOrNull()
+    }
+    DisposableEffect(Unit) {
+        onDispose { toneGenerator?.release() }
+    }
 
     LaunchedEffect(pendingSpin?.requestId) {
         val currentRequest = pendingSpin ?: return@LaunchedEffect
+        val nameCount = names.size.coerceAtLeast(1)
+        val sweepPerSlice = 360f / nameCount
+        var lastTickedSlice = floor(rotation.value / sweepPerSlice).toInt()
+
+        val tickerJob = launch {
+            snapshotFlow { rotation.value }.collect { current ->
+                val currentSlice = floor(current / sweepPerSlice).toInt()
+                if (currentSlice != lastTickedSlice) {
+                    val ticksToPlay = abs(currentSlice - lastTickedSlice).coerceAtMost(2)
+                    repeat(ticksToPlay) {
+                        toneGenerator?.startTone(ToneGenerator.TONE_PROP_BEEP, TICK_DURATION_MS)
+                    }
+                    lastTickedSlice = currentSlice
+                }
+            }
+        }
+
         rotation.animateTo(
             targetValue = rotation.value + currentRequest.deltaRotationDegrees,
             animationSpec = tween(
@@ -70,6 +100,8 @@ internal fun RouletteWheelCard(
                 easing = FastOutSlowInEasing
             )
         )
+        tickerJob.cancel()
+        toneGenerator?.startTone(ToneGenerator.TONE_PROP_ACK, FINAL_TONE_DURATION_MS)
         onSpinAnimationCompleted(currentRequest.requestId)
     }
 
@@ -421,5 +453,9 @@ private fun RouletteWheel(
         }
     }
 }
+
+private const val TONE_VOLUME = 70
+private const val TICK_DURATION_MS = 30
+private const val FINAL_TONE_DURATION_MS = 320
 
 // created by Mories Deo Hutapea, S.E.,S.Kom

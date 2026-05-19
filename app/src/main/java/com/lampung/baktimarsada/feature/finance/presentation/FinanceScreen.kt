@@ -60,17 +60,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewModelScope
 import com.lampung.baktimarsada.R
 import com.lampung.baktimarsada.core.constants.AppConstants
-import com.lampung.baktimarsada.core.dispatchers.DispatcherProvider
-import com.lampung.baktimarsada.core.result.AppResult
 import com.lampung.baktimarsada.model.FinanceReportDetail
 import com.lampung.baktimarsada.domain.model.SessionState
-import com.lampung.baktimarsada.repository.AuthRepository
-import com.lampung.baktimarsada.repository.FinanceReportRepository
 import com.lampung.baktimarsada.ui.component.BaktiAmountInput
 import com.lampung.baktimarsada.ui.component.BaktiCheckbox
 import com.lampung.baktimarsada.ui.component.BaktiEmptyState
@@ -84,13 +78,6 @@ import com.lampung.baktimarsada.ui.component.BaktiTextInput
 import com.lampung.baktimarsada.ui.component.JemaatPill
 import com.lampung.baktimarsada.ui.theme.BaktiMarsadaTheme
 import com.lampung.baktimarsada.ui.util.formatCurrency
-import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
 
 @Composable
 fun FinanceRoute(
@@ -106,9 +93,9 @@ fun FinanceRoute(
     FinanceContent(
         isAdmin = isAdmin,
         state = state,
-        onRefresh = viewModel::refresh,
-        onDelete = viewModel::delete,
-        onToggleVisibility = viewModel::toggleVisibility,
+        onRefresh = { viewModel.onEvent(FinanceEvent.Refresh) },
+        onDelete = { viewModel.onEvent(FinanceEvent.Delete(it)) },
+        onToggleVisibility = { viewModel.onEvent(FinanceEvent.ToggleVisibility(it)) },
         onShowCreate = { showCreateDialog = true },
         onShowDetail = { detailTarget = it },
         onShowEdit = { editTarget = it }
@@ -124,7 +111,7 @@ fun FinanceRoute(
             session = session,
             onDismiss = { showCreateDialog = false },
             onSave = {
-                viewModel.save(it)
+                viewModel.onEvent(FinanceEvent.Save(it))
                 showCreateDialog = false
             }
         )
@@ -136,7 +123,7 @@ fun FinanceRoute(
             session = session,
             onDismiss = { editTarget = null },
             onSave = {
-                viewModel.save(it)
+                viewModel.onEvent(FinanceEvent.Save(it))
                 editTarget = null
             }
         )
@@ -865,76 +852,6 @@ private fun FinanceFormDialog(
             }
         }
     )
-}
-
-data class FinanceUiState(
-    val items: List<FinanceReportDetail> = emptyList(),
-    val isLoading: Boolean = true,
-    val errorMessage: String? = null
-)
-
-@HiltViewModel
-class FinanceViewModel @Inject constructor(
-    private val repository: FinanceReportRepository,
-    private val authRepository: AuthRepository,
-    private val dispatcherProvider: DispatcherProvider
-) : ViewModel() {
-
-    private val _state = MutableStateFlow(FinanceUiState())
-    val state: StateFlow<FinanceUiState> = _state.asStateFlow()
-
-    init {
-        viewModelScope.launch(dispatcherProvider.io) {
-            repository.observeReports().collect { items ->
-                _state.update { it.copy(items = items, isLoading = false) }
-            }
-        }
-        refresh()
-    }
-
-    fun refresh() {
-        viewModelScope.launch(dispatcherProvider.io) {
-            val session = authRepository.getCurrentSession() ?: return@launch
-            _state.update { it.copy(isLoading = true, errorMessage = null) }
-            when (val result = repository.refresh(session.sectorContext)) {
-                is AppResult.Success -> _state.update { it.copy(isLoading = false, errorMessage = null) }
-                is AppResult.Error -> _state.update { it.copy(isLoading = false, errorMessage = result.message) }
-            }
-        }
-    }
-
-    fun save(item: FinanceReportDetail) {
-        viewModelScope.launch(dispatcherProvider.io) {
-            val session = authRepository.getCurrentSession() ?: return@launch
-            _state.update { it.copy(isLoading = true, errorMessage = null) }
-            when (val result = repository.save(item, session.sectorContext)) {
-                is AppResult.Success -> _state.update { it.copy(isLoading = false, errorMessage = null) }
-                is AppResult.Error -> _state.update { it.copy(isLoading = false, errorMessage = result.message) }
-            }
-        }
-    }
-
-    fun delete(id: String) {
-        viewModelScope.launch(dispatcherProvider.io) {
-            val session = authRepository.getCurrentSession() ?: return@launch
-            _state.update { it.copy(isLoading = true, errorMessage = null) }
-            when (val result = repository.delete(id, session.sectorContext)) {
-                is AppResult.Success -> _state.update { it.copy(isLoading = false, errorMessage = null) }
-                is AppResult.Error -> _state.update { it.copy(isLoading = false, errorMessage = result.message) }
-            }
-        }
-    }
-
-    fun toggleVisibility(item: FinanceReportDetail) {
-        viewModelScope.launch(dispatcherProvider.io) {
-            val session = authRepository.getCurrentSession() ?: return@launch
-            _state.update { it.copy(isLoading = true, errorMessage = null) }
-            when (val result = repository.toggleVisibility(item, session.sectorContext)) {
-                is AppResult.Success -> _state.update { it.copy(isLoading = false, errorMessage = null) }
-                is AppResult.Error -> _state.update { it.copy(isLoading = false, errorMessage = result.message) }
-            }
-        }
-    }
 }
 
 private val previewFinance = FinanceReportDetail(
