@@ -23,7 +23,6 @@ import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Payments
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -376,14 +375,7 @@ private fun JemaatHomeTopBar(
                 }
             }
         },
-        actions = {
-            IconButton(onClick = onOpenProfile) {
-                Icon(
-                    imageVector = Icons.Filled.Person,
-                    contentDescription = stringResource(id = R.string.tab_profile)
-                )
-            }
-        }
+        actions = {}
     )
 }
 
