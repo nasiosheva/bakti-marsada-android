@@ -10,11 +10,14 @@ import com.lampung.baktimarsada.network.dto.CreateUserAccountRequestDto
 import com.lampung.baktimarsada.network.dto.CreateUserAccountResponseDto
 import com.lampung.baktimarsada.network.dto.EventDto
 import com.lampung.baktimarsada.network.dto.FcmTokenRequestDto
+import com.lampung.baktimarsada.network.dto.FillArisanParticipantsRequestDto
 import com.lampung.baktimarsada.network.dto.FinanceReportDto
 import com.lampung.baktimarsada.network.dto.GoogleLoginRequestDto
 import com.lampung.baktimarsada.network.dto.LoginRequestDto
+import com.lampung.baktimarsada.network.dto.ArisanParticipantDto
 import com.lampung.baktimarsada.network.dto.MemberDto
 import com.lampung.baktimarsada.network.dto.PaymentObligationDto
+import com.lampung.baktimarsada.network.dto.ReplaceArisanParticipantsRequestDto
 import com.lampung.baktimarsada.network.dto.SessionResponseDto
 import com.lampung.baktimarsada.network.dto.WorshipTemplateDto
 import retrofit2.Response
@@ -134,6 +137,28 @@ abstract class RestAppRemoteDataSource(
 
     override suspend fun deletePaymentObligation(obligationId: String) {
         apiService.deletePaymentObligation(obligationId).requireSuccess("Failed to delete payment obligation")
+    }
+
+    override suspend fun fetchArisanParticipants(sectorId: String): List<ArisanParticipantDto> {
+        return apiService.fetchArisanParticipants(sectorId).requireDataBody("Failed to load arisan participants")
+    }
+
+    override suspend fun replaceArisanParticipants(
+        sectorId: String,
+        memberIds: List<String>
+    ): List<ArisanParticipantDto> {
+        return apiService.replaceArisanParticipants(
+            ReplaceArisanParticipantsRequestDto(
+                sectorId = sectorId,
+                memberIds = memberIds
+            )
+        ).requireDataBody("Failed to update arisan participants")
+    }
+
+    override suspend fun fillArisanParticipantsFromMembers(sectorId: String): List<ArisanParticipantDto> {
+        return apiService.fillArisanParticipantsFromMembers(
+            FillArisanParticipantsRequestDto(sectorId = sectorId)
+        ).requireDataBody("Failed to fill arisan participants")
     }
 
     override suspend fun createUserAccount(request: CreateUserAccountRequestDto): CreateUserAccountResponseDto {

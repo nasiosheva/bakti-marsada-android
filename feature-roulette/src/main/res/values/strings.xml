@@ -3,6 +3,7 @@
     <string name="roulette_title">Roulette Nama</string>
     <string name="roulette_subtitle">Acak nama cepat untuk undian sektor</string>
     <string name="roulette_action_spin">Spin</string>
+    <string name="roulette_action_spinning">Memutar…</string>
     <string name="roulette_action_edit_names">Edit Nama</string>
     <string name="roulette_action_import_members">Impor Anggota</string>
     <string name="roulette_action_refresh_members">Muat Ulang</string>
@@ -16,6 +17,7 @@
     <string name="roulette_participant_count">Peserta aktif</string>
     <string name="roulette_history_title">Riwayat Hasil</string>
     <string name="roulette_history_empty">Belum ada hasil undian.</string>
+    <string name="roulette_history_latest_badge">Terbaru</string>
     <string name="roulette_names_empty">Belum ada nama. Tambahkan manual atau impor anggota terlebih dahulu.</string>
     <string name="roulette_names_sheet_title">Kelola Nama Peserta</string>
     <string name="roulette_names_sheet_label">Satu nama per baris</string>

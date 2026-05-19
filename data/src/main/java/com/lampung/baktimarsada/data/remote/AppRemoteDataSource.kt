@@ -4,6 +4,7 @@ import com.lampung.baktimarsada.network.dto.EventDto
 import com.lampung.baktimarsada.network.dto.FinanceReportDto
 import com.lampung.baktimarsada.network.dto.GoogleLoginRequestDto
 import com.lampung.baktimarsada.network.dto.LoginRequestDto
+import com.lampung.baktimarsada.network.dto.ArisanParticipantDto
 import com.lampung.baktimarsada.network.dto.MemberDto
 import com.lampung.baktimarsada.network.dto.PaymentObligationDto
 import com.lampung.baktimarsada.network.dto.CreateUserAccountRequestDto
@@ -28,6 +29,9 @@ interface AppRemoteDataSource {
     suspend fun fetchPaymentObligations(sectorId: String): List<PaymentObligationDto>
     suspend fun savePaymentObligation(obligation: PaymentObligationDto): PaymentObligationDto
     suspend fun deletePaymentObligation(obligationId: String)
+    suspend fun fetchArisanParticipants(sectorId: String): List<ArisanParticipantDto>
+    suspend fun replaceArisanParticipants(sectorId: String, memberIds: List<String>): List<ArisanParticipantDto>
+    suspend fun fillArisanParticipantsFromMembers(sectorId: String): List<ArisanParticipantDto>
     suspend fun fetchWorshipTemplates(sectorId: String): List<WorshipTemplateDto>
     suspend fun saveWorshipTemplate(template: WorshipTemplateDto): WorshipTemplateDto
     suspend fun deleteWorshipTemplate(templateId: String)

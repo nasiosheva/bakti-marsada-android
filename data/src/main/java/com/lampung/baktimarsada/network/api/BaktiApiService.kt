@@ -2,6 +2,7 @@ package com.lampung.baktimarsada.network.api
 
 import com.lampung.baktimarsada.core.constants.AppConstants
 import com.lampung.baktimarsada.network.dto.ApiResponseDto
+import com.lampung.baktimarsada.network.dto.ArisanParticipantDto
 import com.lampung.baktimarsada.network.dto.BackendAuthResponseDto
 import com.lampung.baktimarsada.network.dto.BackendGoogleLoginRequestDto
 import com.lampung.baktimarsada.network.dto.BackendLoginRequestDto
@@ -12,6 +13,8 @@ import com.lampung.baktimarsada.network.dto.FcmTokenRequestDto
 import com.lampung.baktimarsada.network.dto.FinanceReportDto
 import com.lampung.baktimarsada.network.dto.MemberDto
 import com.lampung.baktimarsada.network.dto.PaymentObligationDto
+import com.lampung.baktimarsada.network.dto.FillArisanParticipantsRequestDto
+import com.lampung.baktimarsada.network.dto.ReplaceArisanParticipantsRequestDto
 import com.lampung.baktimarsada.network.dto.WorshipTemplateDto
 import retrofit2.Response
 import retrofit2.http.DELETE
@@ -19,6 +22,7 @@ import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.POST
+import retrofit2.http.PUT
 import retrofit2.http.Path
 import retrofit2.http.Query
 
@@ -79,6 +83,19 @@ interface BaktiApiService {
 
     @DELETE("${AppConstants.ROUTE_PAYMENT_OBLIGATIONS}/{id}")
     suspend fun deletePaymentObligation(@Path("id") obligationId: String): Response<ApiResponseDto<Unit?>>
+
+    @GET(AppConstants.ROUTE_ARISAN_PARTICIPANTS)
+    suspend fun fetchArisanParticipants(@Query("sectorId") sectorId: String): Response<ApiResponseDto<List<ArisanParticipantDto>>>
+
+    @PUT(AppConstants.ROUTE_ARISAN_PARTICIPANTS)
+    suspend fun replaceArisanParticipants(
+        @Body request: ReplaceArisanParticipantsRequestDto
+    ): Response<ApiResponseDto<List<ArisanParticipantDto>>>
+
+    @POST("${AppConstants.ROUTE_ARISAN_PARTICIPANTS}/fill-from-members")
+    suspend fun fillArisanParticipantsFromMembers(
+        @Body request: FillArisanParticipantsRequestDto
+    ): Response<ApiResponseDto<List<ArisanParticipantDto>>>
 
     @POST(AppConstants.ROUTE_USERS)
     suspend fun createUser(@Body request: CreateUserAccountRequestDto): Response<ApiResponseDto<CreateUserAccountResponseDto>>

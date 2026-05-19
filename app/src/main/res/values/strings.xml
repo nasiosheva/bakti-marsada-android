@@ -218,6 +218,10 @@
     <string name="arisan_action_generate_dues">Buat Tagihan</string>
     <string name="arisan_action_draw_winner">Undi</string>
     <string name="arisan_action_redraw">Undi Ulang</string>
+    <string name="arisan_action_add_all_members">Tambah Semua Anggota</string>
+    <string name="arisan_action_select_participants">Pilih Peserta</string>
+    <string name="arisan_participant_picker_title">Pilih Peserta Arisan</string>
+    <string name="arisan_empty_members_source">Belum ada anggota sektor untuk dipilih.</string>
     <string name="arisan_redraw_confirm_title">Konfirmasi Undi Ulang</string>
     <string name="arisan_redraw_confirm_message">Pemenang saat ini adalah %1$s. Undi ulang akan memilih nama berbeda jika masih ada kandidat lain.</string>
     <string name="arisan_my_due_status">Status Iuran Saya</string>

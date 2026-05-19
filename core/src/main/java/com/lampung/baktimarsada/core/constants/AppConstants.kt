@@ -28,6 +28,7 @@ object AppConstants {
     const val FIRESTORE_COLLECTION_MEMBERS = "members"
     const val FIRESTORE_COLLECTION_FINANCE_REPORTS = "finance_reports"
     const val FIRESTORE_COLLECTION_PAYMENT_OBLIGATIONS = "payment_obligations"
+    const val FIRESTORE_COLLECTION_ARISAN_PARTICIPANTS = "arisan_participants"
     const val FIRESTORE_FIELD_EVENT_TYPE = "event_type"
     const val FIRESTORE_FIELD_TIMESTAMP = "timestamp"
     const val FIRESTORE_FIELD_SELECTED_ROLE = "selected_role"
@@ -69,6 +70,7 @@ object AppConstants {
     const val FIRESTORE_FIELD_IS_VISIBLE_TO_JEMAAT = "is_visible_to_jemaat"
     const val FIRESTORE_FIELD_MEMBER_ID = "member_id"
     const val FIRESTORE_FIELD_MEMBER_NAME = "member_name"
+    const val FIRESTORE_FIELD_MEMBER_IDS = "member_ids"
     const val FIRESTORE_FIELD_DUE_DATE = "due_date"
     const val FIRESTORE_FIELD_STATUS = "status"
 
@@ -100,6 +102,7 @@ object AppConstants {
     const val ROUTE_MEMBERS = "v1/members"
     const val ROUTE_FINANCE_REPORTS = "v1/finance-reports"
     const val ROUTE_PAYMENT_OBLIGATIONS = "v1/payment-obligations"
+    const val ROUTE_ARISAN_PARTICIPANTS = "v1/arisan/participants"
     const val ROUTE_USERS = "v1/users"
     const val DEFAULT_LIST_PAGE_SIZE = 10
     const val DATE_FORMAT_ISO_LOCAL_DATE = "yyyy-MM-dd"

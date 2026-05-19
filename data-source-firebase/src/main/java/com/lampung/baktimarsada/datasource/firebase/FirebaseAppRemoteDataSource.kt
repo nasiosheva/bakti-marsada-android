@@ -14,6 +14,7 @@ import com.lampung.baktimarsada.network.dto.CreateUserAccountRequestDto
 import com.lampung.baktimarsada.network.dto.CreateUserAccountResponseDto
 import com.lampung.baktimarsada.network.dto.GoogleLoginRequestDto
 import com.lampung.baktimarsada.network.dto.LoginRequestDto
+import com.lampung.baktimarsada.network.dto.ArisanParticipantDto
 import com.lampung.baktimarsada.network.dto.MemberDto
 import com.lampung.baktimarsada.network.dto.PaymentObligationDto
 import com.lampung.baktimarsada.network.dto.SessionResponseDto
@@ -283,6 +284,55 @@ class FirebaseAppRemoteDataSource @Inject constructor(
             .document(obligationId)
             .delete()
             .await()
+    }
+
+    override suspend fun fetchArisanParticipants(sectorId: String): List<ArisanParticipantDto> {
+        val document = firestore.collection(AppConstants.FIRESTORE_COLLECTION_ARISAN_PARTICIPANTS)
+            .document(sectorId)
+            .get()
+            .await()
+        val memberIds = (document.get(AppConstants.FIRESTORE_FIELD_MEMBER_IDS) as? List<*>)
+            ?.mapNotNull { it as? String }
+            .orEmpty()
+            .distinct()
+        if (memberIds.isEmpty()) return emptyList()
+        val membersById = fetchMembers(sectorId).associateBy { it.id }
+        return memberIds
+            .mapNotNull { memberId ->
+                membersById[memberId]?.let { member ->
+                    ArisanParticipantDto(
+                        memberId = member.id,
+                        memberName = member.fullName
+                    )
+                }
+            }
+            .sortedBy { it.memberName }
+    }
+
+    override suspend fun replaceArisanParticipants(
+        sectorId: String,
+        memberIds: List<String>
+    ): List<ArisanParticipantDto> {
+        val validMemberIds = fetchMembers(sectorId).map { it.id }.toSet()
+        val selectedIds = memberIds
+            .map { it.trim() }
+            .filter { it.isNotBlank() && it in validMemberIds }
+            .distinct()
+        firestore.collection(AppConstants.FIRESTORE_COLLECTION_ARISAN_PARTICIPANTS)
+            .document(sectorId)
+            .set(
+                mapOf(
+                    AppConstants.FIRESTORE_FIELD_SECTOR_ID to sectorId,
+                    AppConstants.FIRESTORE_FIELD_MEMBER_IDS to selectedIds
+                )
+            )
+            .await()
+        return fetchArisanParticipants(sectorId)
+    }
+
+    override suspend fun fillArisanParticipantsFromMembers(sectorId: String): List<ArisanParticipantDto> {
+        val allIds = fetchMembers(sectorId).map { it.id }
+        return replaceArisanParticipants(sectorId, allIds)
     }
 
     override suspend fun createUserAccount(request: CreateUserAccountRequestDto): CreateUserAccountResponseDto {

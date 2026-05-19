@@ -1,10 +1,10 @@
 package com.lampung.baktimarsada.feature.arisan.presentation
 
-import android.app.Activity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -27,6 +28,7 @@ import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.Wallet
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -67,6 +69,7 @@ import com.lampung.baktimarsada.domain.model.SectorContext
 import com.lampung.baktimarsada.domain.model.SessionState
 import com.lampung.baktimarsada.domain.model.UserRole
 import com.lampung.baktimarsada.feature.roulette.presentation.RouletteLauncher
+import com.lampung.baktimarsada.repository.ArisanParticipantRepository
 import com.lampung.baktimarsada.repository.MemberRepository
 import com.lampung.baktimarsada.repository.PaymentObligationRepository
 import com.lampung.baktimarsada.ui.component.BaktiBottomSheet
@@ -110,6 +113,10 @@ fun ArisanRoute(
         state = state,
         bottomContentPadding = bottomContentPadding,
         onGeneratePeriod = { viewModel.generatePeriod(session.sectorContext) },
+        onFillAllMembers = { viewModel.fillAllParticipants(session.sectorContext) },
+        onSaveManualParticipants = { selectedIds ->
+            viewModel.saveSelectedParticipants(session.sectorContext, selectedIds)
+        },
         onDrawWinner = {
             val candidates = state.buildWinnerCandidates()
             if (candidates.isEmpty()) {
@@ -127,6 +134,8 @@ fun ArisanRoute(
 
 data class ArisanUiState(
     val group: ArisanGroup? = null,
+    val allMembers: List<MemberDetail> = emptyList(),
+    val selectedParticipantIds: Set<String> = emptySet(),
     val isLoading: Boolean = true,
     val message: String? = null,
     val winnerName: String? = null
@@ -134,30 +143,100 @@ data class ArisanUiState(
 
 @HiltViewModel
 class ArisanViewModel @Inject constructor(
+    private val arisanParticipantRepository: ArisanParticipantRepository,
     private val memberRepository: MemberRepository,
     private val paymentRepository: PaymentObligationRepository,
     private val dispatcherProvider: DispatcherProvider
 ) : ViewModel() {
     private val _state = MutableStateFlow(ArisanUiState())
     val state: StateFlow<ArisanUiState> = _state.asStateFlow()
+    private val selectedIdsFlow = MutableStateFlow<Set<String>>(emptySet())
 
     init {
         viewModelScope.launch {
             combine(
                 memberRepository.observeMembers(),
-                paymentRepository.observeObligations()
-            ) { members, obligations ->
-                buildArisanGroup(members, obligations)
+                paymentRepository.observeObligations(),
+                selectedIdsFlow
+            ) { members, obligations, selectedParticipantIds ->
+                Triple(
+                    buildArisanGroup(members, obligations, selectedParticipantIds),
+                    members,
+                    selectedParticipantIds
+                )
             }.collect { group ->
-                _state.update { it.copy(group = group, isLoading = false) }
+                _state.update {
+                    it.copy(
+                        group = group.first,
+                        allMembers = group.second,
+                        selectedParticipantIds = group.third,
+                        isLoading = false
+                    )
+                }
             }
         }
     }
 
     fun refresh(sectorContext: SectorContext) {
         viewModelScope.launch(dispatcherProvider.io) {
+            _state.update { it.copy(isLoading = true) }
             memberRepository.refresh(sectorContext)
             paymentRepository.refresh(sectorContext)
+            when (val result = arisanParticipantRepository.fetch(sectorContext)) {
+                is AppResult.Success -> {
+                    selectedIdsFlow.value = result.data.toSet()
+                    _state.update { it.copy(message = null, isLoading = false) }
+                }
+                is AppResult.Error -> {
+                    selectedIdsFlow.value = emptySet()
+                    _state.update {
+                        it.copy(
+                            message = result.message,
+                            isLoading = false
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    fun fillAllParticipants(sectorContext: SectorContext) {
+        viewModelScope.launch(dispatcherProvider.io) {
+            _state.update { it.copy(isLoading = true, message = null) }
+            when (val result = arisanParticipantRepository.fillAllFromMembers(sectorContext)) {
+                is AppResult.Success -> {
+                    selectedIdsFlow.value = result.data.toSet()
+                    _state.update {
+                        it.copy(
+                            isLoading = false,
+                            message = "Peserta arisan berhasil diisi dari semua anggota."
+                        )
+                    }
+                }
+                is AppResult.Error -> {
+                    _state.update { it.copy(isLoading = false, message = result.message) }
+                }
+            }
+        }
+    }
+
+    fun saveSelectedParticipants(sectorContext: SectorContext, memberIds: Set<String>) {
+        viewModelScope.launch(dispatcherProvider.io) {
+            _state.update { it.copy(isLoading = true, message = null) }
+            when (val result = arisanParticipantRepository.replace(sectorContext, memberIds.toList())) {
+                is AppResult.Success -> {
+                    selectedIdsFlow.value = result.data.toSet()
+                    _state.update {
+                        it.copy(
+                            isLoading = false,
+                            message = "Peserta arisan berhasil diperbarui."
+                        )
+                    }
+                }
+                is AppResult.Error -> {
+                    _state.update { it.copy(isLoading = false, message = result.message) }
+                }
+            }
         }
     }
 
@@ -209,11 +288,13 @@ class ArisanViewModel @Inject constructor(
 
     private fun buildArisanGroup(
         members: List<MemberDetail>,
-        obligations: List<PaymentObligationDetail>
+        obligations: List<PaymentObligationDetail>,
+        selectedParticipantIds: Set<String>
     ): ArisanGroup {
         val arisanPayments = obligations.filter { it.title.contains(ARISAN_TITLE_KEYWORD, ignoreCase = true) }
         val paymentsByMember = arisanPayments.associateBy { it.memberId }
-        val participants = members.map { member ->
+        val selectedMembers = members.filter { it.id in selectedParticipantIds }
+        val participants = selectedMembers.map { member ->
             ArisanParticipant(
                 memberId = member.id,
                 memberName = member.fullName,
@@ -265,13 +346,17 @@ private fun ArisanContent(
     state: ArisanUiState,
     bottomContentPadding: Dp,
     onGeneratePeriod: () -> Unit,
-    onDrawWinner: () -> Unit
+    onDrawWinner: () -> Unit,
+    onFillAllMembers: () -> Unit = {},
+    onSaveManualParticipants: (Set<String>) -> Unit = {}
 ) {
     val group = state.group
     val participants = group?.participants.orEmpty()
     val paidCount = participants.count { it.hasPaid }
     val ownParticipant = participants.firstOrNull { it.memberName.equals(session.displayName, ignoreCase = true) }
     var showRedrawConfirmation by remember { mutableStateOf(false) }
+    var showParticipantPicker by remember { mutableStateOf(false) }
+    var selectedIds by remember(state.selectedParticipantIds) { mutableStateOf(state.selectedParticipantIds) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
@@ -317,6 +402,29 @@ private fun ArisanContent(
                 item { BaktiSectionMessage(message = message) }
             }
             if (isAdmin) {
+                item {
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        OutlinedButton(
+                            onClick = onFillAllMembers,
+                            enabled = state.allMembers.isNotEmpty() && !state.isLoading,
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Text(text = stringResource(id = R.string.arisan_action_add_all_members))
+                        }
+                        OutlinedButton(
+                            onClick = {
+                                selectedIds = state.selectedParticipantIds
+                                showParticipantPicker = true
+                            },
+                            enabled = state.allMembers.isNotEmpty() && !state.isLoading,
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Text(text = stringResource(id = R.string.arisan_action_select_participants))
+                        }
+                    }
+                }
                 item {
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         Button(
@@ -388,6 +496,95 @@ private fun ArisanContent(
                     onDrawWinner()
                 }
             )
+        }
+
+        if (showParticipantPicker) {
+            ArisanParticipantPickerSheet(
+                allMembers = state.allMembers,
+                selectedIds = selectedIds,
+                onToggleMember = { memberId ->
+                    selectedIds = selectedIds.toMutableSet().apply {
+                        if (!add(memberId)) remove(memberId)
+                    }.toSet()
+                },
+                onDismiss = { showParticipantPicker = false },
+                onSave = {
+                    showParticipantPicker = false
+                    onSaveManualParticipants(selectedIds)
+                }
+            )
+        }
+    }
+}
+
+@Composable
+private fun ArisanParticipantPickerSheet(
+    allMembers: List<MemberDetail>,
+    selectedIds: Set<String>,
+    onToggleMember: (String) -> Unit,
+    onDismiss: () -> Unit,
+    onSave: () -> Unit
+) {
+    BaktiBottomSheet(
+        onDismissRequest = onDismiss,
+        title = stringResource(id = R.string.arisan_participant_picker_title)
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            if (allMembers.isEmpty()) {
+                Text(
+                    text = stringResource(id = R.string.arisan_empty_members_source),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(280.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(allMembers, key = { it.id }) { member ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onToggleMember(member.id) }
+                                .padding(horizontal = 4.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Checkbox(
+                                checked = member.id in selectedIds,
+                                onCheckedChange = { onToggleMember(member.id) }
+                            )
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = member.fullName,
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                Text(
+                                    text = member.familyGroup.ifBlank { member.roleInSector },
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(text = stringResource(id = R.string.action_cancel))
+                }
+                Button(
+                    onClick = onSave,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(text = stringResource(id = R.string.action_save))
+                }
+            }
         }
     }
 }

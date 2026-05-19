@@ -1,12 +1,14 @@
 package com.lampung.baktimarsada.di
 
 import com.lampung.baktimarsada.data.repository.AuthRepositoryImpl
+import com.lampung.baktimarsada.data.repository.ArisanParticipantRepositoryImpl
 import com.lampung.baktimarsada.data.repository.EventRepositoryImpl
 import com.lampung.baktimarsada.data.repository.FinanceReportRepositoryImpl
 import com.lampung.baktimarsada.data.repository.MemberRepositoryImpl
 import com.lampung.baktimarsada.data.repository.PaymentObligationRepositoryImpl
 import com.lampung.baktimarsada.data.repository.WorshipTemplateRepositoryImpl
 import com.lampung.baktimarsada.repository.AuthRepository
+import com.lampung.baktimarsada.repository.ArisanParticipantRepository
 import com.lampung.baktimarsada.repository.EventRepository
 import com.lampung.baktimarsada.repository.FinanceReportRepository
 import com.lampung.baktimarsada.repository.MemberRepository
@@ -27,6 +29,12 @@ abstract class RepositoryModule {
     abstract fun bindAuthRepository(
         impl: AuthRepositoryImpl
     ): AuthRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindArisanParticipantRepository(
+        impl: ArisanParticipantRepositoryImpl
+    ): ArisanParticipantRepository
 
     @Binds
     @Singleton

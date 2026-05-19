@@ -10,6 +10,7 @@ import com.lampung.baktimarsada.network.dto.CreateUserAccountRequestDto
 import com.lampung.baktimarsada.network.dto.CreateUserAccountResponseDto
 import com.lampung.baktimarsada.network.dto.GoogleLoginRequestDto
 import com.lampung.baktimarsada.network.dto.LoginRequestDto
+import com.lampung.baktimarsada.network.dto.ArisanParticipantDto
 import com.lampung.baktimarsada.network.dto.MemberDto
 import com.lampung.baktimarsada.network.dto.PaymentObligationDto
 import com.lampung.baktimarsada.network.dto.SessionResponseDto
@@ -59,6 +60,7 @@ class SimulateAppRemoteDataSource @Inject constructor() : AppRemoteDataSource {
     private val financeReports = mutableListOf<FinanceReportDto>()
 
     private val paymentObligations = mutableListOf<PaymentObligationDto>()
+    private val arisanParticipantsBySector = mutableMapOf<String, MutableSet<String>>()
 
     init {
         resetDataInternal()
@@ -487,6 +489,47 @@ class SimulateAppRemoteDataSource @Inject constructor() : AppRemoteDataSource {
         paymentObligations.removeAll { it.id == obligationId }
     }
 
+    override suspend fun fetchArisanParticipants(sectorId: String): List<ArisanParticipantDto> {
+        val selectedIds = arisanParticipantsBySector[sectorId].orEmpty()
+        val memberById = members.associateBy { it.id }
+        return selectedIds
+            .mapNotNull { memberId ->
+                memberById[memberId]?.let { member ->
+                    ArisanParticipantDto(
+                        memberId = member.id,
+                        memberName = member.fullName
+                    )
+                }
+            }
+            .sortedBy { it.memberName }
+    }
+
+    override suspend fun replaceArisanParticipants(
+        sectorId: String,
+        memberIds: List<String>
+    ): List<ArisanParticipantDto> {
+        val validIds = members
+            .asSequence()
+            .filter { it.sectorId == sectorId }
+            .map { it.id }
+            .toSet()
+        val selected = memberIds
+            .map { it.trim() }
+            .filter { it.isNotBlank() && it in validIds }
+            .toMutableSet()
+        arisanParticipantsBySector[sectorId] = selected
+        return fetchArisanParticipants(sectorId)
+    }
+
+    override suspend fun fillArisanParticipantsFromMembers(sectorId: String): List<ArisanParticipantDto> {
+        val allSectorMemberIds = members
+            .filter { it.sectorId == sectorId }
+            .map { it.id }
+            .toMutableSet()
+        arisanParticipantsBySector[sectorId] = allSectorMemberIds
+        return fetchArisanParticipants(sectorId)
+    }
+
     override suspend fun createUserAccount(request: CreateUserAccountRequestDto): CreateUserAccountResponseDto {
         val username = request.username.trim().lowercase()
         val email = request.email.trim().lowercase()
@@ -588,6 +631,7 @@ class SimulateAppRemoteDataSource @Inject constructor() : AppRemoteDataSource {
         financeReports.addAll(seedFinanceReports())
         paymentObligations.clear()
         paymentObligations.addAll(seedPaymentObligations())
+        arisanParticipantsBySector.clear()
     }
 
     private fun EventDto.withIdIfNeeded(prefix: String): EventDto {
