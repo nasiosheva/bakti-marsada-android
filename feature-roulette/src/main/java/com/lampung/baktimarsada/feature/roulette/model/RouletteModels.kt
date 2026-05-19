@@ -1,8 +1,5 @@
 package com.lampung.baktimarsada.feature.roulette.model
 
-import com.lampung.baktimarsada.domain.model.MemberDetail
-import com.lampung.baktimarsada.domain.model.SessionState
-
 enum class RouletteNameSource {
     MANUAL,
     IMPORT
@@ -28,6 +25,19 @@ data class RouletteLocalSnapshot(
     val lastUpdatedMillis: Long? = null
 )
 
+data class RouletteMemberUi(
+    val id: String,
+    val fullName: String,
+    val familyGroup: String,
+    val roleInSector: String
+)
+
+data class RouletteSessionUi(
+    val userId: String,
+    val displayName: String,
+    val sectorName: String
+)
+
 data class RouletteUiState(
     val names: List<String> = emptyList(),
     val history: List<RouletteHistoryItem> = emptyList(),
@@ -38,8 +48,8 @@ data class RouletteUiState(
     val message: String? = null,
     val isLoggingIn: Boolean = false,
     val isLoadingMembers: Boolean = false,
-    val members: List<MemberDetail> = emptyList(),
-    val session: SessionState? = null
+    val members: List<RouletteMemberUi> = emptyList(),
+    val session: RouletteSessionUi? = null
 )
 
 // created by Mories Deo Hutapea, S.E.,S.Kom

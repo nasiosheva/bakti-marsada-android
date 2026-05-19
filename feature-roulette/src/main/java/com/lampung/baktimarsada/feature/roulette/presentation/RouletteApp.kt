@@ -14,13 +14,14 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lampung.baktimarsada.feature.roulette.R
-import com.lampung.baktimarsada.ui.component.BaktiResponseSnackbarEffect
-import com.lampung.baktimarsada.ui.component.BaktiSnackbarHost
-import com.lampung.baktimarsada.ui.component.BaktiToolbar
+import com.lampung.baktimarsada.feature.roulette.presentation.RouletteResponseSnackbarEffect
+import com.lampung.baktimarsada.feature.roulette.presentation.RouletteSnackbarHost
+import com.lampung.baktimarsada.feature.roulette.presentation.RouletteToolbar
 
 @Composable
 fun RouletteApp(
     initialNames: List<String> = emptyList(),
+    onBack: (() -> Unit)? = null,
     onWinnerConfirmed: ((String) -> Unit)? = null,
     viewModel: RouletteViewModel = hiltViewModel()
 ) {
@@ -58,7 +59,7 @@ fun RouletteApp(
         }
     }
 
-    BaktiResponseSnackbarEffect(
+    RouletteResponseSnackbarEffect(
         message = state.message,
         hostState = snackbarHostState,
         onMessageConsumed = viewModel::consumeMessage
@@ -66,13 +67,14 @@ fun RouletteApp(
 
     Scaffold(
         topBar = {
-            BaktiToolbar(
+            RouletteToolbar(
                 title = stringResource(id = R.string.roulette_title),
-                subtitle = stringResource(id = R.string.roulette_subtitle)
+                subtitle = stringResource(id = R.string.roulette_subtitle),
+                onBack = onBack
             )
         },
         snackbarHost = {
-            BaktiSnackbarHost(hostState = snackbarHostState)
+            RouletteSnackbarHost(hostState = snackbarHostState)
         }
     ) { innerPadding ->
         RouletteHomeContent(

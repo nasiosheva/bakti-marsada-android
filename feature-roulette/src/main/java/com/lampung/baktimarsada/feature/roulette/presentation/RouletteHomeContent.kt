@@ -51,14 +51,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.lampung.baktimarsada.domain.model.MemberDetail
-import com.lampung.baktimarsada.domain.model.SessionState
 import com.lampung.baktimarsada.feature.roulette.R
 import com.lampung.baktimarsada.feature.roulette.model.RouletteHistoryItem
+import com.lampung.baktimarsada.feature.roulette.model.RouletteMemberUi
 import com.lampung.baktimarsada.feature.roulette.model.RouletteNameSource
 import com.lampung.baktimarsada.feature.roulette.model.RoulettePendingSpin
+import com.lampung.baktimarsada.feature.roulette.model.RouletteSessionUi
 import com.lampung.baktimarsada.feature.roulette.model.RouletteUiState
-import com.lampung.baktimarsada.ui.component.JemaatPill
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.time.Instant
@@ -148,12 +147,12 @@ private fun RouletteSummaryCard(state: RouletteUiState) {
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        JemaatPill(
+                        RoulettePill(
                             text = stringResource(id = R.string.roulette_names_count, state.names.size),
                             containerColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.18f),
                             contentColor = MaterialTheme.colorScheme.onPrimary
                         )
-                        JemaatPill(
+                        RoulettePill(
                             text = sourceLabel(source = state.source),
                             containerColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.18f),
                             contentColor = MaterialTheme.colorScheme.onPrimary
@@ -285,7 +284,7 @@ private fun ActiveNamesCard(names: List<String>) {
             } else {
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(names, key = { it }) { name ->
-                        JemaatPill(text = name)
+                        RoulettePill(text = name)
                     }
                 }
             }
@@ -423,7 +422,7 @@ private fun HistoryRow(index: Int, item: RouletteHistoryItem) {
                 )
             }
             if (index == 0) {
-                JemaatPill(
+                RoulettePill(
                     text = stringResource(id = R.string.roulette_history_latest_badge),
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary
@@ -476,7 +475,7 @@ private fun SectionStripHeader(
 
 @Composable
 internal fun ImportSessionCard(
-    session: SessionState,
+    session: RouletteSessionUi,
     isLoading: Boolean,
     onRefresh: () -> Unit,
     onLogout: () -> Unit
@@ -524,7 +523,7 @@ internal fun ImportSessionCard(
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        text = stringResource(id = R.string.roulette_import_sector_label, session.sectorContext.sectorName),
+                        text = stringResource(id = R.string.roulette_import_sector_label, session.sectorName),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
@@ -606,7 +605,7 @@ internal fun EmptyMembersCard() {
 
 @Composable
 internal fun MemberSelectionRow(
-    member: MemberDetail,
+    member: RouletteMemberUi,
     selected: Boolean,
     onToggle: () -> Unit
 ) {

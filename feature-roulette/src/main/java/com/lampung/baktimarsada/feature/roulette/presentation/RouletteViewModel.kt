@@ -5,17 +5,13 @@ import androidx.lifecycle.viewModelScope
 import com.lampung.baktimarsada.core.dispatchers.DispatcherProvider
 import com.lampung.baktimarsada.core.resources.StringProvider
 import com.lampung.baktimarsada.core.result.AppResult
-import com.lampung.baktimarsada.domain.model.SessionState
-import com.lampung.baktimarsada.domain.usecase.LoginUseCase
-import com.lampung.baktimarsada.domain.usecase.LogoutUseCase
 import com.lampung.baktimarsada.feature.roulette.R
-import com.lampung.baktimarsada.feature.roulette.data.RouletteLocalStore
+import com.lampung.baktimarsada.feature.roulette.data.RouletteImportDataSource
+import com.lampung.baktimarsada.feature.roulette.data.RouletteLocalDataSource
 import com.lampung.baktimarsada.feature.roulette.model.RouletteHistoryItem
 import com.lampung.baktimarsada.feature.roulette.model.RouletteNameSource
 import com.lampung.baktimarsada.feature.roulette.model.RoulettePendingSpin
 import com.lampung.baktimarsada.feature.roulette.model.RouletteUiState
-import com.lampung.baktimarsada.repository.AuthRepository
-import com.lampung.baktimarsada.repository.MemberRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlin.random.Random
@@ -27,11 +23,8 @@ import kotlinx.coroutines.launch
 
 @HiltViewModel
 class RouletteViewModel @Inject constructor(
-    private val localStore: RouletteLocalStore,
-    private val authRepository: AuthRepository,
-    private val memberRepository: MemberRepository,
-    private val loginUseCase: LoginUseCase,
-    private val logoutUseCase: LogoutUseCase,
+    private val localStore: RouletteLocalDataSource,
+    private val importDataSource: RouletteImportDataSource,
     private val stringProvider: StringProvider,
     private val dispatcherProvider: DispatcherProvider
 ) : ViewModel() {
@@ -137,8 +130,8 @@ class RouletteViewModel @Inject constructor(
     }
 
     fun prepareImportMembers() {
-        val session = _state.value.session ?: return
-        refreshMembers(session)
+        if (_state.value.session == null) return
+        refreshMembers()
     }
 
     fun loginForImport(
@@ -159,7 +152,7 @@ class RouletteViewModel @Inject constructor(
         }
         viewModelScope.launch(dispatcherProvider.io) {
             _state.update { it.copy(isLoggingIn = true, message = null) }
-            when (val result = loginUseCase(identifier.trim(), password)) {
+            when (val result = importDataSource.login(identifier.trim(), password)) {
                 is AppResult.Success -> {
                     _state.update {
                         it.copy(
@@ -167,7 +160,7 @@ class RouletteViewModel @Inject constructor(
                             message = stringProvider.get(R.string.roulette_login_success)
                         )
                     }
-                    refreshMembers(result.data)
+                    refreshMembers()
                 }
                 is AppResult.Error -> {
                     _state.update {
@@ -183,7 +176,7 @@ class RouletteViewModel @Inject constructor(
 
     fun logoutImportSession() {
         viewModelScope.launch(dispatcherProvider.io) {
-            logoutUseCase()
+            importDataSource.logout()
             _state.update {
                 it.copy(
                     session = null,
@@ -229,7 +222,7 @@ class RouletteViewModel @Inject constructor(
 
     private fun observeSession() {
         viewModelScope.launch {
-            authRepository.observeSession().collect { session ->
+            importDataSource.observeSession().collect { session ->
                 _state.update { current ->
                     current.copy(
                         session = session,
@@ -242,7 +235,7 @@ class RouletteViewModel @Inject constructor(
 
     private fun observeMembers() {
         viewModelScope.launch {
-            memberRepository.observeMembers().collect { members ->
+            importDataSource.observeMembers().collect { members ->
                 if (_state.value.session != null) {
                     _state.update { it.copy(members = members) }
                 }
@@ -250,10 +243,10 @@ class RouletteViewModel @Inject constructor(
         }
     }
 
-    private fun refreshMembers(session: SessionState) {
+    private fun refreshMembers() {
         viewModelScope.launch(dispatcherProvider.io) {
             _state.update { it.copy(isLoadingMembers = true, message = null) }
-            when (val result = memberRepository.refresh(session.sectorContext)) {
+            when (val result = importDataSource.refreshMembers()) {
                 is AppResult.Success -> {
                     _state.update { it.copy(isLoadingMembers = false) }
                 }

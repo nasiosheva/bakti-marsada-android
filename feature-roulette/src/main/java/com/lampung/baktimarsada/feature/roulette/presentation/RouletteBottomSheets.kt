@@ -30,8 +30,8 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.lampung.baktimarsada.feature.roulette.R
 import com.lampung.baktimarsada.feature.roulette.model.RouletteUiState
-import com.lampung.baktimarsada.ui.component.BaktiBottomSheet
-import com.lampung.baktimarsada.ui.component.BaktiTextInput
+import com.lampung.baktimarsada.feature.roulette.presentation.RouletteBottomSheet
+import com.lampung.baktimarsada.feature.roulette.presentation.RouletteTextInput
 
 @Composable
 internal fun RouletteEditNamesSheet(
@@ -43,7 +43,7 @@ internal fun RouletteEditNamesSheet(
 ) {
     if (!visible) return
 
-    BaktiBottomSheet(
+    RouletteBottomSheet(
         onDismissRequest = onDismiss,
         title = stringResource(id = R.string.roulette_names_sheet_title)
     ) {
@@ -53,7 +53,7 @@ internal fun RouletteEditNamesSheet(
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            BaktiTextInput(
+            RouletteTextInput(
                 value = editableNames,
                 label = stringResource(id = R.string.roulette_names_sheet_label),
                 onValueChange = onEditableNamesChange,
@@ -96,7 +96,7 @@ internal fun RouletteImportMembersSheet(
 ) {
     if (!visible) return
 
-    BaktiBottomSheet(
+    RouletteBottomSheet(
         onDismissRequest = onDismiss,
         title = stringResource(id = R.string.roulette_import_sheet_title)
     ) {
@@ -140,12 +140,12 @@ private fun RouletteImportLoginContent(
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        BaktiTextInput(
+        RouletteTextInput(
             value = loginIdentifier,
             label = stringResource(id = R.string.roulette_import_identifier),
             onValueChange = onLoginIdentifierChange
         )
-        BaktiTextInput(
+        RouletteTextInput(
             value = loginPassword,
             label = stringResource(id = R.string.roulette_import_password),
             onValueChange = onLoginPasswordChange,
@@ -249,7 +249,7 @@ internal fun RouletteWinnerSheet(
     onConfirm: (String) -> Unit
 ) {
     val safeWinnerName = winnerName ?: return
-    BaktiBottomSheet(
+    RouletteBottomSheet(
         onDismissRequest = onDismiss,
         title = stringResource(id = R.string.roulette_winner_title)
     ) {

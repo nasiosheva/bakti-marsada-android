@@ -39,6 +39,7 @@
     <string name="roulette_login_identifier_required">Identifier wajib diisi.</string>
     <string name="roulette_login_password_required">Password wajib diisi.</string>
     <string name="roulette_import_requires_login">Login dulu untuk impor anggota.</string>
+    <string name="roulette_import_session_not_found">Sesi login tidak ditemukan.</string>
     <string name="roulette_import_no_selection">Pilih minimal satu anggota.</string>
     <string name="roulette_spin_requires_names">Tambahkan nama peserta terlebih dahulu.</string>
     <string name="roulette_names_saved">Daftar nama roulette berhasil diperbarui.</string>

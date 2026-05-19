@@ -17,6 +17,7 @@ class RouletteActivity : ComponentActivity() {
         setContent {
             RouletteApp(
                 initialNames = participantNames,
+                onBack = { finish() },
                 onWinnerConfirmed = { winnerName ->
                     setResult(
                         Activity.RESULT_OK,

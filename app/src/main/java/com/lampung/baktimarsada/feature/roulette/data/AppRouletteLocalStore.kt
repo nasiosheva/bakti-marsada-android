@@ -16,10 +16,11 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 @Singleton
-class RouletteLocalStore @Inject constructor(
+class AppRouletteLocalStore @Inject constructor(
     private val dataStore: DataStore<Preferences>
-) {
-    val snapshot: Flow<RouletteLocalSnapshot> = dataStore.data.map { preferences ->
+) : RouletteLocalDataSource {
+
+    override val snapshot: Flow<RouletteLocalSnapshot> = dataStore.data.map { preferences ->
         RouletteLocalSnapshot(
             names = decodeNames(preferences[rouletteNamesKey]),
             history = decodeHistory(preferences[rouletteHistoryKey]),
@@ -30,10 +31,7 @@ class RouletteLocalStore @Inject constructor(
         )
     }
 
-    suspend fun replaceNames(
-        names: List<String>,
-        source: RouletteNameSource
-    ) {
+    override suspend fun replaceNames(names: List<String>, source: RouletteNameSource) {
         val sanitizedNames = sanitizeNames(names)
         val updatedAt = System.currentTimeMillis()
         dataStore.edit { preferences ->
@@ -43,7 +41,7 @@ class RouletteLocalStore @Inject constructor(
         }
     }
 
-    suspend fun appendHistory(winnerName: String) {
+    override suspend fun appendHistory(winnerName: String) {
         val updatedAt = System.currentTimeMillis()
         dataStore.edit { preferences ->
             val currentHistory = decodeHistory(preferences[rouletteHistoryKey])
@@ -62,7 +60,7 @@ class RouletteLocalStore @Inject constructor(
         }
     }
 
-    suspend fun clearHistory() {
+    override suspend fun clearHistory() {
         dataStore.edit { preferences ->
             preferences[rouletteHistoryKey] = encodeHistory(emptyList())
             preferences[rouletteUpdatedAtKey] = System.currentTimeMillis()
