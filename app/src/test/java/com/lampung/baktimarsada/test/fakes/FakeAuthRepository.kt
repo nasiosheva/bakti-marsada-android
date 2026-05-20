@@ -56,6 +56,20 @@ class FakeAuthRepository(
         }
     }
 
+    override suspend fun registerNewTenant(
+        churchName: String,
+        denomination: String,
+        adminFullName: String,
+        adminEmail: String,
+        adminPassword: String,
+        terminologyPreset: String
+    ): AppResult<SessionState> {
+        val role = fixedRole ?: UserRole.ADMIN
+        val session = buildSession(identifier = adminEmail, role = role)
+        sessionFlow.value = session
+        return AppResult.Success(session)
+    }
+
     override suspend fun logout() {
         sessionFlow.value = null
     }

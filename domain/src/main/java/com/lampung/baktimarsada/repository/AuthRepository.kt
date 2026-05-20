@@ -10,6 +10,14 @@ interface AuthRepository {
     suspend fun getCurrentSession(): SessionState?
     suspend fun login(identifier: String, password: String): AppResult<SessionState>
     suspend fun loginWithGoogle(idToken: String): AppResult<SessionState>
+    suspend fun registerNewTenant(
+        churchName: String,
+        denomination: String,
+        adminFullName: String,
+        adminEmail: String,
+        adminPassword: String,
+        terminologyPreset: String = ""
+    ): AppResult<SessionState>
     suspend fun logout()
     suspend fun syncFcmToken(token: String): AppResult<Unit>
 }

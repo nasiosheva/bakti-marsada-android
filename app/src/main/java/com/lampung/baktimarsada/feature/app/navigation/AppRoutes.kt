@@ -7,6 +7,7 @@ object AppRoutes {
 
     const val SPLASH = "splash"
     const val LOGIN = "login"
+    const val REGISTER_CHURCH = "register_church"
     const val JEMAAT_HOME = "jemaat_home"
     const val ADMIN_HOME = "admin_home"
     const val JEMAAT_EVENT_DETAIL = "jemaat_event_detail/{$EVENT_ID_ARG}"

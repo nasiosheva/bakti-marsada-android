@@ -12,6 +12,7 @@ import com.lampung.baktimarsada.db.dao.WorshipTemplateItemDao
 import com.lampung.baktimarsada.domain.model.SectorContext
 import com.lampung.baktimarsada.domain.model.WorshipTemplate
 import com.lampung.baktimarsada.domain.repository.WorshipTemplateRepository
+import com.lampung.baktimarsada.repository.AuthRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import javax.inject.Inject
@@ -22,8 +23,12 @@ class WorshipTemplateRepositoryImpl @Inject constructor(
     private val templateDao: WorshipTemplateDao,
     private val templateItemDao: WorshipTemplateItemDao,
     private val database: AppDatabase,
-    private val remoteDataSource: AppRemoteDataSource
+    private val remoteDataSource: AppRemoteDataSource,
+    private val authRepository: AuthRepository
 ) : WorshipTemplateRepository {
+
+    private suspend fun currentTenantId(): String =
+        authRepository.getCurrentSession()?.tenantContext?.tenantId.orEmpty()
 
     override fun observeTemplates(): Flow<List<WorshipTemplate>> {
         return combine(
@@ -37,7 +42,8 @@ class WorshipTemplateRepositoryImpl @Inject constructor(
 
     override suspend fun refresh(sectorContext: SectorContext): AppResult<Unit> {
         return runCatching {
-            val remoteItems = remoteDataSource.fetchWorshipTemplates(sectorContext.sectorId)
+            val tenantId = currentTenantId()
+            val remoteItems = remoteDataSource.fetchWorshipTemplates(tenantId, sectorContext.sectorId)
             val templates = remoteItems.map { it.toEntity() }
             val templateItems = remoteItems.flatMap { template ->
                 template.items.map { it.toEntity(template.id) }
@@ -56,7 +62,8 @@ class WorshipTemplateRepositoryImpl @Inject constructor(
 
     override suspend fun save(template: WorshipTemplate, sectorContext: SectorContext): AppResult<Unit> {
         return runCatching {
-            remoteDataSource.saveWorshipTemplate(template.toDto())
+            val tenantId = currentTenantId()
+            remoteDataSource.saveWorshipTemplate(tenantId, template.toDto())
             refresh(sectorContext)
         }.fold(
             onSuccess = { AppResult.Success(Unit) },
@@ -66,7 +73,8 @@ class WorshipTemplateRepositoryImpl @Inject constructor(
 
     override suspend fun delete(templateId: String, sectorContext: SectorContext): AppResult<Unit> {
         return runCatching {
-            remoteDataSource.deleteWorshipTemplate(templateId)
+            val tenantId = currentTenantId()
+            remoteDataSource.deleteWorshipTemplate(tenantId, templateId)
             refresh(sectorContext)
         }.fold(
             onSuccess = { AppResult.Success(Unit) },

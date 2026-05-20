@@ -19,6 +19,15 @@ data class BackendGoogleLoginRequestDto(
     val idToken: String
 )
 
+data class RegisterTenantRequestDto(
+    val churchName: String,
+    val denomination: String,
+    val adminFullName: String,
+    val adminEmail: String,
+    val adminPassword: String,
+    val terminologyPreset: String = ""
+)
+
 data class CreateUserAccountRequestDto(
     val username: String,
     val email: String,

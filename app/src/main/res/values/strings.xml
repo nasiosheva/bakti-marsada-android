@@ -3,6 +3,22 @@
     <string name="splash_message">Menyiapkan sesi aplikasi...</string>
 
     <string name="login_subtitle">Masuk untuk melihat data sektor atau mengelola pelayanan wijk.</string>
+
+    <string name="login_register_church_button">Daftarkan Gereja Baru</string>
+    <string name="register_church_title">Daftarkan Gereja</string>
+    <string name="register_hero_title">Mulai pelayanan digital gereja Anda</string>
+    <string name="register_hero_subtitle">Buat akun admin pertama dan komunitas Anda siap dipakai dalam hitungan menit.</string>
+    <string name="register_section_church">Identitas Gereja</string>
+    <string name="register_section_admin">Akun Admin Pertama</string>
+    <string name="register_field_church_name">Nama Gereja</string>
+    <string name="register_field_denomination">Denominasi</string>
+    <string name="register_field_terminology">Preset Terminologi</string>
+    <string name="register_field_admin_name">Nama Lengkap Admin</string>
+    <string name="register_field_admin_email">Email Admin</string>
+    <string name="register_field_admin_password">Password Admin (min. 8 karakter)</string>
+    <string name="register_action_submit">Daftarkan &amp; Masuk</string>
+    <string name="register_action_back_to_login">Sudah punya akun? Kembali ke login</string>
+
     <string name="login_identifier_label">Email atau Identifier</string>
     <string name="login_password_label">Password</string>
     <string name="login_remember_me">Remember me</string>
@@ -77,8 +93,8 @@
     <string name="jemaat_count_finance">%1$d laporan</string>
     <string name="jemaat_count_payments">%1$d tagihan</string>
 
-    <string name="event_title_jemaat">Daftar Acara Partangiangan</string>
-    <string name="event_title_admin">Kelola Acara Partangiangan</string>
+    <string name="event_title_jemaat">Daftar Acara %1$s</string>
+    <string name="event_title_admin">Kelola Acara %1$s</string>
     <string name="event_detail_title">Detail Acara</string>
     <string name="event_empty">Belum ada acara partangiangan untuk sektor ini.</string>
     <string name="dialog_add_event">Tambah Acara Partangiangan</string>
@@ -102,8 +118,8 @@
     <string name="form_section_event_info">Informasi Acara</string>
     <string name="form_section_template_info">Informasi Template</string>
 
-    <string name="member_title_jemaat">Direktori Anggota Sektor</string>
-    <string name="member_title_admin">Kelola Direktori Anggota</string>
+    <string name="member_title_jemaat">Direktori %1$s Sektor</string>
+    <string name="member_title_admin">Kelola Direktori %1$s</string>
     <string name="member_empty">Belum ada data anggota pada sektor ini.</string>
     <string name="dialog_add_member">Tambah Anggota</string>
     <string name="dialog_edit_member">Ubah Data Anggota</string>

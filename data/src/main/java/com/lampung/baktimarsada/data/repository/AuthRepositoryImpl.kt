@@ -2,6 +2,8 @@ package com.lampung.baktimarsada.data.repository
 
 import com.lampung.baktimarsada.core.constants.AppConstants
 import com.lampung.baktimarsada.core.result.AppResult
+import com.lampung.baktimarsada.core.tenant.TenantProfile
+import com.lampung.baktimarsada.core.tenant.TenantRuntime
 import com.lampung.baktimarsada.data.mapper.toDomain
 import com.lampung.baktimarsada.data.remote.AppRemoteDataSource
 import com.lampung.baktimarsada.domain.model.SectorContext
@@ -11,6 +13,7 @@ import com.lampung.baktimarsada.domain.model.UserRole
 import com.lampung.baktimarsada.repository.AuthRepository
 import com.lampung.baktimarsada.network.dto.GoogleLoginRequestDto
 import com.lampung.baktimarsada.network.dto.LoginRequestDto
+import com.lampung.baktimarsada.network.dto.RegisterTenantRequestDto
 import com.lampung.baktimarsada.security.SecureStorage
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,6 +34,7 @@ class AuthRepositoryImpl @Inject constructor(
     override suspend fun bootstrapSession(): SessionState? {
         val restored = readStoredSession()
         sessionStateFlow.value = restored
+        restored?.let { applyTenantRuntime(it) }
         return restored
     }
 
@@ -55,12 +59,35 @@ class AuthRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun registerNewTenant(
+        churchName: String,
+        denomination: String,
+        adminFullName: String,
+        adminEmail: String,
+        adminPassword: String,
+        terminologyPreset: String
+    ): AppResult<SessionState> {
+        return performLogin("Pendaftaran gereja gagal") {
+            remoteDataSource.registerNewTenant(
+                RegisterTenantRequestDto(
+                    churchName = churchName,
+                    denomination = denomination,
+                    adminFullName = adminFullName,
+                    adminEmail = adminEmail,
+                    adminPassword = adminPassword,
+                    terminologyPreset = terminologyPreset
+                )
+            ).toDomain()
+        }
+    }
+
     override suspend fun logout() {
         sessionStateFlow.value?.authToken?.let { token ->
             runCatching { remoteDataSource.logout(token) }
         }
         clearStoredSession()
         sessionStateFlow.value = null
+        TenantRuntime.resetToDefault()
     }
 
     override suspend fun syncFcmToken(token: String): AppResult<Unit> {
@@ -86,6 +113,7 @@ class AuthRepositoryImpl @Inject constructor(
             onSuccess = { session ->
                 persistSession(session)
                 sessionStateFlow.value = session
+                applyTenantRuntime(session)
                 secureStorage.getString(AppConstants.KEY_FCM_TOKEN)
                     ?.takeIf { it.isNotBlank() }
                     ?.let { token ->
@@ -99,6 +127,20 @@ class AuthRepositoryImpl @Inject constructor(
                     cause = throwable
                 )
             }
+        )
+    }
+
+    private fun applyTenantRuntime(session: SessionState) {
+        val base = TenantRuntime.current
+        TenantRuntime.setActive(
+            base.copy(
+                tenantId = session.tenantContext.tenantId,
+                tenantName = session.tenantContext.tenantName,
+                subTenantId = session.tenantContext.subTenantId,
+                subTenantName = session.tenantContext.subTenantName,
+                defaultSectorId = session.sectorContext.sectorId,
+                defaultSectorName = session.sectorContext.sectorName
+            )
         )
     }
 

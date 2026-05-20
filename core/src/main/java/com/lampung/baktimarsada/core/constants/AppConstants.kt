@@ -6,6 +6,7 @@ object AppConstants {
     const val KEY_FCM_TOKEN = "key_fcm_token"
     const val KEY_DB_PASSPHRASE = "key_db_passphrase"
     const val KEY_AUTH_TOKEN = "key_auth_token"
+    const val HEADER_TENANT_ID = "X-Tenant-Id"
     const val KEY_USER_ID = "key_user_id"
     const val KEY_DISPLAY_NAME = "key_display_name"
     const val KEY_USER_ROLE = "key_user_role"
@@ -104,6 +105,8 @@ object AppConstants {
     const val ROUTE_PAYMENT_OBLIGATIONS = "v1/payment-obligations"
     const val ROUTE_ARISAN_PARTICIPANTS = "v1/arisan/participants"
     const val ROUTE_USERS = "v1/users"
+    const val ROUTE_TENANT_PROFILE = "v1/tenants/me/profile"
+    const val ROUTE_TENANT_REGISTER = "v1/tenants/register"
     const val DEFAULT_LIST_PAGE_SIZE = 10
     const val DATE_FORMAT_ISO_LOCAL_DATE = "yyyy-MM-dd"
 

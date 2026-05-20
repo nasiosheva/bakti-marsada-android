@@ -174,19 +174,6 @@ class RouletteViewModel @Inject constructor(
         }
     }
 
-    fun logoutImportSession() {
-        viewModelScope.launch(dispatcherProvider.io) {
-            importDataSource.logout()
-            _state.update {
-                it.copy(
-                    session = null,
-                    members = emptyList(),
-                    message = null
-                )
-            }
-        }
-    }
-
     fun importSelectedMembers(selectedIds: Set<String>) {
         if (selectedIds.isEmpty()) {
             _state.update {

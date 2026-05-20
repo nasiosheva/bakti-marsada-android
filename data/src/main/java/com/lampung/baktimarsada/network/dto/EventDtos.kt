@@ -8,6 +8,7 @@ data class EventDto(
     val location: String,
     val sectorId: String,
     val sectorName: String,
+    val tenantId: String = "",
     val programItems: List<EventProgramItemDto> = emptyList()
 )
 

@@ -116,12 +116,6 @@ fun RouletteApp(
             )
         },
         onRefreshMembers = viewModel::prepareImportMembers,
-        onLogout = {
-            viewModel.logoutImportSession()
-            loginIdentifier = ""
-            loginPassword = ""
-            selectedMemberIds = emptySet()
-        },
         onApplyImport = {
             viewModel.importSelectedMembers(selectedMemberIds)
             showImportSheet = false

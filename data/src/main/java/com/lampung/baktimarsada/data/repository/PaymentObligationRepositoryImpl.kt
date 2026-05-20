@@ -10,6 +10,7 @@ import com.lampung.baktimarsada.db.AppDatabase
 import com.lampung.baktimarsada.db.dao.PaymentObligationDao
 import com.lampung.baktimarsada.domain.model.PaymentObligationDetail
 import com.lampung.baktimarsada.domain.model.SectorContext
+import com.lampung.baktimarsada.repository.AuthRepository
 import com.lampung.baktimarsada.repository.PaymentObligationRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -20,8 +21,12 @@ import javax.inject.Singleton
 class PaymentObligationRepositoryImpl @Inject constructor(
     private val dao: PaymentObligationDao,
     private val database: AppDatabase,
-    private val remoteDataSource: AppRemoteDataSource
+    private val remoteDataSource: AppRemoteDataSource,
+    private val authRepository: AuthRepository
 ) : PaymentObligationRepository {
+
+    private suspend fun currentTenantId(): String =
+        authRepository.getCurrentSession()?.tenantContext?.tenantId.orEmpty()
 
     override fun observeObligations(): Flow<List<PaymentObligationDetail>> {
         return dao.observeAll().map { entities -> entities.map { it.toDomain() } }
@@ -29,7 +34,8 @@ class PaymentObligationRepositoryImpl @Inject constructor(
 
     override suspend fun refresh(sectorContext: SectorContext): AppResult<Unit> {
         return runCatching {
-            val items = remoteDataSource.fetchPaymentObligations(sectorContext.sectorId).map { it.toEntity() }
+            val tenantId = currentTenantId()
+            val items = remoteDataSource.fetchPaymentObligations(tenantId, sectorContext.sectorId).map { it.toEntity() }
             database.withTransaction {
                 dao.clearAll()
                 dao.insertAll(items)
@@ -42,7 +48,8 @@ class PaymentObligationRepositoryImpl @Inject constructor(
 
     override suspend fun save(obligation: PaymentObligationDetail, sectorContext: SectorContext): AppResult<Unit> {
         return runCatching {
-            remoteDataSource.savePaymentObligation(obligation.toDto())
+            val tenantId = currentTenantId()
+            remoteDataSource.savePaymentObligation(tenantId, obligation.toDto())
             refresh(sectorContext)
         }.fold(
             onSuccess = { AppResult.Success(Unit) },
@@ -52,7 +59,8 @@ class PaymentObligationRepositoryImpl @Inject constructor(
 
     override suspend fun delete(obligationId: String, sectorContext: SectorContext): AppResult<Unit> {
         return runCatching {
-            remoteDataSource.deletePaymentObligation(obligationId)
+            val tenantId = currentTenantId()
+            remoteDataSource.deletePaymentObligation(tenantId, obligationId)
             refresh(sectorContext)
         }.fold(
             onSuccess = { AppResult.Success(Unit) },

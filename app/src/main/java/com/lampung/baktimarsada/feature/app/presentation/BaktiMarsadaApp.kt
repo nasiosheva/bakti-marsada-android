@@ -35,12 +35,17 @@ import com.lampung.baktimarsada.repository.EventRepository
 import com.lampung.baktimarsada.repository.FinanceReportRepository
 import com.lampung.baktimarsada.repository.MemberRepository
 import com.lampung.baktimarsada.repository.PaymentObligationRepository
+import com.lampung.baktimarsada.repository.TenantProfileRepository
+import com.lampung.baktimarsada.domain.model.TenantProfileSnapshot
+import com.lampung.baktimarsada.ui.tenant.BaktiTerminology
+import com.lampung.baktimarsada.ui.tenant.BaktiTerminologyProvider
 import com.lampung.baktimarsada.domain.usecase.BootstrapSessionUseCase
 import com.lampung.baktimarsada.domain.usecase.LogoutUseCase
 import com.lampung.baktimarsada.domain.usecase.ObserveSessionUseCase
 import com.lampung.baktimarsada.core.constants.AppConstants
 import com.lampung.baktimarsada.feature.app.navigation.AppRoutes
 import com.lampung.baktimarsada.feature.auth.presentation.LoginRoute
+import com.lampung.baktimarsada.feature.onboarding.presentation.RegisterChurchRoute
 import com.lampung.baktimarsada.feature.events.presentation.EventCreateRoute
 import com.lampung.baktimarsada.feature.events.presentation.EventCopySourceRoute
 import com.lampung.baktimarsada.feature.events.presentation.EventEditRoute
@@ -87,6 +92,7 @@ fun BaktiMarsadaApp(
         }
     }
 
+    BaktiTerminologyProvider(terminology = state.tenantTerminology) {
     NavHost(
         navController = navController,
         startDestination = AppRoutes.SPLASH
@@ -97,6 +103,17 @@ fun BaktiMarsadaApp(
         composable(AppRoutes.LOGIN) {
             LoginRoute(
                 onLoginSuccess = { role ->
+                    navController.navigateAndClear(role.toHomeRoute())
+                },
+                onOpenRegisterChurch = {
+                    navController.navigate(AppRoutes.REGISTER_CHURCH)
+                }
+            )
+        }
+        composable(AppRoutes.REGISTER_CHURCH) {
+            RegisterChurchRoute(
+                onBack = { navController.navigateUp() },
+                onRegistered = { role ->
                     navController.navigateAndClear(role.toHomeRoute())
                 }
             )
@@ -269,6 +286,7 @@ fun BaktiMarsadaApp(
             }
         }
     }
+    }
 
     BackHandler(enabled = isAtRootHome) {
         val now = System.currentTimeMillis()
@@ -313,9 +331,23 @@ private fun UserRole.toHomeRoute(): String {
     }
 }
 
+private fun TenantProfileSnapshot?.toBaktiTerminology(): BaktiTerminology {
+    val snapshot = this ?: return BaktiTerminology.Default
+    return BaktiTerminology(
+        sectorLabel = snapshot.terminology.sectorLabel,
+        sectorPluralLabel = snapshot.terminology.sectorPluralLabel,
+        gatheringLabel = snapshot.terminology.gatheringLabel,
+        memberLabel = snapshot.terminology.memberLabel,
+        financeLabel = snapshot.terminology.financeLabel,
+        paymentLabel = snapshot.terminology.paymentLabel,
+        arisanLabel = snapshot.terminology.arisanLabel
+    )
+}
+
 data class AppEntryUiState(
     val session: SessionState? = null,
-    val pendingRoute: String? = null
+    val pendingRoute: String? = null,
+    val tenantTerminology: BaktiTerminology = BaktiTerminology.Default
 )
 
 @HiltViewModel
@@ -327,6 +359,7 @@ class AppEntryViewModel @Inject constructor(
     private val memberRepository: MemberRepository,
     private val financeReportRepository: FinanceReportRepository,
     private val paymentObligationRepository: PaymentObligationRepository,
+    private val tenantProfileRepository: TenantProfileRepository,
     private val notificationHelper: NotificationHelper
 ) : ViewModel() {
 
@@ -336,7 +369,18 @@ class AppEntryViewModel @Inject constructor(
 
     init {
         observeSession()
+        observeTenantProfile()
         bootstrapSession()
+    }
+
+    private fun observeTenantProfile() {
+        viewModelScope.launch {
+            tenantProfileRepository.observeProfile().collect { snapshot ->
+                _state.update {
+                    it.copy(tenantTerminology = snapshot.toBaktiTerminology())
+                }
+            }
+        }
     }
 
     fun consumePendingRoute() {
@@ -366,6 +410,9 @@ class AppEntryViewModel @Inject constructor(
             observeSessionUseCase().collect { session ->
                 _state.update { it.copy(session = session) }
                 startOrStopDataSync(session)
+                if (session != null) {
+                    runCatching { tenantProfileRepository.refresh() }
+                }
             }
         }
     }

@@ -13,7 +13,10 @@ import com.lampung.baktimarsada.network.dto.LoginRequestDto
 import com.lampung.baktimarsada.network.dto.ArisanParticipantDto
 import com.lampung.baktimarsada.network.dto.MemberDto
 import com.lampung.baktimarsada.network.dto.PaymentObligationDto
+import com.lampung.baktimarsada.network.dto.RegisterTenantRequestDto
 import com.lampung.baktimarsada.network.dto.SessionResponseDto
+import com.lampung.baktimarsada.network.dto.TenantProfileDto
+import com.lampung.baktimarsada.network.dto.TenantTerminologyDto
 import com.lampung.baktimarsada.network.dto.WorshipTemplateDto
 import com.lampung.baktimarsada.network.dto.WorshipTemplateItemDto
 import dagger.Binds
@@ -583,97 +586,160 @@ class SimulateAppRemoteDataSource @Inject constructor() : AppRemoteDataSource {
         )
     }
 
+    override suspend fun registerNewTenant(request: RegisterTenantRequestDto): SessionResponseDto {
+        val churchName = request.churchName.trim()
+        val adminFullName = request.adminFullName.trim()
+        val adminEmail = request.adminEmail.trim().lowercase()
+        val password = request.adminPassword
+        val denomination = request.denomination.trim()
+
+        if (churchName.isBlank()) throw IllegalArgumentException("Nama gereja wajib diisi")
+        if (adminFullName.isBlank()) throw IllegalArgumentException("Nama admin wajib diisi")
+        if (!adminEmail.contains("@")) throw IllegalArgumentException("Email admin tidak valid")
+        if (password.length < 8) throw IllegalArgumentException("Password admin minimal 8 karakter")
+        if (accounts.any { it.identifier.equals(adminEmail, ignoreCase = true) }) {
+            throw IllegalArgumentException("Email admin sudah terdaftar")
+        }
+
+        val newTenantId = "tenant-${UUID.randomUUID()}"
+        val newSectorId = "sector-${UUID.randomUUID()}"
+        val newUserId = "admin-${UUID.randomUUID()}"
+        val tenantName = churchName
+        val subTenantId = "$newTenantId-main"
+        val sectorName = "Sektor Utama"
+
+        accounts.add(
+            SampleAccount(
+                identifier = adminEmail,
+                password = password,
+                userId = newUserId,
+                displayName = adminFullName,
+                role = "ADMIN",
+                sectorId = newSectorId,
+                sectorName = sectorName
+            )
+        )
+
+        val token = "token-${UUID.randomUUID()}"
+        sessionTokens.add(token)
+        return SessionResponseDto(
+            authToken = token,
+            userId = newUserId,
+            displayName = adminFullName,
+            role = "ADMIN",
+            tenantId = newTenantId,
+            tenantName = tenantName,
+            subTenantId = subTenantId,
+            subTenantName = tenantName,
+            sectorId = newSectorId,
+            sectorName = sectorName
+        )
+    }
+
     override suspend fun logout(token: String) {
         sessionTokens.remove(token)
     }
 
     override suspend fun syncFcmToken(token: String) = Unit
 
-    override suspend fun fetchEvents(sectorId: String): List<EventDto> {
-        return events.filter { it.sectorId == sectorId }.sortedBy { it.scheduledAt }
+    override suspend fun fetchEvents(tenantId: String, sectorId: String): List<EventDto> {
+        return events
+            .filter { it.matchesTenant(tenantId) && it.sectorId == sectorId }
+            .sortedBy { it.scheduledAt }
     }
 
-    override suspend fun saveEvent(event: EventDto): EventDto {
-        val resolved = event.withIdIfNeeded(prefix = "event")
+    override suspend fun saveEvent(tenantId: String, event: EventDto): EventDto {
+        val resolved = event.withIdIfNeeded(prefix = "event").stampTenant(tenantId)
         events.removeAll { it.id == resolved.id }
         events.add(resolved)
         return resolved
     }
 
-    override suspend fun deleteEvent(eventId: String) {
-        events.removeAll { it.id == eventId }
+    override suspend fun deleteEvent(tenantId: String, eventId: String) {
+        events.removeAll { it.id == eventId && it.matchesTenant(tenantId) }
     }
 
-    override suspend fun fetchWorshipTemplates(sectorId: String): List<WorshipTemplateDto> {
-        return worshipTemplates.filter { it.sectorId == null || it.sectorId == sectorId }.sortedBy { it.title }
+    override suspend fun fetchWorshipTemplates(tenantId: String, sectorId: String): List<WorshipTemplateDto> {
+        return worshipTemplates
+            .filter { (it.tenantId.isBlank() || tenantId.isBlank() || it.tenantId == tenantId) && (it.sectorId == null || it.sectorId == sectorId) }
+            .sortedBy { it.title }
     }
 
-    override suspend fun saveWorshipTemplate(template: WorshipTemplateDto): WorshipTemplateDto {
-        val resolved = template.withIdIfNeeded(prefix = "template")
+    override suspend fun saveWorshipTemplate(tenantId: String, template: WorshipTemplateDto): WorshipTemplateDto {
+        val resolved = template.withIdIfNeeded(prefix = "template").let {
+            if (it.tenantId.isBlank()) it.copy(tenantId = tenantId) else it
+        }
         worshipTemplates.removeAll { it.id == resolved.id }
         worshipTemplates.add(resolved)
         return resolved
     }
 
-    override suspend fun deleteWorshipTemplate(templateId: String) {
-        worshipTemplates.removeAll { it.id == templateId }
+    override suspend fun deleteWorshipTemplate(tenantId: String, templateId: String) {
+        worshipTemplates.removeAll { it.id == templateId && (it.tenantId.isBlank() || tenantId.isBlank() || it.tenantId == tenantId) }
     }
 
-    override suspend fun fetchMembers(sectorId: String): List<MemberDto> {
-        return members.filter { it.sectorId == sectorId }.sortedBy { it.fullName }
+    override suspend fun fetchMembers(tenantId: String, sectorId: String): List<MemberDto> {
+        return members
+            .filter { it.matchesTenant(tenantId) && it.sectorId == sectorId }
+            .sortedBy { it.fullName }
     }
 
-    override suspend fun saveMember(member: MemberDto): MemberDto {
-        val resolved = member.withIdIfNeeded(prefix = "member")
+    override suspend fun saveMember(tenantId: String, member: MemberDto): MemberDto {
+        val resolved = member.withIdIfNeeded(prefix = "member").stampTenant(tenantId)
         members.removeAll { it.id == resolved.id }
         members.add(resolved)
         return resolved
     }
 
-    override suspend fun deleteMember(memberId: String) {
-        members.removeAll { it.id == memberId }
-        paymentObligations.removeAll { it.memberId == memberId }
+    override suspend fun deleteMember(tenantId: String, memberId: String) {
+        members.removeAll { it.id == memberId && it.matchesTenant(tenantId) }
+        paymentObligations.removeAll { it.memberId == memberId && it.matchesTenant(tenantId) }
     }
 
-    override suspend fun fetchFinanceReports(sectorId: String): List<FinanceReportDto> {
-        return financeReports.filter { it.sectorId == sectorId }.sortedByDescending { it.periodLabel }
+    override suspend fun fetchFinanceReports(tenantId: String, sectorId: String): List<FinanceReportDto> {
+        return financeReports
+            .filter { it.matchesTenant(tenantId) && it.sectorId == sectorId }
+            .sortedByDescending { it.periodLabel }
     }
 
-    override suspend fun saveFinanceReport(report: FinanceReportDto): FinanceReportDto {
-        val resolved = report.withIdIfNeeded(prefix = "finance")
+    override suspend fun saveFinanceReport(tenantId: String, report: FinanceReportDto): FinanceReportDto {
+        val resolved = report.withIdIfNeeded(prefix = "finance").stampTenant(tenantId)
         financeReports.removeAll { it.id == resolved.id }
         financeReports.add(resolved)
         return resolved
     }
 
-    override suspend fun deleteFinanceReport(reportId: String) {
-        financeReports.removeAll { it.id == reportId }
+    override suspend fun deleteFinanceReport(tenantId: String, reportId: String) {
+        financeReports.removeAll { it.id == reportId && it.matchesTenant(tenantId) }
     }
 
-    override suspend fun fetchPaymentObligations(sectorId: String): List<PaymentObligationDto> {
-        return paymentObligations.filter { it.sectorId == sectorId }.sortedBy { it.dueDate }
+    override suspend fun fetchPaymentObligations(tenantId: String, sectorId: String): List<PaymentObligationDto> {
+        return paymentObligations
+            .filter { it.matchesTenant(tenantId) && it.sectorId == sectorId }
+            .sortedBy { it.dueDate }
     }
 
-    override suspend fun savePaymentObligation(obligation: PaymentObligationDto): PaymentObligationDto {
-        val resolved = obligation.withIdIfNeeded(prefix = "payment")
+    override suspend fun savePaymentObligation(tenantId: String, obligation: PaymentObligationDto): PaymentObligationDto {
+        val resolved = obligation.withIdIfNeeded(prefix = "payment").stampTenant(tenantId)
         paymentObligations.removeAll { it.id == resolved.id }
         paymentObligations.add(resolved)
         return resolved
     }
 
-    override suspend fun deletePaymentObligation(obligationId: String) {
-        paymentObligations.removeAll { it.id == obligationId }
+    override suspend fun deletePaymentObligation(tenantId: String, obligationId: String) {
+        paymentObligations.removeAll { it.id == obligationId && it.matchesTenant(tenantId) }
     }
 
-    override suspend fun fetchArisanParticipants(sectorId: String): List<ArisanParticipantDto> {
-        val selectedIds = arisanParticipantsBySector[sectorId].orEmpty()
+    override suspend fun fetchArisanParticipants(tenantId: String, sectorId: String): List<ArisanParticipantDto> {
+        val selectedIds = arisanParticipantsBySector[arisanKey(tenantId, sectorId)].orEmpty()
         val memberById = members.associateBy { it.id }
         return selectedIds
             .mapNotNull { memberId ->
                 memberById[memberId]?.let { member ->
                     ArisanParticipantDto(
                         memberId = member.id,
-                        memberName = member.fullName
+                        memberName = member.fullName,
+                        tenantId = member.tenantId
                     )
                 }
             }
@@ -681,30 +747,57 @@ class SimulateAppRemoteDataSource @Inject constructor() : AppRemoteDataSource {
     }
 
     override suspend fun replaceArisanParticipants(
+        tenantId: String,
         sectorId: String,
         memberIds: List<String>
     ): List<ArisanParticipantDto> {
         val validIds = members
             .asSequence()
-            .filter { it.sectorId == sectorId }
+            .filter { it.matchesTenant(tenantId) && it.sectorId == sectorId }
             .map { it.id }
             .toSet()
         val selected = memberIds
             .map { it.trim() }
             .filter { it.isNotBlank() && it in validIds }
             .toMutableSet()
-        arisanParticipantsBySector[sectorId] = selected
-        return fetchArisanParticipants(sectorId)
+        arisanParticipantsBySector[arisanKey(tenantId, sectorId)] = selected
+        return fetchArisanParticipants(tenantId, sectorId)
     }
 
-    override suspend fun fillArisanParticipantsFromMembers(sectorId: String): List<ArisanParticipantDto> {
+    override suspend fun fillArisanParticipantsFromMembers(tenantId: String, sectorId: String): List<ArisanParticipantDto> {
         val allSectorMemberIds = members
-            .filter { it.sectorId == sectorId }
+            .filter { it.matchesTenant(tenantId) && it.sectorId == sectorId }
             .map { it.id }
             .toMutableSet()
-        arisanParticipantsBySector[sectorId] = allSectorMemberIds
-        return fetchArisanParticipants(sectorId)
+        arisanParticipantsBySector[arisanKey(tenantId, sectorId)] = allSectorMemberIds
+        return fetchArisanParticipants(tenantId, sectorId)
     }
+
+    private fun arisanKey(tenantId: String, sectorId: String): String = "$tenantId::$sectorId"
+
+    private fun EventDto.matchesTenant(tenantId: String): Boolean =
+        tenantId.isBlank() || this.tenantId.isBlank() || this.tenantId == tenantId
+
+    private fun MemberDto.matchesTenant(tenantId: String): Boolean =
+        tenantId.isBlank() || this.tenantId.isBlank() || this.tenantId == tenantId
+
+    private fun FinanceReportDto.matchesTenant(tenantId: String): Boolean =
+        tenantId.isBlank() || this.tenantId.isBlank() || this.tenantId == tenantId
+
+    private fun PaymentObligationDto.matchesTenant(tenantId: String): Boolean =
+        tenantId.isBlank() || this.tenantId.isBlank() || this.tenantId == tenantId
+
+    private fun EventDto.stampTenant(tenantId: String): EventDto =
+        if (this.tenantId.isBlank() && tenantId.isNotBlank()) copy(tenantId = tenantId) else this
+
+    private fun MemberDto.stampTenant(tenantId: String): MemberDto =
+        if (this.tenantId.isBlank() && tenantId.isNotBlank()) copy(tenantId = tenantId) else this
+
+    private fun FinanceReportDto.stampTenant(tenantId: String): FinanceReportDto =
+        if (this.tenantId.isBlank() && tenantId.isNotBlank()) copy(tenantId = tenantId) else this
+
+    private fun PaymentObligationDto.stampTenant(tenantId: String): PaymentObligationDto =
+        if (this.tenantId.isBlank() && tenantId.isNotBlank()) copy(tenantId = tenantId) else this
 
     override suspend fun createUserAccount(request: CreateUserAccountRequestDto): CreateUserAccountResponseDto {
         val username = request.username.trim().lowercase()
@@ -769,6 +862,29 @@ class SimulateAppRemoteDataSource @Inject constructor() : AppRemoteDataSource {
             }
     }
 
+    override suspend fun fetchTenantProfile(tenantId: String): TenantProfileDto {
+        val current = TenantRuntime.current
+        return TenantProfileDto(
+            tenantId = current.tenantId,
+            tenantName = current.tenantName,
+            subTenantId = current.subTenantId,
+            subTenantName = current.subTenantName,
+            denomination = "HKBP",
+            appDisplayName = current.appDisplayName,
+            logoUrl = "",
+            themeColor = "",
+            terminology = TenantTerminologyDto(
+                sectorLabel = "Sektor",
+                sectorPluralLabel = "Sektor",
+                gatheringLabel = "Partangiangan",
+                memberLabel = "Anggota Jemaat",
+                financeLabel = "Laporan Keuangan",
+                paymentLabel = "Tagihan",
+                arisanLabel = "Arisan"
+            )
+        )
+    }
+
     override suspend fun resetSimulationData() {
         resetDataInternal()
     }
@@ -815,16 +931,21 @@ class SimulateAppRemoteDataSource @Inject constructor() : AppRemoteDataSource {
                 )
             )
         )
+        val seedTenantId = TenantRuntime.current.tenantId
         events.clear()
-        events.addAll(seedEvents())
+        events.addAll(seedEvents().map { it.stampTenant(seedTenantId) })
         worshipTemplates.clear()
-        worshipTemplates.addAll(seedWorshipTemplates())
+        worshipTemplates.addAll(
+            seedWorshipTemplates().map { template ->
+                if (template.tenantId.isBlank()) template.copy(tenantId = seedTenantId) else template
+            }
+        )
         members.clear()
-        members.addAll(seedMembers())
+        members.addAll(seedMembers().map { it.stampTenant(seedTenantId) })
         financeReports.clear()
-        financeReports.addAll(seedFinanceReports())
+        financeReports.addAll(seedFinanceReports().map { it.stampTenant(seedTenantId) })
         paymentObligations.clear()
-        paymentObligations.addAll(seedPaymentObligations())
+        paymentObligations.addAll(seedPaymentObligations().map { it.stampTenant(seedTenantId) })
         arisanParticipantsBySector.clear()
     }
 

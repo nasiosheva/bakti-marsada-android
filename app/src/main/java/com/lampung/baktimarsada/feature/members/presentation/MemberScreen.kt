@@ -153,8 +153,10 @@ fun MemberContent(
     val filteredItems = state.items.filter { it.matchesMemberQuery(searchQuery) }
     val displayItems = filteredItems.take(visibleCount)
     val canLoadMore = displayItems.size < filteredItems.size
+    val memberLabel = com.lampung.baktimarsada.ui.tenant.BaktiTerminologies.current.memberLabel
     val title = stringResource(
-        id = if (isAdmin) R.string.member_title_admin else R.string.member_title_jemaat
+        id = if (isAdmin) R.string.member_title_admin else R.string.member_title_jemaat,
+        memberLabel
     )
     val countLabel = if (isAdmin) {
         stringResource(id = R.string.pagination_summary, displayItems.size, filteredItems.size)

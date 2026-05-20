@@ -47,6 +47,7 @@ class AppEntryViewModelTest {
             memberRepository = FakeMemberRepository(),
             financeReportRepository = FakeFinanceReportRepository(),
             paymentObligationRepository = FakePaymentObligationRepository(),
+            tenantProfileRepository = com.lampung.baktimarsada.test.fakes.FakeTenantProfileRepository(),
             notificationHelper = FakeNotificationHelper()
         )
         advanceUntilIdle()
@@ -67,6 +68,7 @@ class AppEntryViewModelTest {
             memberRepository = FakeMemberRepository(),
             financeReportRepository = FakeFinanceReportRepository(),
             paymentObligationRepository = FakePaymentObligationRepository(),
+            tenantProfileRepository = com.lampung.baktimarsada.test.fakes.FakeTenantProfileRepository(),
             notificationHelper = FakeNotificationHelper()
         )
         advanceUntilIdle()
@@ -86,6 +88,7 @@ class AppEntryViewModelTest {
             memberRepository = FakeMemberRepository(),
             financeReportRepository = FakeFinanceReportRepository(),
             paymentObligationRepository = FakePaymentObligationRepository(),
+            tenantProfileRepository = com.lampung.baktimarsada.test.fakes.FakeTenantProfileRepository(),
             notificationHelper = FakeNotificationHelper()
         )
         advanceUntilIdle()

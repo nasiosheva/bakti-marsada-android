@@ -91,7 +91,6 @@ internal fun RouletteImportMembersSheet(
     onDismiss: () -> Unit,
     onLogin: () -> Unit,
     onRefreshMembers: () -> Unit,
-    onLogout: () -> Unit,
     onApplyImport: () -> Unit
 ) {
     if (!visible) return
@@ -117,7 +116,6 @@ internal fun RouletteImportMembersSheet(
                 onSelectedMemberIdsChange = onSelectedMemberIdsChange,
                 onDismiss = onDismiss,
                 onRefreshMembers = onRefreshMembers,
-                onLogout = onLogout,
                 onApplyImport = onApplyImport
             )
         }
@@ -184,7 +182,6 @@ private fun RouletteImportSelectionContent(
     onSelectedMemberIdsChange: (Set<String>) -> Unit,
     onDismiss: () -> Unit,
     onRefreshMembers: () -> Unit,
-    onLogout: () -> Unit,
     onApplyImport: () -> Unit
 ) {
     val session = state.session ?: return
@@ -192,8 +189,7 @@ private fun RouletteImportSelectionContent(
         ImportSessionCard(
             session = session,
             isLoading = state.isLoadingMembers,
-            onRefresh = onRefreshMembers,
-            onLogout = onLogout
+            onRefresh = onRefreshMembers
         )
         Text(
             text = stringResource(id = R.string.roulette_import_selection_label),

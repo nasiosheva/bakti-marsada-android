@@ -12,8 +12,6 @@ interface RouletteImportDataSource {
 
     suspend fun login(identifier: String, password: String): AppResult<Unit>
 
-    suspend fun logout()
-
     suspend fun refreshMembers(): AppResult<Unit>
 }
 

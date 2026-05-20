@@ -14,7 +14,9 @@ import com.lampung.baktimarsada.network.dto.FinanceReportDto
 import com.lampung.baktimarsada.network.dto.MemberDto
 import com.lampung.baktimarsada.network.dto.PaymentObligationDto
 import com.lampung.baktimarsada.network.dto.FillArisanParticipantsRequestDto
+import com.lampung.baktimarsada.network.dto.RegisterTenantRequestDto
 import com.lampung.baktimarsada.network.dto.ReplaceArisanParticipantsRequestDto
+import com.lampung.baktimarsada.network.dto.TenantProfileDto
 import com.lampung.baktimarsada.network.dto.WorshipTemplateDto
 import retrofit2.Response
 import retrofit2.http.DELETE
@@ -102,6 +104,12 @@ interface BaktiApiService {
 
     @GET(AppConstants.ROUTE_USERS)
     suspend fun fetchUsers(@Query("role") role: String): Response<ApiResponseDto<List<CreateUserAccountResponseDto>>>
+
+    @GET(AppConstants.ROUTE_TENANT_PROFILE)
+    suspend fun fetchTenantProfile(): Response<ApiResponseDto<TenantProfileDto>>
+
+    @POST(AppConstants.ROUTE_TENANT_REGISTER)
+    suspend fun registerTenant(@Body request: RegisterTenantRequestDto): Response<ApiResponseDto<BackendAuthResponseDto>>
 }
 
 // created by Mories Deo Hutapea, S.E.,S.Kom

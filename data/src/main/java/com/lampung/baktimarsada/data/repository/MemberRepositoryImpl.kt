@@ -10,6 +10,7 @@ import com.lampung.baktimarsada.db.AppDatabase
 import com.lampung.baktimarsada.db.dao.MemberDao
 import com.lampung.baktimarsada.domain.model.MemberDetail
 import com.lampung.baktimarsada.domain.model.SectorContext
+import com.lampung.baktimarsada.repository.AuthRepository
 import com.lampung.baktimarsada.repository.MemberRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -20,8 +21,12 @@ import javax.inject.Singleton
 class MemberRepositoryImpl @Inject constructor(
     private val dao: MemberDao,
     private val database: AppDatabase,
-    private val remoteDataSource: AppRemoteDataSource
+    private val remoteDataSource: AppRemoteDataSource,
+    private val authRepository: AuthRepository
 ) : MemberRepository {
+
+    private suspend fun currentTenantId(): String =
+        authRepository.getCurrentSession()?.tenantContext?.tenantId.orEmpty()
 
     override fun observeMembers(): Flow<List<MemberDetail>> {
         return dao.observeAll().map { entities -> entities.map { it.toDomain() } }
@@ -29,7 +34,8 @@ class MemberRepositoryImpl @Inject constructor(
 
     override suspend fun refresh(sectorContext: SectorContext): AppResult<Unit> {
         return runCatching {
-            val items = remoteDataSource.fetchMembers(sectorContext.sectorId).map { it.toEntity() }
+            val tenantId = currentTenantId()
+            val items = remoteDataSource.fetchMembers(tenantId, sectorContext.sectorId).map { it.toEntity() }
             database.withTransaction {
                 dao.clearAll()
                 dao.insertAll(items)
@@ -42,7 +48,8 @@ class MemberRepositoryImpl @Inject constructor(
 
     override suspend fun save(member: MemberDetail, sectorContext: SectorContext): AppResult<Unit> {
         return runCatching {
-            remoteDataSource.saveMember(member.toDto())
+            val tenantId = currentTenantId()
+            remoteDataSource.saveMember(tenantId, member.toDto())
             refresh(sectorContext)
         }.fold(
             onSuccess = { AppResult.Success(Unit) },
@@ -52,7 +59,8 @@ class MemberRepositoryImpl @Inject constructor(
 
     override suspend fun delete(memberId: String, sectorContext: SectorContext): AppResult<Unit> {
         return runCatching {
-            remoteDataSource.deleteMember(memberId)
+            val tenantId = currentTenantId()
+            remoteDataSource.deleteMember(tenantId, memberId)
             refresh(sectorContext)
         }.fold(
             onSuccess = { AppResult.Success(Unit) },

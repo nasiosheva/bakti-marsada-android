@@ -8,7 +8,8 @@ data class FinanceReportDto(
     val amount: Long,
     val isVisibleToJemaat: Boolean,
     val sectorId: String,
-    val sectorName: String
+    val sectorName: String,
+    val tenantId: String = ""
 )
 
 // created by Mories Deo Hutapea, S.E.,S.Kom

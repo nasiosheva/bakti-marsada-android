@@ -78,6 +78,7 @@ import com.lampung.baktimarsada.ui.theme.BaktiMarsadaTheme
 @Composable
 fun LoginRoute(
     onLoginSuccess: (UserRole) -> Unit,
+    onOpenRegisterChurch: () -> Unit = {},
     viewModel: LoginViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -109,6 +110,7 @@ fun LoginRoute(
         onLoginAsJemaatClicked = viewModel::submitWithDemoJemaat,
         onResetAndLoginAsAdminClicked = viewModel::resetSimulationAndLoginAsAdmin,
         onErrorMessageConsumed = viewModel::clearErrorMessage,
+        onOpenRegisterChurch = onOpenRegisterChurch,
         isGoogleSignInEnabled = state.isGoogleSignInEnabled
     )
 }
@@ -125,6 +127,7 @@ fun LoginScreen(
     onLoginAsJemaatClicked: () -> Unit = {},
     onResetAndLoginAsAdminClicked: () -> Unit = {},
     onErrorMessageConsumed: () -> Unit = {},
+    onOpenRegisterChurch: () -> Unit = {},
     isGoogleSignInEnabled: Boolean = false,
     isSimulationEnabled: Boolean = AppBuildConfig.simulationEnabled
 ) {
@@ -230,6 +233,17 @@ fun LoginScreen(
                             onClick = onGoogleSignInClicked
                         )
                     }
+                }
+                OutlinedButton(
+                    onClick = onOpenRegisterChurch,
+                    enabled = !state.isLoading,
+                    shape = RoundedCornerShape(14.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp)
+                        .semantics { testTag = "login_register_church_button" }
+                ) {
+                    Text(text = stringResource(id = R.string.login_register_church_button))
                 }
                 if (isSimulationEnabled) {
                     DemoLoginCard(

@@ -17,7 +17,10 @@ import com.lampung.baktimarsada.network.dto.LoginRequestDto
 import com.lampung.baktimarsada.network.dto.ArisanParticipantDto
 import com.lampung.baktimarsada.network.dto.MemberDto
 import com.lampung.baktimarsada.network.dto.PaymentObligationDto
+import com.lampung.baktimarsada.network.dto.RegisterTenantRequestDto
 import com.lampung.baktimarsada.network.dto.SessionResponseDto
+import com.lampung.baktimarsada.network.dto.TenantProfileDto
+import com.lampung.baktimarsada.network.dto.TenantTerminologyDto
 import com.lampung.baktimarsada.network.dto.WorshipTemplateDto
 import com.lampung.baktimarsada.network.dto.WorshipTemplateItemDto
 import dagger.Binds
@@ -102,11 +105,15 @@ class FirebaseAppRemoteDataSource @Inject constructor(
         )
     }
 
+    override suspend fun registerNewTenant(request: RegisterTenantRequestDto): SessionResponseDto {
+        throw UnsupportedOperationException("Tenant registration via Firebase data source is not implemented")
+    }
+
     override suspend fun logout(token: String): Unit = Unit
 
     override suspend fun syncFcmToken(token: String): Unit = Unit
 
-    override suspend fun fetchEvents(sectorId: String): List<EventDto> {
+    override suspend fun fetchEvents(tenantId: String, sectorId: String): List<EventDto> {
         return firestore.collection(AppConstants.FIRESTORE_COLLECTION_EVENTS)
             .whereEqualTo(AppConstants.FIRESTORE_FIELD_SECTOR_ID, sectorId)
             .orderBy(AppConstants.FIRESTORE_FIELD_SCHEDULED_AT, Query.Direction.ASCENDING)
@@ -114,14 +121,18 @@ class FirebaseAppRemoteDataSource @Inject constructor(
             .await()
             .documents
             .mapNotNull { it.toEventDto() }
+            .filterTenant(tenantId)
     }
 
-    override suspend fun saveEvent(event: EventDto): EventDto {
-        val resolved = event.withIdIfNeeded(prefix = "event")
+    override suspend fun saveEvent(tenantId: String, event: EventDto): EventDto {
+        val resolved = event.withIdIfNeeded(prefix = "event").let {
+            if (it.tenantId.isBlank()) it.copy(tenantId = tenantId) else it
+        }
         firestore.collection(AppConstants.FIRESTORE_COLLECTION_EVENTS)
             .document(resolved.id)
             .set(
                 mapOf(
+                    AppConstants.FIRESTORE_FIELD_TENANT_ID to resolved.tenantId,
                     AppConstants.FIRESTORE_FIELD_TITLE to resolved.title,
                     AppConstants.FIRESTORE_FIELD_DESCRIPTION to resolved.description,
                     AppConstants.FIRESTORE_FIELD_SCHEDULED_AT to resolved.scheduledAt,
@@ -135,14 +146,14 @@ class FirebaseAppRemoteDataSource @Inject constructor(
         return resolved
     }
 
-    override suspend fun deleteEvent(eventId: String) {
+    override suspend fun deleteEvent(tenantId: String, eventId: String) {
         firestore.collection(AppConstants.FIRESTORE_COLLECTION_EVENTS)
             .document(eventId)
             .delete()
             .await()
     }
 
-    override suspend fun fetchWorshipTemplates(sectorId: String): List<WorshipTemplateDto> {
+    override suspend fun fetchWorshipTemplates(tenantId: String, sectorId: String): List<WorshipTemplateDto> {
         return firestore.collection(AppConstants.FIRESTORE_COLLECTION_WORSHIP_TEMPLATES)
             .whereEqualTo(AppConstants.FIRESTORE_FIELD_SECTOR_ID, sectorId)
             .orderBy(AppConstants.FIRESTORE_FIELD_TITLE, Query.Direction.ASCENDING)
@@ -150,10 +161,13 @@ class FirebaseAppRemoteDataSource @Inject constructor(
             .await()
             .documents
             .mapNotNull { it.toWorshipTemplateDto() }
+            .filterTenant(tenantId) { it.tenantId }
     }
 
-    override suspend fun saveWorshipTemplate(template: WorshipTemplateDto): WorshipTemplateDto {
-        val resolved = template.withIdIfNeeded(prefix = "template")
+    override suspend fun saveWorshipTemplate(tenantId: String, template: WorshipTemplateDto): WorshipTemplateDto {
+        val resolved = template.withIdIfNeeded(prefix = "template").let {
+            if (it.tenantId.isBlank()) it.copy(tenantId = tenantId) else it
+        }
         firestore.collection(AppConstants.FIRESTORE_COLLECTION_WORSHIP_TEMPLATES)
             .document(resolved.id)
             .set(
@@ -169,14 +183,14 @@ class FirebaseAppRemoteDataSource @Inject constructor(
         return resolved
     }
 
-    override suspend fun deleteWorshipTemplate(templateId: String) {
+    override suspend fun deleteWorshipTemplate(tenantId: String, templateId: String) {
         firestore.collection(AppConstants.FIRESTORE_COLLECTION_WORSHIP_TEMPLATES)
             .document(templateId)
             .delete()
             .await()
     }
 
-    override suspend fun fetchMembers(sectorId: String): List<MemberDto> {
+    override suspend fun fetchMembers(tenantId: String, sectorId: String): List<MemberDto> {
         return firestore.collection(AppConstants.FIRESTORE_COLLECTION_MEMBERS)
             .whereEqualTo(AppConstants.FIRESTORE_FIELD_SECTOR_ID, sectorId)
             .orderBy(AppConstants.FIRESTORE_FIELD_FULL_NAME, Query.Direction.ASCENDING)
@@ -184,14 +198,18 @@ class FirebaseAppRemoteDataSource @Inject constructor(
             .await()
             .documents
             .mapNotNull { it.toMemberDto() }
+            .filterTenant(tenantId)
     }
 
-    override suspend fun saveMember(member: MemberDto): MemberDto {
-        val resolved = member.withIdIfNeeded(prefix = "member")
+    override suspend fun saveMember(tenantId: String, member: MemberDto): MemberDto {
+        val resolved = member.withIdIfNeeded(prefix = "member").let {
+            if (it.tenantId.isBlank()) it.copy(tenantId = tenantId) else it
+        }
         firestore.collection(AppConstants.FIRESTORE_COLLECTION_MEMBERS)
             .document(resolved.id)
             .set(
                 mapOf(
+                    AppConstants.FIRESTORE_FIELD_TENANT_ID to resolved.tenantId,
                     AppConstants.FIRESTORE_FIELD_FULL_NAME to resolved.fullName,
                     AppConstants.FIRESTORE_FIELD_FAMILY_GROUP to resolved.familyGroup,
                     AppConstants.FIRESTORE_FIELD_PHONE_NUMBER to resolved.phoneNumber,
@@ -205,14 +223,14 @@ class FirebaseAppRemoteDataSource @Inject constructor(
         return resolved
     }
 
-    override suspend fun deleteMember(memberId: String) {
+    override suspend fun deleteMember(tenantId: String, memberId: String) {
         firestore.collection(AppConstants.FIRESTORE_COLLECTION_MEMBERS)
             .document(memberId)
             .delete()
             .await()
     }
 
-    override suspend fun fetchFinanceReports(sectorId: String): List<FinanceReportDto> {
+    override suspend fun fetchFinanceReports(tenantId: String, sectorId: String): List<FinanceReportDto> {
         return firestore.collection(AppConstants.FIRESTORE_COLLECTION_FINANCE_REPORTS)
             .whereEqualTo(AppConstants.FIRESTORE_FIELD_SECTOR_ID, sectorId)
             .orderBy(AppConstants.FIRESTORE_FIELD_PERIOD_LABEL, Query.Direction.DESCENDING)
@@ -220,14 +238,18 @@ class FirebaseAppRemoteDataSource @Inject constructor(
             .await()
             .documents
             .mapNotNull { it.toFinanceReportDto() }
+            .filterTenant(tenantId)
     }
 
-    override suspend fun saveFinanceReport(report: FinanceReportDto): FinanceReportDto {
-        val resolved = report.withIdIfNeeded(prefix = "finance")
+    override suspend fun saveFinanceReport(tenantId: String, report: FinanceReportDto): FinanceReportDto {
+        val resolved = report.withIdIfNeeded(prefix = "finance").let {
+            if (it.tenantId.isBlank()) it.copy(tenantId = tenantId) else it
+        }
         firestore.collection(AppConstants.FIRESTORE_COLLECTION_FINANCE_REPORTS)
             .document(resolved.id)
             .set(
                 mapOf(
+                    AppConstants.FIRESTORE_FIELD_TENANT_ID to resolved.tenantId,
                     AppConstants.FIRESTORE_FIELD_TITLE to resolved.title,
                     AppConstants.FIRESTORE_FIELD_DESCRIPTION to resolved.description,
                     AppConstants.FIRESTORE_FIELD_PERIOD_LABEL to resolved.periodLabel,
@@ -241,14 +263,14 @@ class FirebaseAppRemoteDataSource @Inject constructor(
         return resolved
     }
 
-    override suspend fun deleteFinanceReport(reportId: String) {
+    override suspend fun deleteFinanceReport(tenantId: String, reportId: String) {
         firestore.collection(AppConstants.FIRESTORE_COLLECTION_FINANCE_REPORTS)
             .document(reportId)
             .delete()
             .await()
     }
 
-    override suspend fun fetchPaymentObligations(sectorId: String): List<PaymentObligationDto> {
+    override suspend fun fetchPaymentObligations(tenantId: String, sectorId: String): List<PaymentObligationDto> {
         return firestore.collection(AppConstants.FIRESTORE_COLLECTION_PAYMENT_OBLIGATIONS)
             .whereEqualTo(AppConstants.FIRESTORE_FIELD_SECTOR_ID, sectorId)
             .orderBy(AppConstants.FIRESTORE_FIELD_DUE_DATE, Query.Direction.ASCENDING)
@@ -256,14 +278,18 @@ class FirebaseAppRemoteDataSource @Inject constructor(
             .await()
             .documents
             .mapNotNull { it.toPaymentObligationDto() }
+            .filterTenant(tenantId)
     }
 
-    override suspend fun savePaymentObligation(obligation: PaymentObligationDto): PaymentObligationDto {
-        val resolved = obligation.withIdIfNeeded(prefix = "payment")
+    override suspend fun savePaymentObligation(tenantId: String, obligation: PaymentObligationDto): PaymentObligationDto {
+        val resolved = obligation.withIdIfNeeded(prefix = "payment").let {
+            if (it.tenantId.isBlank()) it.copy(tenantId = tenantId) else it
+        }
         firestore.collection(AppConstants.FIRESTORE_COLLECTION_PAYMENT_OBLIGATIONS)
             .document(resolved.id)
             .set(
                 mapOf(
+                    AppConstants.FIRESTORE_FIELD_TENANT_ID to resolved.tenantId,
                     AppConstants.FIRESTORE_FIELD_MEMBER_ID to resolved.memberId,
                     AppConstants.FIRESTORE_FIELD_MEMBER_NAME to resolved.memberName,
                     AppConstants.FIRESTORE_FIELD_TITLE to resolved.title,
@@ -279,14 +305,14 @@ class FirebaseAppRemoteDataSource @Inject constructor(
         return resolved
     }
 
-    override suspend fun deletePaymentObligation(obligationId: String) {
+    override suspend fun deletePaymentObligation(tenantId: String, obligationId: String) {
         firestore.collection(AppConstants.FIRESTORE_COLLECTION_PAYMENT_OBLIGATIONS)
             .document(obligationId)
             .delete()
             .await()
     }
 
-    override suspend fun fetchArisanParticipants(sectorId: String): List<ArisanParticipantDto> {
+    override suspend fun fetchArisanParticipants(tenantId: String, sectorId: String): List<ArisanParticipantDto> {
         val document = firestore.collection(AppConstants.FIRESTORE_COLLECTION_ARISAN_PARTICIPANTS)
             .document(sectorId)
             .get()
@@ -296,13 +322,14 @@ class FirebaseAppRemoteDataSource @Inject constructor(
             .orEmpty()
             .distinct()
         if (memberIds.isEmpty()) return emptyList()
-        val membersById = fetchMembers(sectorId).associateBy { it.id }
+        val membersById = fetchMembers(tenantId, sectorId).associateBy { it.id }
         return memberIds
             .mapNotNull { memberId ->
                 membersById[memberId]?.let { member ->
                     ArisanParticipantDto(
                         memberId = member.id,
-                        memberName = member.fullName
+                        memberName = member.fullName,
+                        tenantId = tenantId
                     )
                 }
             }
@@ -310,10 +337,11 @@ class FirebaseAppRemoteDataSource @Inject constructor(
     }
 
     override suspend fun replaceArisanParticipants(
+        tenantId: String,
         sectorId: String,
         memberIds: List<String>
     ): List<ArisanParticipantDto> {
-        val validMemberIds = fetchMembers(sectorId).map { it.id }.toSet()
+        val validMemberIds = fetchMembers(tenantId, sectorId).map { it.id }.toSet()
         val selectedIds = memberIds
             .map { it.trim() }
             .filter { it.isNotBlank() && it in validMemberIds }
@@ -322,17 +350,18 @@ class FirebaseAppRemoteDataSource @Inject constructor(
             .document(sectorId)
             .set(
                 mapOf(
+                    AppConstants.FIRESTORE_FIELD_TENANT_ID to tenantId,
                     AppConstants.FIRESTORE_FIELD_SECTOR_ID to sectorId,
                     AppConstants.FIRESTORE_FIELD_MEMBER_IDS to selectedIds
                 )
             )
             .await()
-        return fetchArisanParticipants(sectorId)
+        return fetchArisanParticipants(tenantId, sectorId)
     }
 
-    override suspend fun fillArisanParticipantsFromMembers(sectorId: String): List<ArisanParticipantDto> {
-        val allIds = fetchMembers(sectorId).map { it.id }
-        return replaceArisanParticipants(sectorId, allIds)
+    override suspend fun fillArisanParticipantsFromMembers(tenantId: String, sectorId: String): List<ArisanParticipantDto> {
+        val allIds = fetchMembers(tenantId, sectorId).map { it.id }
+        return replaceArisanParticipants(tenantId, sectorId, allIds)
     }
 
     override suspend fun createUserAccount(request: CreateUserAccountRequestDto): CreateUserAccountResponseDto {
@@ -419,6 +448,18 @@ class FirebaseAppRemoteDataSource @Inject constructor(
                     fullName = fullName
                 )
             }
+    }
+
+    override suspend fun fetchTenantProfile(tenantId: String): TenantProfileDto {
+        val current = TenantRuntime.current
+        return TenantProfileDto(
+            tenantId = current.tenantId,
+            tenantName = current.tenantName,
+            subTenantId = current.subTenantId,
+            subTenantName = current.subTenantName,
+            appDisplayName = current.appDisplayName,
+            terminology = TenantTerminologyDto()
+        )
     }
 
     override suspend fun resetSimulationData(): Unit = Unit
@@ -687,6 +728,25 @@ class FirebaseAppRemoteDataSource @Inject constructor(
         val sectorId: String,
         val sectorName: String
     )
+
+    @JvmName("filterEventTenant")
+    private fun List<EventDto>.filterTenant(tenantId: String): List<EventDto> =
+        if (tenantId.isBlank()) this else filter { it.tenantId.isBlank() || it.tenantId == tenantId }
+
+    @JvmName("filterMemberTenant")
+    private fun List<MemberDto>.filterTenant(tenantId: String): List<MemberDto> =
+        if (tenantId.isBlank()) this else filter { it.tenantId.isBlank() || it.tenantId == tenantId }
+
+    @JvmName("filterFinanceTenant")
+    private fun List<FinanceReportDto>.filterTenant(tenantId: String): List<FinanceReportDto> =
+        if (tenantId.isBlank()) this else filter { it.tenantId.isBlank() || it.tenantId == tenantId }
+
+    @JvmName("filterPaymentTenant")
+    private fun List<PaymentObligationDto>.filterTenant(tenantId: String): List<PaymentObligationDto> =
+        if (tenantId.isBlank()) this else filter { it.tenantId.isBlank() || it.tenantId == tenantId }
+
+    private fun <T> List<T>.filterTenant(tenantId: String, selector: (T) -> String): List<T> =
+        if (tenantId.isBlank()) this else filter { selector(it).isBlank() || selector(it) == tenantId }
 }
 
 @Module

@@ -22,7 +22,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Edit
@@ -477,8 +476,7 @@ private fun SectionStripHeader(
 internal fun ImportSessionCard(
     session: RouletteSessionUi,
     isLoading: Boolean,
-    onRefresh: () -> Unit,
-    onLogout: () -> Unit
+    onRefresh: () -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -543,7 +541,7 @@ internal fun ImportSessionCard(
             ) {
                 OutlinedButton(
                     onClick = onRefresh,
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.fillMaxWidth(),
                     enabled = !isLoading,
                     shape = RoundedCornerShape(12.dp),
                     contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp)
@@ -556,27 +554,6 @@ internal fun ImportSessionCard(
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = stringResource(id = R.string.roulette_action_refresh_members),
-                        style = MaterialTheme.typography.labelLarge
-                    )
-                }
-                Button(
-                    onClick = onLogout,
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer,
-                        contentColor = MaterialTheme.colorScheme.onErrorContainer
-                    ),
-                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.Logout,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = stringResource(id = R.string.roulette_action_logout),
                         style = MaterialTheme.typography.labelLarge
                     )
                 }

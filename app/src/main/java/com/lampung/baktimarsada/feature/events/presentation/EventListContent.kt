@@ -126,7 +126,11 @@ private fun rememberEventListUiState(
     val filteredItems = state.items.filter { it.matchesEventQuery(searchQuery) }
     val displayItems = filteredItems.take(visibleCount)
     val canLoadMore = displayItems.size < filteredItems.size
-    val title = stringResource(id = if (isAdmin) R.string.event_title_admin else R.string.event_title_jemaat)
+    val gatheringLabel = com.lampung.baktimarsada.ui.tenant.BaktiTerminologies.current.gatheringLabel
+    val title = stringResource(
+        id = if (isAdmin) R.string.event_title_admin else R.string.event_title_jemaat,
+        gatheringLabel
+    )
     val countLabel = if (isAdmin) {
         stringResource(id = R.string.pagination_summary, displayItems.size, filteredItems.size)
     } else {

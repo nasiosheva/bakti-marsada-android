@@ -5,7 +5,6 @@ import com.lampung.baktimarsada.core.resources.StringProvider
 import com.lampung.baktimarsada.domain.model.MemberDetail
 import com.lampung.baktimarsada.domain.model.SessionState
 import com.lampung.baktimarsada.domain.usecase.LoginUseCase
-import com.lampung.baktimarsada.domain.usecase.LogoutUseCase
 import com.lampung.baktimarsada.feature.roulette.R
 import com.lampung.baktimarsada.feature.roulette.model.RouletteMemberUi
 import com.lampung.baktimarsada.feature.roulette.model.RouletteSessionUi
@@ -22,7 +21,6 @@ class DefaultRouletteImportDataSource @Inject constructor(
     private val authRepository: AuthRepository,
     private val memberRepository: MemberRepository,
     private val loginUseCase: LoginUseCase,
-    private val logoutUseCase: LogoutUseCase,
     private val stringProvider: StringProvider
 ) : RouletteImportDataSource {
 
@@ -43,10 +41,6 @@ class DefaultRouletteImportDataSource @Inject constructor(
             is AppResult.Success -> AppResult.Success(Unit)
             is AppResult.Error -> AppResult.Error(result.message)
         }
-    }
-
-    override suspend fun logout() {
-        logoutUseCase()
     }
 
     override suspend fun refreshMembers(): AppResult<Unit> {
